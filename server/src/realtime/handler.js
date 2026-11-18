@@ -28,7 +28,7 @@ function parse(schema, raw) {
 //   { ok: true, ...result }  or  { ok: false, error: { code, message, details? }, current? }
 export function makeHandler({ socket, getRoom }) {
   return function on(event, options, fn) {
-    const { schema = z.object({}).strict(), min = 'viewer', sensitive = false, notMuted = false, frozen = false } =
+    const { schema = z.object({}).strict(), min = 'viewer', sensitive = false, notMuted = false, frozen = false, quiet = false } =
       options;
 
     socket.on(event, async (msg, maybeAck) => {
@@ -66,7 +66,7 @@ export function makeHandler({ socket, getRoom }) {
         const payload = parse(schema, raw ?? {});
         const result = (await fn({ payload, room, user, role })) ?? {};
         ack({ ok: true, ...result });
-        log.info(event, {
+        (quiet ? log.debug : log.info)(event, {
           tripId: room.tripId,
           correlationId: room.correlationId,
           userId: user.id,

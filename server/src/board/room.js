@@ -358,9 +358,12 @@ export class RoomRegistry {
               names: new Map(),
               flushIntervalMs: this.flushIntervalMs,
               weather: destination?.weather ?? null,
+              // Ids come back from MongoDB as ObjectIds; the room works with strings.
               votes: votes.map((v) => ({
                 ...v,
                 itemIds: v.itemIds.map(String),
+                candidates: (v.candidates ?? []).map((c) => ({ ...c, itemId: String(c.itemId) })),
+                openedByUserId: v.openedByUserId ? String(v.openedByUserId) : null,
                 ballots: new Map(Object.entries(v.ballots ?? {})),
               })),
             });

@@ -28,8 +28,15 @@ export function roomActions({ emit, config }) {
   function checkConflicts(room) {
     const current = detectConflicts(conflictInput(room));
     const { opened, resolved } = diffConflicts(room.conflicts, current);
+    // Same conflict, new numbers (e.g. a budget breach grew): refresh it on
+    // screen, without announcing it again in chat or the event log.
+    const before = new Map(room.conflicts.map((c) => [c.conflictId, c]));
+    const changed = current.filter(
+      (c) => before.has(c.conflictId) && JSON.stringify(before.get(c.conflictId).details) !== JSON.stringify(c.details),
+    );
     room.conflicts = current;
     const detectedAt = new Date().toISOString();
+    for (const c of changed) emit(room, 'trip.board.conflict', { ...c, status: 'open', detectedAt, updated: true });
     for (const c of opened) {
       emit(room, 'trip.board.conflict', { ...c, status: 'open', detectedAt });
       room.logEvent('conflict_opened', { conflictId: c.conflictId, conflictType: c.conflictType, itemIds: c.itemIds });

@@ -334,3 +334,53 @@ perform on real users.
 loads the same generated history into MongoDB with `source: "generated"`, under
 stable fake user ids that are not real accounts, so live recommendations have
 something to learn from. Re-running it replaces only those rows.
+
+## Phase 5
+
+**The design was agreed first.** A mockup of the trip room was approved
+before any UI code was written: neutral greys, one accent colour (blue, for
+votes and the main action), warning and danger colours only for problems,
+outline icons, no gradients or emoji, and a serif font for the Concierge's
+answers so AI text stands out.
+
+**Chat reactions are icons.** The backend keeps the six fixed emoji
+reactions the spec asks for, but the UI shows them as outline icons with a
+count (thumbs up, heart, smile, surprise, confetti, thumbs down), to keep the
+no-emoji look.
+
+**The server is the only source of truth.** The board never changes a card
+locally; it waits for the server's `trip.board.update` broadcast, which
+arrives within milliseconds. A move that loses a race is simply never shown,
+and a short notice says someone else moved the card first. This keeps every
+screen identical and makes the conflict handling from Phase 2 visible
+without extra client logic.
+
+**Tokens stay in memory.** The access token is never written to
+localStorage, so injected script can't read it from storage. The httpOnly
+refresh cookie signs a returning visitor back in. A request that hits an
+expired token refreshes once and retries, and an open socket is handed the
+new token with `auth.renew`.
+
+**Drag and drop uses the browser's own API, with the card dialog as the
+touch alternative.** HTML5 drag and drop moves a card to another day; the
+card dialog changes day and time on any device. No drag-and-drop library was
+added.
+
+**No client unit tests.** The client is checked in a real browser, in light
+mode, dark mode and at phone width. The rules it relies on (budget maths,
+versions, votes, permissions) are tested on the server, which enforces them
+whatever the client does. A browser end-to-end suite such as Playwright would
+be the next step.
+
+**Bugs the UI testing found (fixed and covered by tests):**
+- A budget breach that grew kept showing its first amount, because a
+  conflict was only announced when it first appeared. It is now re-sent
+  whenever its details change, without a second chat notice or log row.
+- After a server restart, a restored vote compared database ObjectIds with
+  strings and failed when someone voted. Ids are now normalised when a vote is
+  restored.
+
+**Development restarts.** `node --watch` reacted to file changes in the
+whole server folder, so the dev server restarted at odd moments. The dev
+script now uses `--watch-path=src`. On Windows, Node's watcher may still fire
+once right after startup; this affects development only, not `npm start`.

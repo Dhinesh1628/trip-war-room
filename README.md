@@ -6,13 +6,14 @@ tracks a shared budget, chats, and asks an AI Concierge questions that are
 answered only from a locally authored venue dataset and always obey the
 group's budget, dietary, opening-hours and distance constraints.
 
-> Status: **Phase 4 done: the whole backend.** Auth and four-role access
-> control; trips and invites; the live board (pin, move, lock, simultaneous-move
-> conflicts, presence, chat, reconnects, moderation); the AI Concierge
-> (rule-checked, cited suggestions; conflict detector; contested-slot votes);
-> an exact budget engine (attendance, even and weighted splits, budget-split
-> votes); an event log with session analytics; hybrid recommendations; and the
-> dashboard. The full UI comes in Phase 5 (see [Roadmap](#roadmap)).
+> Status: **Phase 5 done: the full app works end to end in the browser.**
+> Auth and four-role access control; trips and invites; the live board (pin,
+> drag to move, lock, simultaneous-move conflicts, presence, chat, reconnects,
+> moderation); the AI Concierge (rule-checked, cited suggestions; conflict
+> detector; contested-slot votes); an exact budget engine (attendance, even and
+> weighted splits, budget-split votes); session analytics from an event log;
+> hybrid recommendations; the dashboard; and admin dataset upload. Phase 6
+> (load testing, measured performance, final docs) is next (see [Roadmap](#roadmap)).
 
 Docs: [API reference](docs/API.md) · [Decisions and deviations](docs/DECISIONS.md) ·
 [Postman collection](docs/postman/trip-war-room.postman_collection.json)
@@ -45,7 +46,10 @@ trip-war-room/
     scripts/        seed, make-admin, smoke test, live room demo, Concierge and
                     recommender evaluations, interaction generator, dev:memory
     test/           Jest tests (use an in-memory MongoDB, no setup needed)
-  client/   React app (Vite dev server proxies /api and /socket.io)
+  client/   React 19 app (Vite dev server proxies /api and /socket.io)
+    src/lib/        API client (token in memory, refresh cookie), auth, live room hook
+    src/pages/      sign in, dashboard, join, trip room, analytics, admin
+    src/pages/room/ board, dialogs, votes, budget, Concierge, chat, people, ideas
 ```
 
 ## Prerequisites
@@ -132,9 +136,39 @@ loaded (no `.env` or seed needed; all data is lost when you stop it).
 - Client: <http://localhost:5180>
 - API + WebSocket gateway: <http://localhost:5080>
 
-The client page is still a status page for now: it shows whether the REST API,
-the database and the real-time gateway are reachable, plus a measured WebSocket
-round trip.
+### Using the app
+
+1. Open <http://localhost:5180> and create an account.
+2. On the dashboard, start a trip (destination, dates, group budget). You become
+   its leader. The invite code is shown at the top of the trip room; click it
+   to copy a join link.
+3. To see live sync, open the join link in a **second browser profile or a
+   private window** (a second account needs its own cookies), register another
+   traveller, and join.
+
+What you can do in a trip room:
+
+| Area | What it does |
+|---|---|
+| Board | One column per day. "Pin a venue" opens the catalog with filters. Drag a card to another day; open it to change the time, who's going, or how the cost is split; leaders can lock it as final |
+| Votes | Two cards in the same slot open a vote automatically; everyone, Viewers included, picks one. "Put it to a vote" on a card proposes a cost split for a yes/no vote |
+| Warnings | Overlaps, impossible travel, venues booked while closed, and budget breaches appear at the top the moment they happen |
+| Budget | Group total against the budget, and each person's exact share (in red if over their own ceiling) |
+| Concierge | Ask in plain words ("vegan lunch under $20"); the answer cites its sources and has a "Pin it" button |
+| Chat | Messages, typing indicator, reactions (shown as icons), and system notices for votes, conflicts and moderation |
+| People | Who's online and their connection quality; leaders can mute, remove, change roles, hand over the leader role, close the room to new people and replace the invite code |
+| Ideas | "Recommended for your group", with the reason for each |
+
+Other pages: **Analytics** (link in the trip room) shows the session numbers and
+the final cost per person, and confirms the event log replays exactly to the
+board. **Datasets** (admins only, in the top bar) checks and uploads a
+destination's venue file.
+
+On a phone the board shows one day at a time (swipe sideways), and the panels
+become tabs below it. Light and dark mode follow your system setting.
+
+Dragging works with a mouse. On touch screens, open a card and change its day
+or time there.
 
 Ports 5080 and 5180 were chosen to avoid clashing with other local projects
 (5060 would not work: browsers block it as an "unsafe" port).

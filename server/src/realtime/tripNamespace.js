@@ -137,7 +137,7 @@ export function attachTripNamespace(io, { config, registry, actions, ask, emit }
       socket.emit('trip.sync.pong', envelope('trip.sync.pong', tripId, { clientSentAt, serverReceivedAt }));
     });
 
-    on('trip.sync.report', { schema: schemas.syncReport }, ({ payload, room: r }) => {
+    on('trip.sync.report', { schema: schemas.syncReport, quiet: true }, ({ payload, room: r }) => {
       const live = r.presence.get(user.id);
       if (!live) return {};
       const quality = qualityOf(payload.rttMs);
@@ -343,7 +343,7 @@ export function attachTripNamespace(io, { config, registry, actions, ask, emit }
       return { message: view, duplicate };
     });
 
-    on('trip.chat.typing', { schema: schemas.chatTyping, notMuted: true }, ({ payload, room: r }) => {
+    on('trip.chat.typing', { schema: schemas.chatTyping, notMuted: true, quiet: true }, ({ payload, room: r }) => {
       socket.to(r.tripId).emit(
         'trip.chat.typing',
         envelope('trip.chat.typing', r.tripId, {

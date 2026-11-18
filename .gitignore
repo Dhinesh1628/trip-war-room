@@ -6,3 +6,6 @@ coverage/
 !.env.example
 *.log
 .DS_Store
+
+# Local test accounts for browser checks (never committed)
+*.local.json

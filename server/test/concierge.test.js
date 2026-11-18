@@ -242,6 +242,19 @@ describe('conflict detector (spec 6.2 acceptance: flagged within 1 s)', () => {
     expect(await ChatMessage.countDocuments({ tripId: t.tripId, type: 'conflict' })).toBe(1);
   });
 
+  test('when a breach grows, the room gets the new numbers (but only one chat notice)', async () => {
+    const t = await setupTrip();
+    await request(app).patch('/api/v1/users/me').set('Authorization', t.viewer.auth).send({ preferences: { budgetCeiling: 30 } });
+    const lead = await enter(t, t.leader);
+    await lead.send('trip.board.pin', { venueId: 'v_lis_004', dayIndex: 0, startTime: '19:00', endTime: '21:00' }); // $48
+    await lead.waitFor('trip.board.conflict', (m) => m.payload.details.committed === 48);
+    await lead.send('trip.board.pin', { venueId: 'v_lis_001', dayIndex: 1, startTime: '19:00', endTime: '21:00' }); // + $22
+    const updated = await lead.waitFor('trip.board.conflict', (m) => m.payload.details.committed === 70);
+    expect(updated.payload).toMatchObject({ updated: true, details: { over: 40 } });
+    await sleep(50);
+    expect(await ChatMessage.countDocuments({ tripId: t.tripId, type: 'conflict' })).toBe(1);
+  });
+
   test('raising your budget ceiling clears your breach', async () => {
     const t = await setupTrip();
     await request(app).patch('/api/v1/users/me').set('Authorization', t.viewer.auth).send({ preferences: { budgetCeiling: 30 } });
@@ -348,5 +361,8 @@ describe('contested-slot voting (spec 6.2)', () => {
     expect(back.snapshot.payload.votes).toHaveLength(1);
     expect(back.snapshot.payload.votes[0]).toMatchObject({ voteId: vote.voteId, ballotCount: 1, tally: { [b.itemId]: 1 } });
     expect(back.snapshot.payload.items.every((i) => i.lifecycleStage === 'voting')).toBe(true);
+    // And it still works after the reload: ballots can be cast.
+    const ack = await back.send('trip.vote.cast', { voteId: vote.voteId, itemId: a.itemId });
+    expect(ack).toMatchObject({ ok: true, vote: { ballotCount: 2 } });
   });
 });
