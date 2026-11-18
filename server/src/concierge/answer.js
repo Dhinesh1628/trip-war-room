@@ -213,14 +213,151 @@ export function noMatchAnswer(constraints, rejected) {
 
 // ---- the LLM call ------------------------------------------------------------
 
-export function createLlmClient(config) {
-  if (!config.anthropicApiKey) return null;
-  return new Anthropic({ apiKey: config.anthropicApiKey, maxRetries: 0 });
+// Which model writes the wording (CONCIERGE_PROVIDER):
+//   auto      Claude if ANTHROPIC_API_KEY is set, otherwise the template (default)
+//   anthropic Claude via the Anthropic API (paid)
+//   ollama    a local open-source model through Ollama (free, runs on this machine)
+//   none      always the template
+export function resolveProvider(config) {
+  const p = config.conciergeProvider ?? 'auto';
+  if (p === 'auto') return config.anthropicApiKey ? 'anthropic' : 'none';
+  return p;
 }
 
-// Asks Claude to phrase the answer. Resolves with
-// { ok: true, reply, model, usage } or { ok: false, reason }.
+export function createLlmClient(config) {
+  const provider = resolveProvider(config);
+  if (provider === 'anthropic') {
+    if (!config.anthropicApiKey) return null;
+    return new Anthropic({ apiKey: config.anthropicApiKey, maxRetries: 0 });
+  }
+  if (provider === 'ollama') {
+    return { provider: 'ollama', baseUrl: config.ollamaUrl.replace(/\/$/, ''), model: config.ollamaModel };
+  }
+  return null;
+}
+
+// Short label for health checks and logs.
+export const providerLabel = (llm) =>
+  !llm ? 'template' : llm.provider === 'ollama' ? `ollama:${llm.model}` : 'claude';
+
+// Checks a model's JSON reply against the candidate ids.
+function parseReply(text, ids) {
+  if (!text) return { ok: false, reason: 'empty_reply' };
+  let json;
+  try {
+    json = JSON.parse(text);
+  } catch {
+    return { ok: false, reason: 'invalid_json' };
+  }
+  const parsed = replySchema(ids).safeParse(json);
+  if (!parsed.success) return { ok: false, reason: 'schema_mismatch' };
+  return { ok: true, reply: parsed.data };
+}
+
+const userMessage = (facts) => `Facts (JSON):\n${JSON.stringify(facts)}`;
+
+// A small local model on a CPU spends most of its time reading the prompt, so
+// it gets a shorter version: the top 3 candidates and only the fields an
+// answer needs. (The grounding check still uses the full facts.)
+export function compactFacts(facts) {
+  const r = facts.rulesApplied;
+  return {
+    question: facts.question,
+    near: r.nearTo?.name ?? null,
+    weather: facts.weather ? facts.weather.condition : null,
+    candidates: facts.candidates.slice(0, 3).map((c) => ({
+      venueId: c.venueId,
+      name: c.name,
+      area: c.neighborhood,
+      priceUSD: c.pricePerPersonUSD,
+      dietary: c.dietaryTags,
+      open: `${c.hours.open}-${c.hours.close}`,
+      walkMinutes: c.walkMinutes,
+      rating: c.rating,
+    })),
+  };
+}
+
+const SYSTEM_SHORT = `You write one reply for a trip-planning app. Use ONLY the candidates given; they all fit the group's rules and the first is the best match.
+Reply as JSON: "answer" is two plain sentences recommending one candidate by name, mentioning its price (like $22) and why it fits; "suggestedVenueId" is that candidate's venueId; "citedVenueIds" lists every venueId you mention. Never invent prices, times or places.`;
+
+// Rejects replies that are technically grounded but not a real answer
+// (a bare name, or the JSON leaking into the sentence).
+export function qualityProblems(answer, suggested) {
+  const problems = [];
+  if (answer.trim().split(/\s+/).length < 8) problems.push('answer is too short');
+  if (/venueId|citedVenueIds|suggestedVenueId|[{}[\]=]/.test(answer)) problems.push('answer contains raw data');
+  if (suggested && !answer.toLowerCase().includes(suggested.name.toLowerCase())) problems.push('answer does not name the suggestion');
+  return problems;
+}
+
+// Local model through Ollama's chat API. `format` takes a JSON schema, so the
+// reply is constrained to the same shape (and the same candidate ids) as Claude's.
+async function askOllama(llm, facts, config) {
+  const ids = facts.candidates.slice(0, 3).map((c) => c.venueId);
+  let res;
+  try {
+    res = await fetch(`${llm.baseUrl}/api/chat`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: llm.model,
+        stream: false,
+        format: outputSchema(ids),
+        keep_alive: '30m', // keep the model in memory between questions
+        options: { temperature: 0, num_predict: 160 },
+        messages: [
+          { role: 'system', content: SYSTEM_SHORT },
+          { role: 'user', content: JSON.stringify(compactFacts(facts)) },
+        ],
+      }),
+      signal: AbortSignal.timeout(config.conciergeTimeoutMs),
+    });
+  } catch (err) {
+    if (err.name === 'TimeoutError' || err.name === 'AbortError') return { ok: false, reason: 'timeout' };
+    return { ok: false, reason: 'llm_unavailable', detail: `Ollama not reachable at ${llm.baseUrl}` };
+  }
+  if (!res.ok) {
+    const detail = (await res.text().catch(() => '')).slice(0, 300);
+    return { ok: false, reason: `ollama_error_${res.status}`, detail };
+  }
+  const body = await res.json();
+  if (body.done_reason === 'length') return { ok: false, reason: 'max_tokens' };
+  const parsed = parseReply(body.message?.content, ids);
+  if (!parsed.ok) return parsed;
+  return {
+    ...parsed,
+    model: `ollama/${body.model ?? llm.model}`,
+    usage: { input_tokens: body.prompt_eval_count, output_tokens: body.eval_count },
+  };
+}
+
+// Loads the local model into memory at startup, so the first question isn't
+// slowed down by loading it from disk. Never throws.
+export async function warmUp(llm) {
+  if (llm?.provider !== 'ollama') return null;
+  const started = performance.now();
+  try {
+    const res = await fetch(`${llm.baseUrl}/api/chat`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ model: llm.model, stream: false, keep_alive: '30m', messages: [{ role: 'user', content: 'ok' }], options: { num_predict: 1 } }),
+      signal: AbortSignal.timeout(120_000),
+    });
+    const ms = Math.round(performance.now() - started);
+    if (!res.ok) log.warn('concierge.warmup_failed', { model: llm.model, status: res.status, detail: (await res.text()).slice(0, 200) });
+    else log.info('concierge.warmup', { model: llm.model, ms });
+    return ms;
+  } catch (err) {
+    log.warn('concierge.warmup_failed', { model: llm.model, error: err.message });
+    return null;
+  }
+}
+
+// Asks the model to phrase the answer. Resolves with
+// { ok: true, reply, model, usage } or { ok: false, reason, detail? }.
 async function askModel(llm, facts, config) {
+  if (llm.provider === 'ollama') return askOllama(llm, facts, config);
   const ids = facts.candidates.map((c) => c.venueId);
   try {
     const response = await llm.beta.messages.create(
@@ -233,23 +370,15 @@ async function askModel(llm, facts, config) {
         betas: ['server-side-fallback-2026-07-01'],
         fallbacks: 'default',
         system: SYSTEM,
-        messages: [{ role: 'user', content: `Facts (JSON):\n${JSON.stringify(facts)}` }],
+        messages: [{ role: 'user', content: userMessage(facts) }],
       },
       { timeout: config.conciergeTimeoutMs, maxRetries: 0 },
     );
     if (response.stop_reason === 'refusal') return { ok: false, reason: 'refusal' };
     if (response.stop_reason === 'max_tokens') return { ok: false, reason: 'max_tokens' };
-    const text = response.content.find((b) => b.type === 'text')?.text;
-    if (!text) return { ok: false, reason: 'empty_reply' };
-    let json;
-    try {
-      json = JSON.parse(text);
-    } catch {
-      return { ok: false, reason: 'invalid_json' };
-    }
-    const parsed = replySchema(ids).safeParse(json);
-    if (!parsed.success) return { ok: false, reason: 'schema_mismatch' };
-    return { ok: true, reply: parsed.data, model: response.model, usage: response.usage };
+    const parsed = parseReply(response.content.find((b) => b.type === 'text')?.text, ids);
+    if (!parsed.ok) return parsed;
+    return { ...parsed, model: response.model, usage: response.usage };
   } catch (err) {
     if (err instanceof Anthropic.APIConnectionTimeoutError) return { ok: false, reason: 'timeout' };
     if (err instanceof Anthropic.RateLimitError) return { ok: false, reason: 'rate_limited' };
@@ -265,20 +394,28 @@ async function askModel(llm, facts, config) {
 
 // Produces the final reply for a request that has at least one candidate.
 export async function writeAnswer({ facts, llm, config, allVenueNames, tripId }) {
-  if (!llm) return { ...templateAnswer(facts), mode: 'template', fallbackReason: 'no_api_key' };
+  if (!llm) return { ...templateAnswer(facts), mode: 'template', fallbackReason: config.conciergeProvider === 'none' ? 'template_only' : 'no_api_key' };
 
   const started = performance.now();
   const result = await askModel(llm, facts, config);
   const llmMs = Math.round(performance.now() - started);
 
   if (result.ok) {
+    // 1. Truth first: every fact it states must be in the data.
     const problems = groundingProblems(result.reply.answer, facts, allVenueNames);
-    const cited = [...new Set([result.reply.suggestedVenueId, ...result.reply.citedVenueIds])];
-    if (!problems.length) {
-      return { ...result.reply, citedVenueIds: cited, mode: 'llm', model: result.model, llmMs, usage: result.usage };
+    if (problems.length) {
+      log.warn('concierge.ungrounded', { tripId, problems });
+      return { ...templateAnswer(facts), mode: 'template', fallbackReason: 'ungrounded', problems, llmMs };
     }
-    log.warn('concierge.ungrounded', { tripId, problems });
-    return { ...templateAnswer(facts), mode: 'template', fallbackReason: 'ungrounded', problems, llmMs };
+    // 2. Then usefulness: a real sentence that names the suggestion.
+    const suggested = facts.candidates.find((c) => c.venueId === result.reply.suggestedVenueId);
+    const weak = qualityProblems(result.reply.answer, suggested);
+    if (weak.length) {
+      log.warn('concierge.low_quality', { tripId, problems: weak });
+      return { ...templateAnswer(facts), mode: 'template', fallbackReason: 'low_quality', problems: weak, llmMs };
+    }
+    const cited = [...new Set([result.reply.suggestedVenueId, ...result.reply.citedVenueIds])];
+    return { ...result.reply, citedVenueIds: cited, mode: 'llm', model: result.model, llmMs, usage: result.usage };
   }
   log.warn('concierge.llm_fallback', { tripId, reason: result.reason, detail: result.detail, llmMs });
   return { ...templateAnswer(facts), mode: 'template', fallbackReason: result.reason, llmMs };

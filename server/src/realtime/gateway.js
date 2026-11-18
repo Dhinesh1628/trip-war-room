@@ -3,7 +3,7 @@ import { envelope } from './envelope.js';
 import { RoomRegistry } from '../board/room.js';
 import { attachTripNamespace, NAMESPACE } from './tripNamespace.js';
 import { roomActions } from './roomActions.js';
-import { createLlmClient } from '../concierge/answer.js';
+import { createLlmClient, providerLabel, warmUp } from '../concierge/answer.js';
 import { askConcierge, rateLimitAsk } from '../concierge/concierge.js';
 import { saveMessage, messageView } from '../chat/chatService.js';
 
@@ -23,6 +23,8 @@ export function createGateway(httpServer, config) {
   const registry = new RoomRegistry({ flushIntervalMs: config.flushIntervalMs });
   // Tests inject a fake client as config.llm; otherwise one is made from the API key.
   const llm = config.llm !== undefined ? config.llm : createLlmClient(config);
+  // A local model is loaded into memory now, not on the first question.
+  if (config.llm === undefined) warmUp(llm);
 
   io.on('connection', (socket) => {
     // trip.sync.ping { clientSentAt } -> trip.sync.pong { clientSentAt, serverReceivedAt }
@@ -84,7 +86,7 @@ export function createGateway(httpServer, config) {
       connectedClients: io.engine.clientsCount,
       openRooms: registry.rooms.size,
       tripConnections: io.of(NAMESPACE).sockets.size,
-      concierge: llm ? 'claude' : 'template',
+      concierge: providerLabel(llm),
       uptimeSeconds: Math.round((Date.now() - startedAt) / 1000),
     };
   }

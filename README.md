@@ -72,11 +72,16 @@ trip-war-room/
      `node -e "console.log(require('crypto').randomBytes(48).toString('hex'))"`
    - If Atlas fails with `querySrv ECONNREFUSED` (common on Windows), uncomment
      `DNS_SERVERS=8.8.8.8,1.1.1.1`.
-   - Optional: `ANTHROPIC_API_KEY` (from <https://platform.claude.com>) lets
-     Claude write the Concierge's answers. Without it the Concierge still
-     works: it gives the same rule-checked suggestions, worded with a fixed
-     template. Each question with at least one matching venue is one paid API
-     call (`claude-opus-5-5`, low effort).
+   - Optional: choose who writes the Concierge's wording. The suggestions
+     themselves are always picked and checked by the rules in code.
+     - **Nothing set:** a fixed template. Free, no setup.
+     - **Free local model:** install [Ollama](https://ollama.com), run
+       `ollama pull llama3.2:3b` (about 2 GB), and set `CONCIERGE_PROVIDER=ollama`.
+     - **Claude (paid):** set `ANTHROPIC_API_KEY` (from
+       <https://platform.claude.com>, with credits added). Each question with at
+       least one matching venue is one API call (`claude-opus-5-5`, low effort).
+
+     `GET /api/v1/health/gateway` shows which one is active (`concierge`).
 
    `.env` is git-ignored. Never commit real secrets.
 

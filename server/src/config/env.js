@@ -39,10 +39,17 @@ export function loadConfig(env = process.env) {
     chatHistoryLimit: Number(env.CHAT_HISTORY_LIMIT) || 50,
     // AI Concierge. With no key, answers use the deterministic template.
     anthropicApiKey: env.ANTHROPIC_API_KEY || null,
+    // auto | anthropic | ollama | none  (see src/concierge/answer.js)
+    conciergeProvider: env.CONCIERGE_PROVIDER || 'auto',
+    ollamaUrl: env.OLLAMA_URL || 'http://localhost:11434',
+    ollamaModel: env.OLLAMA_MODEL || 'llama3.2:3b',
     conciergeModel: env.CONCIERGE_MODEL || 'claude-opus-5-5',
     conciergeEffort: env.CONCIERGE_EFFORT || 'low',
-    // Spec target is < 3 s end to end; past this the template answer is used.
-    conciergeTimeoutMs: Number(env.CONCIERGE_TIMEOUT_MS) || 2500,
+    // Past this the template answer is used. Claude: 2.5 s, to keep the
+    // spec's < 3 s P95. A local CPU model needs far longer (about 8-13 s on a
+    // laptop), so it gets 20 s by default; it then misses the 3 s target.
+    conciergeTimeoutMs:
+      Number(env.CONCIERGE_TIMEOUT_MS) || (env.CONCIERGE_PROVIDER === 'ollama' ? 20000 : 2500),
     // Max Concierge questions per traveller per minute (cost control).
     conciergeRateLimit: Number(env.CONCIERGE_RATE_LIMIT) || 20,
     // Default length of a contested-slot vote.

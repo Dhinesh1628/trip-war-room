@@ -219,6 +219,16 @@ The request also opts into server-side refusal fallbacks
 (`fallbacks: "default"`), so a safety-classifier decline is retried on a
 recommended fallback model within the same call.
 
+**A free local model is an option (`CONCIERGE_PROVIDER=ollama`).** Spec 8.1
+and 14.1 allow "a local open-source model". Through Ollama's chat API, a local
+model (default `llama3.2:3b`) gets the same facts, the same system prompt and
+the same JSON schema (Ollama's `format` field), so its venue ids are limited
+to the candidates in the same way. The same fact check and template fallback
+apply. The model is loaded into memory when the server starts and kept loaded
+for 30 minutes, so questions don't pay the loading time. The trade-off is speed
+on a laptop without a dedicated GPU; the measured numbers are reported with
+the Phase 6 performance results.
+
 **Cost control.** Claude is not called when nothing passes the rules, each
 traveller is limited to 20 questions a minute, and the prompt only carries
 the top 5 candidates (a few kilobytes of JSON; real token counts are logged
