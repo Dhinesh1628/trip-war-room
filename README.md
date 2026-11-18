@@ -69,7 +69,7 @@ trip-war-room/
     src/analytics/  session analytics from the event log
     src/recs/       interactions, hybrid recommender, data generator, Precision@5
     src/users/      profile, preferences, dashboard
-    data/destinations/  authored venue datasets (lisbon.json)
+    data/destinations/  authored venue datasets: Lisbon plus Delhi, Mumbai, Jaipur, Goa, Kochi
     scripts/        seed, make-admin, smoke test, live room demo, Concierge and
                     recommender evaluations, interaction generator, dev:memory
     test/           Jest tests (use an in-memory MongoDB, no setup needed)
@@ -126,7 +126,7 @@ trip-war-room/
    npm run seed --prefix server
    ```
 
-   Expected output: `lisbon.json: lisbon (lisbon-2026.11-1) - 42 venues ...`
+   Expected output: one line per destination, e.g. `lisbon.json: lisbon (lisbon-2026.11-1) - 42 venues ...`
 
    Optional: give the recommendation engine some history to learn from
    (120 synthetic travellers, about 1,700 interactions; safe to run again):
@@ -219,7 +219,7 @@ What the suites cover:
 | `rbac.test.js` | every protected action tried by outsider, Viewer, Planner, Leader and Admin |
 | `trips.test.js` | trip creation and validation, invite codes, joining, capacity (including 5 people racing for the last seat) |
 | `venues.test.js` | distance maths, proximity search checked against a brute-force calculation, query validation |
-| `dataset.test.js` | the Lisbon data covers every constraint type; bad uploads are rejected with clear messages |
+| `dataset.test.js` | every destination file is valid and covers every category; bad uploads are rejected with clear messages |
 | `boardState.test.js` | the board state machine on its own: lifecycle, version checks, exact budget cents, chat cleaning |
 | `realtime.test.js` | real Socket.io clients: handshake auth, snapshots, sync under 100 ms, 20 rounds of simultaneous moves, locks, leader disconnect, presence and reconnects, chat, moderation |
 | `constraints.test.js` | **100% constraint compliance**: 379 simulated Concierge requests checked against an independent re-implementation of the four rules; opening hours past midnight; the 40/30/30 ranking |
@@ -345,8 +345,10 @@ project's history phase by phase.
   rules are enforced and tested on the server.
 - **Touch screens:** drag and drop needs a mouse; on touch, change the day in
   the card dialog.
-- **Data:** one hand-authored destination (Lisbon); prices and venues are
-  fictional, and weather is mocked.
+- **Data:** six hand-authored destinations (Lisbon, Delhi, Mumbai, Jaipur, Goa,
+  Kochi). Landmarks and coordinates are real; restaurant and hotel names are
+  fictional, prices are approximate USD, and weather is mocked. Recommendation
+  history exists only for Lisbon, so other cities start from popularity.
 - **Hosting:** public deployment is out of scope per spec 4.2, but the repo is
   ready for Render (one service, see [docs/DEPLOY.md](docs/DEPLOY.md)). The free
   plan sleeps after 15 minutes idle.

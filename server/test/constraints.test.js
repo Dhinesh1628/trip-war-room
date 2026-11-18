@@ -1,4 +1,5 @@
 import { readFile } from 'node:fs/promises';
+import { readdirSync, readFileSync } from 'node:fs';
 import { DATA_DIR } from '../src/venues/seedData.js';
 import {
   filterCandidates,
@@ -250,5 +251,35 @@ describe('ranking: 40% proximity, 30% rating/popularity, 30% budget headroom', (
     const [r] = rankCandidates([{ ...base, venueId: 'v_x', coordinates: at(0.4) }], c);
     expect(r.distanceKm).toBeCloseTo(0.4, 2);
     expect(r.walkMinutes).toBe(6); // 0.4 km x 1.25 / 4.8 km/h = 6.25 min
+  });
+});
+
+// The same compliance check for every other destination file (Delhi, Mumbai,
+// Jaipur, Goa, Kochi, ...). Anchors are each city's own tours and landmarks.
+describe('100% constraint compliance in every destination', () => {
+  const files = readdirSync(DATA_DIR).filter((f) => f.endsWith('.json') && f !== 'lisbon.json').sort();
+
+  test('there are other destinations to check', () => {
+    expect(files.length).toBeGreaterThanOrEqual(5);
+  });
+
+  test.each(files)('%s: every suggestion satisfies every active rule, and every rejection is justified', (file) => {
+    const cityVenues = JSON.parse(readFileSync(`${DATA_DIR}/${file}`, 'utf8')).venues;
+    const anchors = cityVenues.filter((v) => ['tour', 'attraction', 'museum'].includes(v.category));
+    const base = simulatedRequests().slice(0, -1); // the matrix, without the Lisbon-only spec example
+    let withSuggestion = 0;
+    base.forEach((req, i) => {
+      const r = { ...req, anchor: req.anchor ? anchors[i % anchors.length] : null };
+      const { valid, rejected } = filterCandidates(cityVenues, r);
+      const ranked = rankCandidates(valid, r);
+      if (ranked.length) withSuggestion += 1;
+      for (const { venue } of ranked) {
+        const v = violations(venue, r);
+        if (v.length) throw new Error(`${file} ${req.label}: suggested ${venue.venueId} breaks ${v.join(', ')}`);
+        if (r.category) expect(venue.category).toBe(r.category);
+      }
+      for (const { venue, failures } of rejected) expect(violations(venue, r).sort()).toEqual(Object.keys(failures).sort());
+    });
+    expect(withSuggestion).toBeGreaterThanOrEqual(30);
   });
 });

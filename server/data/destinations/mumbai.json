@@ -1,0 +1,80 @@
+{
+  "datasetVersion": "mumbai-2026.11-1",
+  "about": "Hand-authored mock dataset for development and testing. Landmarks, neighbourhoods and coordinates are real Mumbai locations; restaurant, bar, hotel and tour-operator names are fictional. Prices are approximate, in USD (landmark tickets use the foreign-visitor fee). Opening hours are typical; weekly closing days are not modelled. Lodging pricePerPerson is per person per night. Weather is mocked: monthly normals plus a sample daily forecast.",
+  "destination": {
+    "slug": "mumbai",
+    "name": "Mumbai, India",
+    "country": "India",
+    "timezone": "Asia/Kolkata",
+    "currency": "USD",
+    "center": {
+      "lat": 18.932,
+      "lng": 72.8347
+    }
+  },
+  "venues": [
+    {"venueId": "v_mum_001", "name": "Fort Irani Cafe", "category": "breakfast", "neighborhood": "Fort", "pricePerPerson": 4, "dietaryTags": [], "hours": {"open": "07:00", "close": "20:00"}, "coordinates": {"lat": 18.9352, "lng": 72.8337}, "rating": 4.5, "reviewCount": 4100, "indoor": true, "description": "Century-old Irani cafe with bentwood chairs, serving bun maska, akuri eggs and sweet chai."},
+    {"venueId": "v_mum_002", "name": "Kala Ghoda Garden Cafe", "category": "cafe", "neighborhood": "Kala Ghoda", "pricePerPerson": 7, "dietaryTags": ["vegetarian", "vegan"], "hours": {"open": "08:00", "close": "23:00"}, "coordinates": {"lat": 18.929, "lng": 72.8318}, "rating": 4.4, "reviewCount": 1700, "indoor": true, "description": "Leafy courtyard cafe in the art district with vegan bakes and cold coffee."},
+    {"venueId": "v_mum_003", "name": "Kalbadevi Thali House", "category": "lunch", "neighborhood": "Kalbadevi", "pricePerPerson": 9, "dietaryTags": ["vegetarian"], "hours": {"open": "11:00", "close": "22:30"}, "coordinates": {"lat": 18.948, "lng": 72.829}, "rating": 4.6, "reviewCount": 2800, "indoor": true, "description": "Gujarati and Rajasthani vegetarian thali with a dozen refillable dishes."},
+    {"venueId": "v_mum_004", "name": "Fort Seafood Thali", "category": "lunch", "neighborhood": "Fort", "pricePerPerson": 11, "dietaryTags": ["gluten-free"], "hours": {"open": "11:30", "close": "16:00"}, "coordinates": {"lat": 18.933, "lng": 72.833}, "rating": 4.6, "reviewCount": 3500, "indoor": true, "description": "Mangalorean and Malvani seafood thalis with rice, fish curry and fried bombil."},
+    {"venueId": "v_mum_005", "name": "Bandra Plant Kitchen", "category": "lunch", "neighborhood": "Bandra West", "pricePerPerson": 13, "dietaryTags": ["vegetarian", "vegan", "gluten-free", "dairy-free", "nut-free"], "hours": {"open": "11:00", "close": "23:00"}, "coordinates": {"lat": 19.059, "lng": 72.83}, "rating": 4.6, "reviewCount": 820, "indoor": true, "description": "Plant-based bistro with millet bowls and coconut curries, free of gluten, dairy and nuts."},
+    {"venueId": "v_mum_006", "name": "Mohammed Ali Road Kebab Lane", "category": "dinner", "neighborhood": "Bhendi Bazaar", "pricePerPerson": 7, "dietaryTags": ["halal"], "hours": {"open": "18:00", "close": "02:00"}, "coordinates": {"lat": 18.9565, "lng": 72.833}, "rating": 4.6, "reviewCount": 3900, "indoor": false, "description": "Night-time street kitchens grilling kebabs and frying malpua, busiest after 9 PM."},
+    {"venueId": "v_mum_007", "name": "Colaba Coastal Kitchen", "category": "dinner", "neighborhood": "Colaba", "pricePerPerson": 24, "dietaryTags": ["gluten-free", "dairy-free"], "hours": {"open": "12:00", "close": "23:30"}, "coordinates": {"lat": 18.9215, "lng": 72.832}, "rating": 4.5, "reviewCount": 2600, "indoor": true, "description": "Konkan-coast seafood restaurant near the Gateway of India, cooking in coconut and kokum."},
+    {"venueId": "v_mum_008", "name": "Chowpatty Chaat Stalls", "category": "dinner", "neighborhood": "Girgaon Chowpatty", "pricePerPerson": 3, "dietaryTags": ["vegetarian"], "hours": {"open": "16:00", "close": "23:30"}, "coordinates": {"lat": 18.9547, "lng": 72.8146}, "rating": 4.2, "reviewCount": 6200, "indoor": false, "description": "Beachfront stalls for pav bhaji, bhel puri and kulfi at the end of Marine Drive."},
+    {"venueId": "v_mum_009", "name": "Colaba Shalom Kitchen", "category": "dinner", "neighborhood": "Colaba", "pricePerPerson": 12, "dietaryTags": ["kosher"], "hours": {"open": "12:00", "close": "21:00"}, "coordinates": {"lat": 18.9158, "lng": 72.8282}, "rating": 4.3, "reviewCount": 180, "indoor": true, "description": "Kosher dining room at a Colaba community centre, serving Shabbat-style and Indian dishes."},
+    {"venueId": "v_mum_010", "name": "Bandstand Brewhouse", "category": "bar", "neighborhood": "Bandra West", "pricePerPerson": 16, "dietaryTags": [], "hours": {"open": "12:00", "close": "01:30"}, "coordinates": {"lat": 19.056, "lng": 72.825}, "rating": 4.3, "reviewCount": 1900, "indoor": true, "description": "Microbrewery a short walk from the Bandra sea promenade."},
+    {"venueId": "v_mum_011", "name": "Nariman Point Rooftop", "category": "bar", "neighborhood": "Nariman Point", "pricePerPerson": 22, "dietaryTags": [], "hours": {"open": "18:00", "close": "01:00"}, "coordinates": {"lat": 18.9256, "lng": 72.8242}, "rating": 4.4, "reviewCount": 1100, "indoor": false, "description": "Rooftop lounge with views along the Queen's Necklace curve of Marine Drive."},
+    {"venueId": "v_mum_012", "name": "Harbour Launch Cruise", "category": "tour", "neighborhood": "Colaba", "pricePerPerson": 4, "dietaryTags": [], "hours": {"open": "09:00", "close": "17:30"}, "coordinates": {"lat": 18.922, "lng": 72.8347}, "rating": 4.3, "reviewCount": 8800, "indoor": false, "description": "Half-hour launch ride around the harbour from the Gateway of India jetty."},
+    {"venueId": "v_mum_013", "name": "Elephanta Caves Ferry & Tour", "category": "tour", "neighborhood": "Elephanta Island", "pricePerPerson": 18, "dietaryTags": [], "hours": {"open": "09:00", "close": "17:30"}, "coordinates": {"lat": 18.9633, "lng": 72.9315}, "rating": 4.5, "reviewCount": 14300, "indoor": false, "description": "Ferry from the Gateway of India to the island's rock-cut Shiva temples, with a guide; about five hours return."},
+    {"venueId": "v_mum_014", "name": "CSMT Heritage Walk", "category": "tour", "neighborhood": "Fort", "pricePerPerson": 3, "dietaryTags": [], "hours": {"open": "14:00", "close": "17:00"}, "coordinates": {"lat": 18.9398, "lng": 72.8355}, "rating": 4.4, "reviewCount": 900, "indoor": true, "description": "Guided walk inside Chhatrapati Shivaji Maharaj Terminus, the Victorian Gothic railway station."},
+    {"venueId": "v_mum_015", "name": "Banganga & Malabar Hill Walk", "category": "tour", "neighborhood": "Walkeshwar", "pricePerPerson": 15, "dietaryTags": [], "hours": {"open": "07:00", "close": "11:00"}, "coordinates": {"lat": 18.946, "lng": 72.794}, "rating": 4.6, "reviewCount": 290, "indoor": false, "description": "Morning walk around the ancient Banganga water tank and the hillside gardens of Malabar Hill."},
+    {"venueId": "v_mum_016", "name": "Dharavi Community Walk", "category": "tour", "neighborhood": "Dharavi", "pricePerPerson": 14, "dietaryTags": [], "hours": {"open": "09:00", "close": "17:00"}, "coordinates": {"lat": 19.04, "lng": 72.855}, "rating": 4.8, "reviewCount": 3600, "indoor": false, "description": "Two-hour walk through Dharavi's recycling, pottery and leather workshops, led by residents."},
+    {"venueId": "v_mum_017", "name": "Marine Drive Sunset Food Walk", "category": "tour", "neighborhood": "Marine Drive", "pricePerPerson": 20, "dietaryTags": [], "hours": {"open": "17:00", "close": "21:00"}, "coordinates": {"lat": 18.944, "lng": 72.823}, "rating": 4.6, "reviewCount": 510, "indoor": false, "description": "Evening walk along Marine Drive to Chowpatty with street-food tastings."},
+    {"venueId": "v_mum_018", "name": "Bollywood Studio Tour", "category": "activity", "neighborhood": "Goregaon", "pricePerPerson": 45, "dietaryTags": [], "hours": {"open": "10:00", "close": "17:00"}, "coordinates": {"lat": 19.163, "lng": 72.88}, "rating": 4.1, "reviewCount": 1200, "indoor": true, "description": "Half-day visit to working film sets in Film City, with a dance demonstration."},
+    {"venueId": "v_mum_019", "name": "Kanheri Caves", "category": "attraction", "neighborhood": "Borivali", "pricePerPerson": 6, "dietaryTags": [], "hours": {"open": "07:30", "close": "17:30"}, "coordinates": {"lat": 19.2147, "lng": 72.9106}, "rating": 4.5, "reviewCount": 9000, "indoor": false, "description": "Buddhist caves carved between the first century BCE and the tenth century, inside Sanjay Gandhi National Park."},
+    {"venueId": "v_mum_020", "name": "CSMVS Museum", "category": "museum", "neighborhood": "Kala Ghoda", "pricePerPerson": 9, "dietaryTags": [], "hours": {"open": "10:15", "close": "18:00"}, "coordinates": {"lat": 18.9269, "lng": 72.8326}, "rating": 4.7, "reviewCount": 21000, "indoor": true, "description": "Chhatrapati Shivaji Maharaj Vastu Sangrahalaya: sculpture, miniature paintings and natural history in an Indo-Saracenic building."},
+    {"venueId": "v_mum_021", "name": "Dr. Bhau Daji Lad Museum", "category": "museum", "neighborhood": "Byculla", "pricePerPerson": 2, "dietaryTags": [], "hours": {"open": "10:00", "close": "18:00"}, "coordinates": {"lat": 18.979, "lng": 72.834}, "rating": 4.5, "reviewCount": 3100, "indoor": true, "description": "The city's oldest museum, restored, telling Mumbai's history through models and decorative arts."},
+    {"venueId": "v_mum_022", "name": "Nehru Science Centre", "category": "museum", "neighborhood": "Worli", "pricePerPerson": 2, "dietaryTags": [], "hours": {"open": "10:00", "close": "18:00"}, "coordinates": {"lat": 18.99, "lng": 72.818}, "rating": 4.4, "reviewCount": 5600, "indoor": true, "description": "Hands-on science galleries and an outdoor science park, popular with families."},
+    {"venueId": "v_mum_023", "name": "Colaba Sea View Hotel", "category": "lodging", "neighborhood": "Colaba", "pricePerPerson": 70, "dietaryTags": [], "hours": {"open": "00:00", "close": "23:59"}, "coordinates": {"lat": 18.92, "lng": 72.831}, "rating": 4.3, "reviewCount": 1800, "indoor": true, "description": "Mid-range hotel on the Colaba waterfront, five minutes' walk from the Gateway of India."},
+    {"venueId": "v_mum_024", "name": "Fort Heritage Rooms", "category": "lodging", "neighborhood": "Fort", "pricePerPerson": 45, "dietaryTags": [], "hours": {"open": "00:00", "close": "23:59"}, "coordinates": {"lat": 18.933, "lng": 72.835}, "rating": 4.4, "reviewCount": 950, "indoor": true, "description": "Small hotel in a restored Fort-district building near CSMT station."},
+    {"venueId": "v_mum_025", "name": "Bandra Bungalow Hostel", "category": "lodging", "neighborhood": "Bandra West", "pricePerPerson": 18, "dietaryTags": [], "hours": {"open": "00:00", "close": "23:59"}, "coordinates": {"lat": 19.057, "lng": 72.829}, "rating": 4.2, "reviewCount": 760, "indoor": true, "description": "Hostel in an old Bandra bungalow with dorms and private rooms."}
+  ],
+  "transit": [
+    {"from": "Colaba", "to": "Fort", "mode": "walk", "minutes": 15, "costPerPerson": 0},
+    {"from": "Fort", "to": "Kala Ghoda", "mode": "walk", "minutes": 5, "costPerPerson": 0},
+    {"from": "Fort", "to": "Marine Drive", "mode": "walk", "minutes": 15, "costPerPerson": 0},
+    {"from": "Colaba", "to": "Elephanta Island", "mode": "ferry", "minutes": 60, "costPerPerson": 3, "line": "Gateway ferry"},
+    {"from": "Fort", "to": "Bandra West", "mode": "train", "minutes": 30, "costPerPerson": 0.25, "line": "Western line"},
+    {"from": "Fort", "to": "Byculla", "mode": "train", "minutes": 12, "costPerPerson": 0.15, "line": "Central line"},
+    {"from": "Fort", "to": "Bhendi Bazaar", "mode": "taxi", "minutes": 15, "costPerPerson": 2},
+    {"from": "Colaba", "to": "Nariman Point", "mode": "taxi", "minutes": 10, "costPerPerson": 1.5},
+    {"from": "Bandra West", "to": "Dharavi", "mode": "taxi", "minutes": 15, "costPerPerson": 2}
+  ],
+  "weather": {
+    "monthly": [
+      {"month": 1, "condition": "sunny", "highC": 31, "lowC": 19, "rainDays": 0},
+      {"month": 2, "condition": "sunny", "highC": 31, "lowC": 20, "rainDays": 0},
+      {"month": 3, "condition": "sunny", "highC": 33, "lowC": 22, "rainDays": 0},
+      {"month": 4, "condition": "sunny", "highC": 33, "lowC": 25, "rainDays": 0},
+      {"month": 5, "condition": "sunny", "highC": 34, "lowC": 27, "rainDays": 1},
+      {"month": 6, "condition": "rain", "highC": 32, "lowC": 26, "rainDays": 14},
+      {"month": 7, "condition": "rain", "highC": 30, "lowC": 25, "rainDays": 22},
+      {"month": 8, "condition": "rain", "highC": 30, "lowC": 25, "rainDays": 20},
+      {"month": 9, "condition": "showers", "highC": 31, "lowC": 25, "rainDays": 13},
+      {"month": 10, "condition": "partly-cloudy", "highC": 33, "lowC": 24, "rainDays": 3},
+      {"month": 11, "condition": "sunny", "highC": 34, "lowC": 22, "rainDays": 1},
+      {"month": 12, "condition": "sunny", "highC": 32, "lowC": 20, "rainDays": 0}
+    ],
+    "daily": [
+      {"date": "2026-12-08", "condition": "sunny", "highC": 32, "lowC": 20, "precipitationChance": 5},
+      {"date": "2026-12-09", "condition": "sunny", "highC": 33, "lowC": 19, "precipitationChance": 5},
+      {"date": "2026-12-10", "condition": "partly-cloudy", "highC": 31, "lowC": 20, "precipitationChance": 15},
+      {"date": "2026-12-11", "condition": "sunny", "highC": 32, "lowC": 21, "precipitationChance": 5},
+      {"date": "2026-12-12", "condition": "sunny", "highC": 33, "lowC": 20, "precipitationChance": 5},
+      {"date": "2026-12-13", "condition": "partly-cloudy", "highC": 31, "lowC": 19, "precipitationChance": 15},
+      {"date": "2026-12-14", "condition": "sunny", "highC": 32, "lowC": 20, "precipitationChance": 5},
+      {"date": "2026-12-15", "condition": "sunny", "highC": 33, "lowC": 20, "precipitationChance": 5},
+      {"date": "2026-12-16", "condition": "sunny", "highC": 32, "lowC": 21, "precipitationChance": 5}
+    ]
+  }
+}

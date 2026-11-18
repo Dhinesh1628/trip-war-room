@@ -61,7 +61,7 @@ test or a measured number (see [TEST-REPORT.md](TEST-REPORT.md)).
 | LLM-based question understanding | Rule-based parsing, plus explicit fields in the request | Predictable constraints, and one model call instead of two (latency) |
 | Leader-away promotion | Freeze lock and unlock until the leader returns | The spec allows either; freezing is simpler and can't hand control to someone the leader didn't choose |
 | Client unit tests | Browser verification, with rules enforced and tested server-side | Time; the server is the security boundary |
-| Real venue and travel data | One hand-authored destination (42 venues) with transit and mocked weather | Spec 4.2 and 14.1 |
+| Real venue and travel data | Six hand-authored destinations (Lisbon and five Indian cities, 164 venues) with transit and mocked weather | Spec 4.2 and 14.1 |
 | Deployment | Local only | Spec 4.2: public deployment is out of scope |
 
 ## What I'd do next with more time

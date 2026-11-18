@@ -1,10 +1,11 @@
 import { readFile } from 'node:fs/promises';
+import { readdirSync, readFileSync } from 'node:fs';
 import request from 'supertest';
 import { startTestServer, registerUser } from './helpers.js';
 import { validateDataset } from '../src/venues/datasetSchema.js';
 import { ingestDataset } from '../src/venues/ingest.js';
 import { DATA_DIR } from '../src/venues/seedData.js';
-import { DIETARY_TAGS, FOOD_CATEGORIES } from '../src/venues/vocabulary.js';
+import { DIETARY_TAGS, FOOD_CATEGORIES, VENUE_CATEGORIES } from '../src/venues/vocabulary.js';
 import { Venue } from '../src/venues/venue.model.js';
 
 let lisbon;
@@ -159,5 +160,31 @@ describe('ingestion and the admin upload endpoint', () => {
       .set('Authorization', admin.auth)
       .send(lisbon);
     expect(res.body).toEqual({ valid: true, destination: 'lisbon', venues: lisbon.venues.length });
+  });
+});
+
+describe('every destination file in server/data/destinations', () => {
+  const files = readdirSync(DATA_DIR).filter((f) => f.endsWith('.json')).sort();
+  const load = (f) => JSON.parse(readFileSync(`${DATA_DIR}/${f}`, 'utf8'));
+
+  test('includes Lisbon and the Indian cities', () => {
+    expect(files).toEqual(expect.arrayContaining(['lisbon.json', 'delhi.json', 'mumbai.json', 'jaipur.json', 'goa.json', 'kochi.json']));
+  });
+
+  test.each(files)('%s passes validation, its slug matches the file name, and it has every venue category', (f) => {
+    const data = load(f);
+    const result = validateDataset(data);
+    expect(result.errors).toBeUndefined();
+    expect(data.destination.slug).toBe(f.replace(/\.json$/, ''));
+    for (const c of VENUE_CATEGORIES) expect(data.venues.some((v) => v.category === c)).toBe(true);
+    for (const tag of ['vegetarian', 'vegan', 'halal', 'gluten-free']) {
+      expect(data.venues.some((v) => FOOD_CATEGORIES.includes(v.category) && v.dietaryTags.includes(tag))).toBe(true);
+    }
+    expect(data.weather.monthly).toHaveLength(12);
+  });
+
+  test('venue ids are unique across all destinations', () => {
+    const ids = files.flatMap((f) => load(f).venues.map((v) => v.venueId));
+    expect(new Set(ids).size).toBe(ids.length);
   });
 });

@@ -1,0 +1,78 @@
+{
+  "datasetVersion": "jaipur-2026.11-1",
+  "about": "Hand-authored mock dataset for development and testing. Landmarks, neighbourhoods and coordinates are real Jaipur locations; restaurant, bar, hotel and tour-operator names are fictional. Prices are approximate, in USD (landmark tickets use the foreign-visitor fee). Opening hours are typical; weekly closing days are not modelled. Lodging pricePerPerson is per person per night. Weather is mocked: monthly normals plus a sample daily forecast.",
+  "destination": {
+    "slug": "jaipur",
+    "name": "Jaipur, India",
+    "country": "India",
+    "timezone": "Asia/Kolkata",
+    "currency": "USD",
+    "center": {
+      "lat": 26.92,
+      "lng": 75.815
+    }
+  },
+  "venues": [
+    {"venueId": "v_jai_001", "name": "Chandpole Kachori Corner", "category": "breakfast", "neighborhood": "Pink City", "pricePerPerson": 1.5, "dietaryTags": ["vegetarian"], "hours": {"open": "07:00", "close": "13:00"}, "coordinates": {"lat": 26.926, "lng": 75.813}, "rating": 4.5, "reviewCount": 4800, "indoor": false, "description": "Street stall frying pyaaz kachori and mirchi vada for the morning crowd."},
+    {"venueId": "v_jai_002", "name": "MI Road Lassi Bar", "category": "cafe", "neighborhood": "MI Road", "pricePerPerson": 1, "dietaryTags": ["vegetarian", "gluten-free", "nut-free"], "hours": {"open": "08:00", "close": "22:00"}, "coordinates": {"lat": 26.9165, "lng": 75.8085}, "rating": 4.6, "reviewCount": 7200, "indoor": false, "description": "Clay-cup lassi stand that has been churning sweet and salted lassi for decades."},
+    {"venueId": "v_jai_003", "name": "Bapu Bazaar Chai & Snacks", "category": "cafe", "neighborhood": "Bapu Bazaar", "pricePerPerson": 1, "dietaryTags": ["vegetarian"], "hours": {"open": "08:00", "close": "21:00"}, "coordinates": {"lat": 26.918, "lng": 75.82}, "rating": 4.3, "reviewCount": 900, "indoor": false, "description": "Masala chai and samosas in the middle of the textile and shoe bazaar."},
+    {"venueId": "v_jai_004", "name": "Dal Baati House", "category": "lunch", "neighborhood": "MI Road", "pricePerPerson": 7, "dietaryTags": ["vegetarian"], "hours": {"open": "11:00", "close": "22:30"}, "coordinates": {"lat": 26.915, "lng": 75.81}, "rating": 4.4, "reviewCount": 3100, "indoor": true, "description": "Rajasthani classics: dal baati churma, gatte ki sabzi and ker sangri."},
+    {"venueId": "v_jai_005", "name": "Leaf & Grain Vegan Cafe", "category": "lunch", "neighborhood": "C-Scheme", "pricePerPerson": 8, "dietaryTags": ["vegetarian", "vegan", "gluten-free", "dairy-free", "nut-free"], "hours": {"open": "09:00", "close": "22:00"}, "coordinates": {"lat": 26.9075, "lng": 75.7985}, "rating": 4.6, "reviewCount": 540, "indoor": true, "description": "Bright cafe cooking millet rotis and seasonal vegetables without gluten, dairy or nuts."},
+    {"venueId": "v_jai_006", "name": "Haveli Rooftop Dining", "category": "dinner", "neighborhood": "Pink City", "pricePerPerson": 14, "dietaryTags": ["vegetarian"], "hours": {"open": "12:00", "close": "23:00"}, "coordinates": {"lat": 26.9236, "lng": 75.8272}, "rating": 4.4, "reviewCount": 1900, "indoor": false, "description": "Rooftop restaurant facing Hawa Mahal, best at sunset; vegetarian Rajasthani menu."},
+    {"venueId": "v_jai_007", "name": "Ramganj Kebab Ghar", "category": "dinner", "neighborhood": "Ramganj", "pricePerPerson": 6, "dietaryTags": ["halal"], "hours": {"open": "17:00", "close": "23:59"}, "coordinates": {"lat": 26.923, "lng": 75.834}, "rating": 4.4, "reviewCount": 1300, "indoor": true, "description": "Old-city kebab house known for seekh kebabs, nihari and fresh roomali roti."},
+    {"venueId": "v_jai_008", "name": "Palace Courtyard Restaurant", "category": "dinner", "neighborhood": "Rambagh", "pricePerPerson": 30, "dietaryTags": ["vegetarian", "gluten-free"], "hours": {"open": "19:00", "close": "23:00"}, "coordinates": {"lat": 26.8985, "lng": 75.809}, "rating": 4.7, "reviewCount": 1400, "indoor": false, "description": "Courtyard dining at a former royal residence with folk music most evenings."},
+    {"venueId": "v_jai_009", "name": "C-Scheme Social", "category": "bar", "neighborhood": "C-Scheme", "pricePerPerson": 14, "dietaryTags": [], "hours": {"open": "12:00", "close": "00:30"}, "coordinates": {"lat": 26.905, "lng": 75.8}, "rating": 4.2, "reviewCount": 1500, "indoor": true, "description": "Busy bar with local craft beer and live music at weekends."},
+    {"venueId": "v_jai_010", "name": "Amber Fort", "category": "attraction", "neighborhood": "Amer", "pricePerPerson": 7, "dietaryTags": [], "hours": {"open": "08:00", "close": "17:30"}, "coordinates": {"lat": 26.9855, "lng": 75.8513}, "rating": 4.7, "reviewCount": 61000, "indoor": false, "description": "Hilltop fort-palace of the Kachwaha rulers with the Sheesh Mahal mirror hall. Allow two to three hours."},
+    {"venueId": "v_jai_011", "name": "Jaigarh Fort", "category": "attraction", "neighborhood": "Amer", "pricePerPerson": 2.5, "dietaryTags": [], "hours": {"open": "09:00", "close": "16:30"}, "coordinates": {"lat": 26.9851, "lng": 75.8456}, "rating": 4.5, "reviewCount": 15000, "indoor": false, "description": "Ridge-top fort above Amber, home to Jaivana, one of the largest cannons on wheels."},
+    {"venueId": "v_jai_012", "name": "Hawa Mahal", "category": "attraction", "neighborhood": "Pink City", "pricePerPerson": 3, "dietaryTags": [], "hours": {"open": "09:00", "close": "16:30"}, "coordinates": {"lat": 26.9239, "lng": 75.8267}, "rating": 4.5, "reviewCount": 72000, "indoor": false, "description": "The five-storey Palace of Winds, its 953 latticed windows built for royal women to watch the street."},
+    {"venueId": "v_jai_013", "name": "Jantar Mantar", "category": "attraction", "neighborhood": "Pink City", "pricePerPerson": 3, "dietaryTags": [], "hours": {"open": "09:00", "close": "16:30"}, "coordinates": {"lat": 26.9248, "lng": 75.8246}, "rating": 4.6, "reviewCount": 24000, "indoor": false, "description": "Eighteenth-century astronomical observatory with the world's largest stone sundial; a UNESCO site."},
+    {"venueId": "v_jai_014", "name": "Nahargarh Fort", "category": "attraction", "neighborhood": "Nahargarh Hills", "pricePerPerson": 3, "dietaryTags": [], "hours": {"open": "10:00", "close": "17:30"}, "coordinates": {"lat": 26.9373, "lng": 75.8155}, "rating": 4.5, "reviewCount": 30000, "indoor": false, "description": "Fort on the Aravalli ridge with the best sunset view over the Pink City."},
+    {"venueId": "v_jai_015", "name": "City Palace", "category": "museum", "neighborhood": "Pink City", "pricePerPerson": 12, "dietaryTags": [], "hours": {"open": "09:30", "close": "17:00"}, "coordinates": {"lat": 26.9258, "lng": 75.8237}, "rating": 4.6, "reviewCount": 38000, "indoor": true, "description": "Royal palace complex with textile, arms and painting galleries; part is still the royal family's home."},
+    {"venueId": "v_jai_016", "name": "Albert Hall Museum", "category": "museum", "neighborhood": "Ram Niwas Garden", "pricePerPerson": 4, "dietaryTags": [], "hours": {"open": "09:00", "close": "17:00"}, "coordinates": {"lat": 26.9116, "lng": 75.8195}, "rating": 4.5, "reviewCount": 26000, "indoor": true, "description": "Rajasthan's oldest museum, in an Indo-Saracenic hall, with carpets, pottery and an Egyptian mummy."},
+    {"venueId": "v_jai_017", "name": "Pink City Heritage Walk", "category": "tour", "neighborhood": "Pink City", "pricePerPerson": 12, "dietaryTags": [], "hours": {"open": "08:00", "close": "11:00"}, "coordinates": {"lat": 26.92, "lng": 75.826}, "rating": 4.8, "reviewCount": 650, "indoor": false, "description": "Morning walk through the old city's temples, havelis and craft workshops before the bazaars get busy."},
+    {"venueId": "v_jai_018", "name": "Johari Bazaar Night Food Tour", "category": "tour", "neighborhood": "Johari Bazaar", "pricePerPerson": 20, "dietaryTags": [], "hours": {"open": "18:00", "close": "21:30"}, "coordinates": {"lat": 26.9185, "lng": 75.827}, "rating": 4.7, "reviewCount": 290, "indoor": false, "description": "Evening tasting walk through the jewellers' bazaar: kachori, ghewar, kulfi and more."},
+    {"venueId": "v_jai_019", "name": "Amber Fort Light & Sound Show", "category": "activity", "neighborhood": "Amer", "pricePerPerson": 4, "dietaryTags": [], "hours": {"open": "18:30", "close": "20:30"}, "coordinates": {"lat": 26.985, "lng": 75.8505}, "rating": 4.3, "reviewCount": 2900, "indoor": false, "description": "Fifty-minute show projected on the fort walls, telling the story of Amber."},
+    {"venueId": "v_jai_020", "name": "Sanganer Block-Printing Workshop", "category": "activity", "neighborhood": "Sanganer", "pricePerPerson": 18, "dietaryTags": [], "hours": {"open": "10:00", "close": "17:00"}, "coordinates": {"lat": 26.82, "lng": 75.79}, "rating": 4.7, "reviewCount": 410, "indoor": true, "description": "Hands-on session printing your own scarf with carved wooden blocks and natural dyes."},
+    {"venueId": "v_jai_021", "name": "Rajasthani Cooking Class", "category": "activity", "neighborhood": "C-Scheme", "pricePerPerson": 25, "dietaryTags": [], "hours": {"open": "10:00", "close": "14:00"}, "coordinates": {"lat": 26.907, "lng": 75.802}, "rating": 4.8, "reviewCount": 330, "indoor": true, "description": "Cook five Rajasthani dishes in a family kitchen, then eat them together."},
+    {"venueId": "v_jai_022", "name": "Pink City Haveli Hotel", "category": "lodging", "neighborhood": "Pink City", "pricePerPerson": 40, "dietaryTags": [], "hours": {"open": "00:00", "close": "23:59"}, "coordinates": {"lat": 26.926, "lng": 75.818}, "rating": 4.5, "reviewCount": 1300, "indoor": true, "description": "Restored eighteenth-century haveli with painted courtyards, inside the old city walls."},
+    {"venueId": "v_jai_023", "name": "Bani Park Guesthouse", "category": "lodging", "neighborhood": "Bani Park", "pricePerPerson": 15, "dietaryTags": [], "hours": {"open": "00:00", "close": "23:59"}, "coordinates": {"lat": 26.93, "lng": 75.795}, "rating": 4.3, "reviewCount": 900, "indoor": true, "description": "Family-run guesthouse with a garden in a quiet residential area."},
+    {"venueId": "v_jai_024", "name": "Rambagh Heritage Palace Hotel", "category": "lodging", "neighborhood": "Rambagh", "pricePerPerson": 180, "dietaryTags": [], "hours": {"open": "00:00", "close": "23:59"}, "coordinates": {"lat": 26.896, "lng": 75.809}, "rating": 4.8, "reviewCount": 2400, "indoor": true, "description": "Luxury stay in a former maharaja's palace with gardens and a pool."}
+  ],
+  "transit": [
+    {"from": "Pink City", "to": "Amer", "mode": "bus", "minutes": 30, "costPerPerson": 0.3, "line": "AC bus 5"},
+    {"from": "Pink City", "to": "Amer", "mode": "taxi", "minutes": 25, "costPerPerson": 5},
+    {"from": "MI Road", "to": "Pink City", "mode": "walk", "minutes": 15, "costPerPerson": 0},
+    {"from": "Pink City", "to": "Ram Niwas Garden", "mode": "walk", "minutes": 15, "costPerPerson": 0},
+    {"from": "Pink City", "to": "Johari Bazaar", "mode": "walk", "minutes": 5, "costPerPerson": 0},
+    {"from": "MI Road", "to": "C-Scheme", "mode": "taxi", "minutes": 10, "costPerPerson": 1.5},
+    {"from": "Pink City", "to": "Nahargarh Hills", "mode": "taxi", "minutes": 30, "costPerPerson": 6},
+    {"from": "C-Scheme", "to": "Sanganer", "mode": "taxi", "minutes": 30, "costPerPerson": 5}
+  ],
+  "weather": {
+    "monthly": [
+      {"month": 1, "condition": "sunny", "highC": 22, "lowC": 8, "rainDays": 1},
+      {"month": 2, "condition": "sunny", "highC": 25, "lowC": 11, "rainDays": 1},
+      {"month": 3, "condition": "sunny", "highC": 31, "lowC": 16, "rainDays": 1},
+      {"month": 4, "condition": "sunny", "highC": 37, "lowC": 21, "rainDays": 1},
+      {"month": 5, "condition": "sunny", "highC": 40, "lowC": 26, "rainDays": 2},
+      {"month": 6, "condition": "partly-cloudy", "highC": 39, "lowC": 28, "rainDays": 4},
+      {"month": 7, "condition": "rain", "highC": 34, "lowC": 26, "rainDays": 10},
+      {"month": 8, "condition": "rain", "highC": 32, "lowC": 25, "rainDays": 10},
+      {"month": 9, "condition": "showers", "highC": 33, "lowC": 24, "rainDays": 5},
+      {"month": 10, "condition": "sunny", "highC": 33, "lowC": 19, "rainDays": 1},
+      {"month": 11, "condition": "sunny", "highC": 29, "lowC": 13, "rainDays": 0},
+      {"month": 12, "condition": "sunny", "highC": 24, "lowC": 9, "rainDays": 1}
+    ],
+    "daily": [
+      {"date": "2026-12-08", "condition": "sunny", "highC": 24, "lowC": 9, "precipitationChance": 5},
+      {"date": "2026-12-09", "condition": "sunny", "highC": 25, "lowC": 8, "precipitationChance": 5},
+      {"date": "2026-12-10", "condition": "sunny", "highC": 23, "lowC": 9, "precipitationChance": 5},
+      {"date": "2026-12-11", "condition": "partly-cloudy", "highC": 24, "lowC": 10, "precipitationChance": 15},
+      {"date": "2026-12-12", "condition": "sunny", "highC": 25, "lowC": 9, "precipitationChance": 5},
+      {"date": "2026-12-13", "condition": "sunny", "highC": 23, "lowC": 8, "precipitationChance": 5},
+      {"date": "2026-12-14", "condition": "windy", "highC": 24, "lowC": 9, "precipitationChance": 15},
+      {"date": "2026-12-15", "condition": "sunny", "highC": 25, "lowC": 9, "precipitationChance": 5},
+      {"date": "2026-12-16", "condition": "sunny", "highC": 24, "lowC": 10, "precipitationChance": 5}
+    ]
+  }
+}

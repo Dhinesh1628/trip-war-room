@@ -1,0 +1,75 @@
+{
+  "datasetVersion": "goa-2026.11-1",
+  "about": "Hand-authored mock dataset for development and testing. Landmarks, neighbourhoods and coordinates are real Goa locations; restaurant, bar, hotel and tour-operator names are fictional. Prices are approximate, in USD (landmark tickets use the foreign-visitor fee). Opening hours are typical; weekly closing days are not modelled. Lodging pricePerPerson is per person per night. Weather is mocked: monthly normals plus a sample daily forecast.",
+  "destination": {
+    "slug": "goa",
+    "name": "Goa, India",
+    "country": "India",
+    "timezone": "Asia/Kolkata",
+    "currency": "USD",
+    "center": {
+      "lat": 15.4989,
+      "lng": 73.8278
+    }
+  },
+  "venues": [
+    {"venueId": "v_goa_001", "name": "Assagao Bakehouse", "category": "breakfast", "neighborhood": "Assagao", "pricePerPerson": 7, "dietaryTags": ["vegetarian"], "hours": {"open": "08:00", "close": "15:00"}, "coordinates": {"lat": 15.595, "lng": 73.765}, "rating": 4.6, "reviewCount": 1300, "indoor": true, "description": "Village bakery with sourdough, eggs and Goan poee bread in a Portuguese-era house."},
+    {"venueId": "v_goa_002", "name": "Fontainhas Courtyard Cafe", "category": "cafe", "neighborhood": "Fontainhas", "pricePerPerson": 4, "dietaryTags": ["vegetarian"], "hours": {"open": "08:30", "close": "20:00"}, "coordinates": {"lat": 15.4965, "lng": 73.834}, "rating": 4.5, "reviewCount": 1100, "indoor": true, "description": "Cafe in a yellow Latin Quarter house serving bebinca, coffee and sandwiches."},
+    {"venueId": "v_goa_003", "name": "Panjim Fish Thali House", "category": "lunch", "neighborhood": "Panaji", "pricePerPerson": 6, "dietaryTags": ["gluten-free", "dairy-free"], "hours": {"open": "11:30", "close": "15:30"}, "coordinates": {"lat": 15.498, "lng": 73.828}, "rating": 4.5, "reviewCount": 3800, "indoor": true, "description": "Local lunch spot for Goan fish-curry rice thali with fried kingfish."},
+    {"venueId": "v_goa_004", "name": "Anjuna Plant Kitchen", "category": "lunch", "neighborhood": "Anjuna", "pricePerPerson": 10, "dietaryTags": ["vegetarian", "vegan", "gluten-free", "dairy-free", "nut-free"], "hours": {"open": "09:00", "close": "22:00"}, "coordinates": {"lat": 15.576, "lng": 73.742}, "rating": 4.6, "reviewCount": 980, "indoor": false, "description": "Open-air plant-based kitchen with smoothie bowls and coconut curries."},
+    {"venueId": "v_goa_005", "name": "Baga Beach Shack", "category": "dinner", "neighborhood": "Baga", "pricePerPerson": 15, "dietaryTags": ["gluten-free"], "hours": {"open": "10:00", "close": "23:30"}, "coordinates": {"lat": 15.555, "lng": 73.752}, "rating": 4.2, "reviewCount": 2900, "indoor": false, "description": "Beach shack on the sand grilling the day's catch, with tables at the waterline."},
+    {"venueId": "v_goa_006", "name": "Panjim Biryani Darbar", "category": "dinner", "neighborhood": "Panaji", "pricePerPerson": 6, "dietaryTags": ["halal"], "hours": {"open": "12:00", "close": "23:00"}, "coordinates": {"lat": 15.499, "lng": 73.825}, "rating": 4.3, "reviewCount": 1200, "indoor": true, "description": "Biryani and kebab restaurant in the Panaji market area."},
+    {"venueId": "v_goa_007", "name": "Candolim Goan Kitchen", "category": "dinner", "neighborhood": "Candolim", "pricePerPerson": 18, "dietaryTags": [], "hours": {"open": "12:00", "close": "23:00"}, "coordinates": {"lat": 15.517, "lng": 73.763}, "rating": 4.6, "reviewCount": 2200, "indoor": true, "description": "Home-style Goan cooking: xacuti, vindaloo, prawn balchão and sorpotel."},
+    {"venueId": "v_goa_008", "name": "Calangute Sundowner Bar", "category": "bar", "neighborhood": "Calangute", "pricePerPerson": 9, "dietaryTags": [], "hours": {"open": "11:00", "close": "01:00"}, "coordinates": {"lat": 15.543, "lng": 73.758}, "rating": 4.1, "reviewCount": 1700, "indoor": false, "description": "Beachfront bar for sunset cocktails and local feni."},
+    {"venueId": "v_goa_009", "name": "Latin Quarter Tavern", "category": "bar", "neighborhood": "Fontainhas", "pricePerPerson": 10, "dietaryTags": [], "hours": {"open": "18:00", "close": "00:30"}, "coordinates": {"lat": 15.4975, "lng": 73.8335}, "rating": 4.4, "reviewCount": 650, "indoor": true, "description": "Small tavern in an old Fontainhas house with Goan music and feni cocktails."},
+    {"venueId": "v_goa_010", "name": "Fort Aguada", "category": "attraction", "neighborhood": "Candolim", "pricePerPerson": 1, "dietaryTags": [], "hours": {"open": "09:30", "close": "18:00"}, "coordinates": {"lat": 15.492, "lng": 73.7737}, "rating": 4.4, "reviewCount": 21000, "indoor": false, "description": "Seventeenth-century Portuguese fort and lighthouse above the Mandovi river mouth."},
+    {"venueId": "v_goa_011", "name": "Old Goa Churches Tour", "category": "tour", "neighborhood": "Old Goa", "pricePerPerson": 12, "dietaryTags": [], "hours": {"open": "09:00", "close": "17:30"}, "coordinates": {"lat": 15.5009, "lng": 73.9116}, "rating": 4.6, "reviewCount": 5100, "indoor": false, "description": "Guided visit to the Basilica of Bom Jesus, Se Cathedral and other UNESCO-listed churches."},
+    {"venueId": "v_goa_012", "name": "Fontainhas Latin Quarter Walk", "category": "tour", "neighborhood": "Fontainhas", "pricePerPerson": 10, "dietaryTags": [], "hours": {"open": "08:00", "close": "11:00"}, "coordinates": {"lat": 15.497, "lng": 73.833}, "rating": 4.7, "reviewCount": 820, "indoor": false, "description": "Morning walk through Panaji's Portuguese quarter of tiled, colourful houses."},
+    {"venueId": "v_goa_013", "name": "Mandovi Sunset Cruise", "category": "tour", "neighborhood": "Panaji", "pricePerPerson": 7, "dietaryTags": [], "hours": {"open": "17:00", "close": "20:00"}, "coordinates": {"lat": 15.5, "lng": 73.831}, "rating": 4.1, "reviewCount": 3300, "indoor": false, "description": "One-hour river cruise at sunset with Goan folk dance on deck."},
+    {"venueId": "v_goa_014", "name": "Spice Plantation Tour", "category": "tour", "neighborhood": "Ponda", "pricePerPerson": 12, "dietaryTags": [], "hours": {"open": "09:00", "close": "16:00"}, "coordinates": {"lat": 15.41, "lng": 74}, "rating": 4.4, "reviewCount": 4100, "indoor": false, "description": "Guided walk through a working spice farm, with a Goan buffet lunch."},
+    {"venueId": "v_goa_015", "name": "Baga Watersports", "category": "activity", "neighborhood": "Baga", "pricePerPerson": 25, "dietaryTags": [], "hours": {"open": "09:00", "close": "17:30"}, "coordinates": {"lat": 15.556, "lng": 73.7517}, "rating": 4, "reviewCount": 2700, "indoor": false, "description": "Parasailing, jet-ski and banana-boat rides from Baga beach."},
+    {"venueId": "v_goa_016", "name": "Dolphin-Spotting Boat Trip", "category": "activity", "neighborhood": "Sinquerim", "pricePerPerson": 10, "dietaryTags": [], "hours": {"open": "08:00", "close": "12:00"}, "coordinates": {"lat": 15.495, "lng": 73.77}, "rating": 4.1, "reviewCount": 1600, "indoor": false, "description": "Morning boat trip along the coast near Fort Aguada to see humpback dolphins."},
+    {"venueId": "v_goa_017", "name": "Museum of Goa", "category": "museum", "neighborhood": "Pilerne", "pricePerPerson": 4, "dietaryTags": [], "hours": {"open": "10:00", "close": "18:00"}, "coordinates": {"lat": 15.531, "lng": 73.795}, "rating": 4.5, "reviewCount": 2400, "indoor": true, "description": "Contemporary art museum with work by Goan and Indian artists."},
+    {"venueId": "v_goa_018", "name": "Houses of Goa Museum", "category": "museum", "neighborhood": "Salvador do Mundo", "pricePerPerson": 1, "dietaryTags": [], "hours": {"open": "10:00", "close": "19:30"}, "coordinates": {"lat": 15.5432, "lng": 73.8217}, "rating": 4.3, "reviewCount": 900, "indoor": true, "description": "Ship-shaped museum about Goa's Indo-Portuguese houses and their architecture."},
+    {"venueId": "v_goa_019", "name": "Goa Chitra Museum", "category": "museum", "neighborhood": "Benaulim", "pricePerPerson": 4, "dietaryTags": [], "hours": {"open": "09:00", "close": "18:00"}, "coordinates": {"lat": 15.264, "lng": 73.953}, "rating": 4.6, "reviewCount": 1900, "indoor": true, "description": "Ethnographic museum of farming tools, crafts and everyday objects from rural Goa."},
+    {"venueId": "v_goa_020", "name": "Panjim Heritage Inn", "category": "lodging", "neighborhood": "Panaji", "pricePerPerson": 35, "dietaryTags": [], "hours": {"open": "00:00", "close": "23:59"}, "coordinates": {"lat": 15.4975, "lng": 73.832}, "rating": 4.5, "reviewCount": 1100, "indoor": true, "description": "Small heritage hotel in a restored house at the edge of Fontainhas."},
+    {"venueId": "v_goa_021", "name": "Candolim Beach Resort", "category": "lodging", "neighborhood": "Candolim", "pricePerPerson": 70, "dietaryTags": [], "hours": {"open": "00:00", "close": "23:59"}, "coordinates": {"lat": 15.518, "lng": 73.762}, "rating": 4.4, "reviewCount": 2600, "indoor": true, "description": "Resort with a pool, a short walk from Candolim beach."},
+    {"venueId": "v_goa_022", "name": "Anjuna Surf Hostel", "category": "lodging", "neighborhood": "Anjuna", "pricePerPerson": 12, "dietaryTags": [], "hours": {"open": "00:00", "close": "23:59"}, "coordinates": {"lat": 15.575, "lng": 73.743}, "rating": 4.3, "reviewCount": 900, "indoor": true, "description": "Social hostel near Anjuna beach with dorms and private rooms."}
+  ],
+  "transit": [
+    {"from": "Panaji", "to": "Old Goa", "mode": "bus", "minutes": 25, "costPerPerson": 0.4, "line": "Kadamba bus"},
+    {"from": "Panaji", "to": "Calangute", "mode": "bus", "minutes": 40, "costPerPerson": 0.4, "line": "Kadamba bus"},
+    {"from": "Panaji", "to": "Fontainhas", "mode": "walk", "minutes": 10, "costPerPerson": 0},
+    {"from": "Calangute", "to": "Baga", "mode": "walk", "minutes": 20, "costPerPerson": 0},
+    {"from": "Panaji", "to": "Candolim", "mode": "taxi", "minutes": 30, "costPerPerson": 8},
+    {"from": "Calangute", "to": "Anjuna", "mode": "taxi", "minutes": 20, "costPerPerson": 5},
+    {"from": "Panaji", "to": "Ponda", "mode": "taxi", "minutes": 45, "costPerPerson": 12}
+  ],
+  "weather": {
+    "monthly": [
+      {"month": 1, "condition": "sunny", "highC": 32, "lowC": 20, "rainDays": 0},
+      {"month": 2, "condition": "sunny", "highC": 32, "lowC": 21, "rainDays": 0},
+      {"month": 3, "condition": "sunny", "highC": 32, "lowC": 23, "rainDays": 0},
+      {"month": 4, "condition": "sunny", "highC": 33, "lowC": 25, "rainDays": 0},
+      {"month": 5, "condition": "sunny", "highC": 33, "lowC": 27, "rainDays": 1},
+      {"month": 6, "condition": "rain", "highC": 30, "lowC": 25, "rainDays": 20},
+      {"month": 7, "condition": "rain", "highC": 29, "lowC": 24, "rainDays": 26},
+      {"month": 8, "condition": "rain", "highC": 29, "lowC": 24, "rainDays": 23},
+      {"month": 9, "condition": "showers", "highC": 30, "lowC": 24, "rainDays": 14},
+      {"month": 10, "condition": "partly-cloudy", "highC": 32, "lowC": 24, "rainDays": 5},
+      {"month": 11, "condition": "sunny", "highC": 34, "lowC": 22, "rainDays": 2},
+      {"month": 12, "condition": "sunny", "highC": 33, "lowC": 21, "rainDays": 0}
+    ],
+    "daily": [
+      {"date": "2026-12-08", "condition": "sunny", "highC": 33, "lowC": 21, "precipitationChance": 5},
+      {"date": "2026-12-09", "condition": "sunny", "highC": 34, "lowC": 20, "precipitationChance": 5},
+      {"date": "2026-12-10", "condition": "sunny", "highC": 32, "lowC": 21, "precipitationChance": 5},
+      {"date": "2026-12-11", "condition": "partly-cloudy", "highC": 33, "lowC": 22, "precipitationChance": 15},
+      {"date": "2026-12-12", "condition": "sunny", "highC": 34, "lowC": 21, "precipitationChance": 5},
+      {"date": "2026-12-13", "condition": "sunny", "highC": 32, "lowC": 20, "precipitationChance": 5},
+      {"date": "2026-12-14", "condition": "sunny", "highC": 33, "lowC": 21, "precipitationChance": 5},
+      {"date": "2026-12-15", "condition": "partly-cloudy", "highC": 34, "lowC": 21, "precipitationChance": 15},
+      {"date": "2026-12-16", "condition": "sunny", "highC": 33, "lowC": 22, "precipitationChance": 5}
+    ]
+  }
+}

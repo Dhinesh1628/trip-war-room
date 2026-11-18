@@ -1,0 +1,82 @@
+{
+  "datasetVersion": "delhi-2026.11-1",
+  "about": "Hand-authored mock dataset for development and testing. Landmarks, neighbourhoods and coordinates are real Delhi locations; restaurant, bar, hotel and tour-operator names are fictional. Prices are approximate, in USD (landmark tickets use the foreign-visitor fee). Opening hours are typical; weekly closing days are not modelled. Lodging pricePerPerson is per person per night. Weather is mocked: monthly normals plus a sample daily forecast.",
+  "destination": {
+    "slug": "delhi",
+    "name": "Delhi, India",
+    "country": "India",
+    "timezone": "Asia/Kolkata",
+    "currency": "USD",
+    "center": {
+      "lat": 28.6315,
+      "lng": 77.2167
+    }
+  },
+  "venues": [
+    {"venueId": "v_del_001", "name": "Gali Paratha House", "category": "breakfast", "neighborhood": "Chandni Chowk", "pricePerPerson": 3, "dietaryTags": ["vegetarian"], "hours": {"open": "08:00", "close": "21:00"}, "coordinates": {"lat": 28.6559, "lng": 77.2307}, "rating": 4.4, "reviewCount": 2100, "indoor": true, "description": "Narrow-lane kitchen frying stuffed parathas in ghee from early morning, a short walk from the Old Delhi food walk meeting point."},
+    {"venueId": "v_del_002", "name": "Udupi Corner", "category": "breakfast", "neighborhood": "Connaught Place", "pricePerPerson": 4, "dietaryTags": ["vegetarian", "gluten-free"], "hours": {"open": "07:30", "close": "22:30"}, "coordinates": {"lat": 28.6318, "lng": 77.2195}, "rating": 4.3, "reviewCount": 3400, "indoor": true, "description": "South Indian canteen serving rice-and-lentil dosas, idli and filter coffee under the Connaught Place colonnades."},
+    {"venueId": "v_del_003", "name": "Dariba Jalebi Corner", "category": "cafe", "neighborhood": "Chandni Chowk", "pricePerPerson": 2, "dietaryTags": ["vegetarian"], "hours": {"open": "08:00", "close": "22:00"}, "coordinates": {"lat": 28.6545, "lng": 77.2318}, "rating": 4.5, "reviewCount": 3300, "indoor": false, "description": "Street-corner sweet shop frying fresh jalebi and serving hot milk and chai."},
+    {"venueId": "v_del_004", "name": "Khan Market Roastery", "category": "cafe", "neighborhood": "Khan Market", "pricePerPerson": 6, "dietaryTags": ["vegetarian", "vegan", "dairy-free"], "hours": {"open": "08:00", "close": "23:00"}, "coordinates": {"lat": 28.6002, "lng": 77.2273}, "rating": 4.5, "reviewCount": 890, "indoor": true, "description": "Upstairs coffee bar with oat-milk drinks and vegan bakes, popular with readers from the market bookshops."},
+    {"venueId": "v_del_005", "name": "CP Coffee & Books", "category": "cafe", "neighborhood": "Connaught Place", "pricePerPerson": 5, "dietaryTags": ["vegetarian"], "hours": {"open": "09:00", "close": "21:00"}, "coordinates": {"lat": 28.634, "lng": 77.221}, "rating": 4.2, "reviewCount": 520, "indoor": true, "description": "Quiet cafe inside a secondhand bookshop in the inner circle of Connaught Place."},
+    {"venueId": "v_del_006", "name": "Haveli Thali Kitchen", "category": "lunch", "neighborhood": "Connaught Place", "pricePerPerson": 11, "dietaryTags": ["vegetarian"], "hours": {"open": "11:30", "close": "15:30"}, "coordinates": {"lat": 28.6331, "lng": 77.2177}, "rating": 4.4, "reviewCount": 1420, "indoor": true, "description": "Unlimited North Indian vegetarian thali with dal, seasonal sabzi, rotis and rice, refilled at the table."},
+    {"venueId": "v_del_007", "name": "Green Leaf Vegan Kitchen", "category": "lunch", "neighborhood": "Hauz Khas", "pricePerPerson": 12, "dietaryTags": ["vegetarian", "vegan", "gluten-free", "dairy-free", "nut-free"], "hours": {"open": "11:00", "close": "22:30"}, "coordinates": {"lat": 28.5501, "lng": 77.1993}, "rating": 4.6, "reviewCount": 640, "indoor": true, "description": "Plant-based kitchen cooking millet bowls and curries without wheat, dairy or nuts."},
+    {"venueId": "v_del_008", "name": "Tibetan Momo House", "category": "lunch", "neighborhood": "Majnu ka Tilla", "pricePerPerson": 5, "dietaryTags": [], "hours": {"open": "10:00", "close": "22:00"}, "coordinates": {"lat": 28.7016, "lng": 77.2276}, "rating": 4.4, "reviewCount": 760, "indoor": true, "description": "Family-run Tibetan kitchen in the refugee colony serving momos, thukpa and butter tea."},
+    {"venueId": "v_del_009", "name": "Jama Masjid Kebab Ghar", "category": "dinner", "neighborhood": "Chandni Chowk", "pricePerPerson": 9, "dietaryTags": ["halal"], "hours": {"open": "11:00", "close": "23:30"}, "coordinates": {"lat": 28.6497, "lng": 77.2335}, "rating": 4.5, "reviewCount": 5200, "indoor": true, "description": "Old Delhi Mughlai institution near Jama Masjid known for mutton korma, seekh kebabs and sheermal bread."},
+    {"venueId": "v_del_010", "name": "Nizamuddin Biryani Darbar", "category": "dinner", "neighborhood": "Nizamuddin", "pricePerPerson": 7, "dietaryTags": ["halal"], "hours": {"open": "12:00", "close": "23:00"}, "coordinates": {"lat": 28.5893, "lng": 77.2424}, "rating": 4.2, "reviewCount": 980, "indoor": true, "description": "Biryani and nihari house in the lanes beside the Nizamuddin shrine, a short walk from Humayun's Tomb."},
+    {"venueId": "v_del_011", "name": "Pandara Road Tandoor", "category": "dinner", "neighborhood": "India Gate", "pricePerPerson": 22, "dietaryTags": [], "hours": {"open": "12:00", "close": "00:30"}, "coordinates": {"lat": 28.6045, "lng": 77.2293}, "rating": 4.3, "reviewCount": 1870, "indoor": true, "description": "Late-night Punjabi grill famous for butter chicken and dal makhani, close to India Gate."},
+    {"venueId": "v_del_012", "name": "Shalom Paharganj Kitchen", "category": "dinner", "neighborhood": "Paharganj", "pricePerPerson": 10, "dietaryTags": ["kosher"], "hours": {"open": "12:00", "close": "21:30"}, "coordinates": {"lat": 28.6427, "lng": 77.2121}, "rating": 4.3, "reviewCount": 310, "indoor": true, "description": "Kosher kitchen run by a community centre for travellers, serving Israeli and Indian vegetarian dishes."},
+    {"venueId": "v_del_013", "name": "Lutyens Grill", "category": "dinner", "neighborhood": "Khan Market", "pricePerPerson": 34, "dietaryTags": ["gluten-free"], "hours": {"open": "18:30", "close": "23:30"}, "coordinates": {"lat": 28.6008, "lng": 77.2265}, "rating": 4.6, "reviewCount": 980, "indoor": true, "description": "Modern Indian grill with a gluten-free menu of tandoori meats, fish and millet breads."},
+    {"venueId": "v_del_014", "name": "Deer Park Terrace", "category": "bar", "neighborhood": "Hauz Khas", "pricePerPerson": 18, "dietaryTags": [], "hours": {"open": "12:00", "close": "01:00"}, "coordinates": {"lat": 28.5538, "lng": 77.194}, "rating": 4.1, "reviewCount": 1530, "indoor": false, "description": "Rooftop bar overlooking the Hauz Khas lake and medieval ruins, busiest after sunset."},
+    {"venueId": "v_del_015", "name": "Red Fort", "category": "attraction", "neighborhood": "Chandni Chowk", "pricePerPerson": 6, "dietaryTags": [], "hours": {"open": "09:30", "close": "16:30"}, "coordinates": {"lat": 28.6562, "lng": 77.241}, "rating": 4.5, "reviewCount": 41200, "indoor": false, "description": "Seventeenth-century Mughal fort of red sandstone with palaces, gardens and a museum. Allow about two hours."},
+    {"venueId": "v_del_016", "name": "Qutub Minar", "category": "attraction", "neighborhood": "Mehrauli", "pricePerPerson": 7, "dietaryTags": [], "hours": {"open": "07:00", "close": "17:00"}, "coordinates": {"lat": 28.5245, "lng": 77.1855}, "rating": 4.6, "reviewCount": 38900, "indoor": false, "description": "Seventy-three-metre victory tower from 1193 in a complex of early Delhi Sultanate ruins and an iron pillar."},
+    {"venueId": "v_del_017", "name": "Humayun's Tomb", "category": "attraction", "neighborhood": "Nizamuddin", "pricePerPerson": 7, "dietaryTags": [], "hours": {"open": "06:00", "close": "18:00"}, "coordinates": {"lat": 28.5933, "lng": 77.2507}, "rating": 4.7, "reviewCount": 29800, "indoor": false, "description": "Garden tomb of the Mughal emperor Humayun, a UNESCO World Heritage Site and forerunner of the Taj Mahal."},
+    {"venueId": "v_del_018", "name": "Akshardham Exhibitions", "category": "attraction", "neighborhood": "Akshardham", "pricePerPerson": 4, "dietaryTags": [], "hours": {"open": "10:00", "close": "20:00"}, "coordinates": {"lat": 28.6127, "lng": 77.2773}, "rating": 4.7, "reviewCount": 52000, "indoor": true, "description": "Hindu temple complex; the ticket covers the exhibition halls, boat ride and evening water show. Phones are not allowed inside."},
+    {"venueId": "v_del_019", "name": "National Museum", "category": "museum", "neighborhood": "India Gate", "pricePerPerson": 8, "dietaryTags": [], "hours": {"open": "10:00", "close": "18:00"}, "coordinates": {"lat": 28.6118, "lng": 77.2193}, "rating": 4.4, "reviewCount": 9800, "indoor": true, "description": "India's largest museum, from Harappan seals to Mughal miniatures and a Buddhist relics gallery."},
+    {"venueId": "v_del_020", "name": "National Gallery of Modern Art", "category": "museum", "neighborhood": "India Gate", "pricePerPerson": 6, "dietaryTags": [], "hours": {"open": "11:00", "close": "18:30"}, "coordinates": {"lat": 28.6105, "lng": 77.2345}, "rating": 4.5, "reviewCount": 4200, "indoor": true, "description": "Indian art from the 1850s onward in a former maharaja's palace near India Gate."},
+    {"venueId": "v_del_021", "name": "National Crafts Museum", "category": "museum", "neighborhood": "Pragati Maidan", "pricePerPerson": 3, "dietaryTags": [], "hours": {"open": "10:00", "close": "17:00"}, "coordinates": {"lat": 28.6145, "lng": 77.242}, "rating": 4.6, "reviewCount": 6100, "indoor": true, "description": "Folk and tribal crafts, a recreated village complex and artisans demonstrating their work."},
+    {"venueId": "v_del_022", "name": "Old Delhi Food Walk", "category": "tour", "neighborhood": "Chandni Chowk", "pricePerPerson": 25, "dietaryTags": [], "hours": {"open": "16:00", "close": "20:00"}, "coordinates": {"lat": 28.6506, "lng": 77.2303}, "rating": 4.8, "reviewCount": 1150, "indoor": false, "description": "Three-hour guided walk through the bazaars of Chandni Chowk with ten tastings; vegetarian route on request."},
+    {"venueId": "v_del_023", "name": "Lodhi Garden & Art District Walk", "category": "tour", "neighborhood": "Lodhi Road", "pricePerPerson": 15, "dietaryTags": [], "hours": {"open": "07:00", "close": "11:00"}, "coordinates": {"lat": 28.5918, "lng": 77.2197}, "rating": 4.6, "reviewCount": 430, "indoor": false, "description": "Morning walk past fifteenth-century tombs in Lodhi Garden and the street murals of Lodhi Colony."},
+    {"venueId": "v_del_024", "name": "India Gate Evening Cycle Tour", "category": "activity", "neighborhood": "India Gate", "pricePerPerson": 20, "dietaryTags": [], "hours": {"open": "16:30", "close": "19:30"}, "coordinates": {"lat": 28.6129, "lng": 77.2295}, "rating": 4.5, "reviewCount": 380, "indoor": false, "description": "Guided bicycle ride along Kartavya Path to India Gate as the monuments light up."},
+    {"venueId": "v_del_025", "name": "Chandni Chowk Rickshaw Ride", "category": "activity", "neighborhood": "Chandni Chowk", "pricePerPerson": 5, "dietaryTags": [], "hours": {"open": "09:00", "close": "20:00"}, "coordinates": {"lat": 28.6555, "lng": 77.23}, "rating": 4.2, "reviewCount": 2200, "indoor": false, "description": "Forty-minute cycle-rickshaw ride through the spice market and wholesale lanes of Old Delhi."},
+    {"venueId": "v_del_026", "name": "Paharganj Backpackers Inn", "category": "lodging", "neighborhood": "Paharganj", "pricePerPerson": 14, "dietaryTags": [], "hours": {"open": "00:00", "close": "23:59"}, "coordinates": {"lat": 28.644, "lng": 77.213}, "rating": 4, "reviewCount": 1300, "indoor": true, "description": "Budget guesthouse with private rooms and dorms beside New Delhi railway station."},
+    {"venueId": "v_del_027", "name": "Connaught Courtyard Hotel", "category": "lodging", "neighborhood": "Connaught Place", "pricePerPerson": 55, "dietaryTags": [], "hours": {"open": "00:00", "close": "23:59"}, "coordinates": {"lat": 28.633, "lng": 77.22}, "rating": 4.4, "reviewCount": 2100, "indoor": true, "description": "Mid-range hotel in a colonial building on the Connaught Place circle, near the Rajiv Chowk metro."},
+    {"venueId": "v_del_028", "name": "Lutyens Heritage Bungalow", "category": "lodging", "neighborhood": "Lodhi Road", "pricePerPerson": 110, "dietaryTags": [], "hours": {"open": "00:00", "close": "23:59"}, "coordinates": {"lat": 28.604, "lng": 77.22}, "rating": 4.7, "reviewCount": 640, "indoor": true, "description": "Eight-room boutique stay in a 1930s bungalow with a garden, between Khan Market and Lodhi Garden."}
+  ],
+  "transit": [
+    {"from": "Connaught Place", "to": "Chandni Chowk", "mode": "metro", "minutes": 10, "costPerPerson": 0.3, "line": "Yellow line"},
+    {"from": "Connaught Place", "to": "Hauz Khas", "mode": "metro", "minutes": 25, "costPerPerson": 0.45, "line": "Yellow line"},
+    {"from": "Connaught Place", "to": "Mehrauli", "mode": "metro", "minutes": 35, "costPerPerson": 0.55, "line": "Yellow line"},
+    {"from": "Connaught Place", "to": "Khan Market", "mode": "metro", "minutes": 12, "costPerPerson": 0.3, "line": "Blue + Violet lines"},
+    {"from": "Paharganj", "to": "Connaught Place", "mode": "walk", "minutes": 15, "costPerPerson": 0},
+    {"from": "Connaught Place", "to": "India Gate", "mode": "taxi", "minutes": 10, "costPerPerson": 2},
+    {"from": "India Gate", "to": "Nizamuddin", "mode": "taxi", "minutes": 12, "costPerPerson": 2.5},
+    {"from": "Chandni Chowk", "to": "Majnu ka Tilla", "mode": "taxi", "minutes": 20, "costPerPerson": 3}
+  ],
+  "weather": {
+    "monthly": [
+      {"month": 1, "condition": "cloudy", "highC": 20, "lowC": 7, "rainDays": 2},
+      {"month": 2, "condition": "sunny", "highC": 24, "lowC": 10, "rainDays": 2},
+      {"month": 3, "condition": "sunny", "highC": 30, "lowC": 15, "rainDays": 2},
+      {"month": 4, "condition": "sunny", "highC": 36, "lowC": 21, "rainDays": 1},
+      {"month": 5, "condition": "sunny", "highC": 40, "lowC": 26, "rainDays": 2},
+      {"month": 6, "condition": "partly-cloudy", "highC": 39, "lowC": 28, "rainDays": 5},
+      {"month": 7, "condition": "rain", "highC": 35, "lowC": 27, "rainDays": 12},
+      {"month": 8, "condition": "rain", "highC": 34, "lowC": 27, "rainDays": 13},
+      {"month": 9, "condition": "showers", "highC": 34, "lowC": 25, "rainDays": 7},
+      {"month": 10, "condition": "sunny", "highC": 33, "lowC": 19, "rainDays": 1},
+      {"month": 11, "condition": "sunny", "highC": 28, "lowC": 13, "rainDays": 0},
+      {"month": 12, "condition": "cloudy", "highC": 22, "lowC": 8, "rainDays": 1}
+    ],
+    "daily": [
+      {"date": "2026-12-08", "condition": "cloudy", "highC": 22, "lowC": 8, "precipitationChance": 25},
+      {"date": "2026-12-09", "condition": "cloudy", "highC": 23, "lowC": 7, "precipitationChance": 25},
+      {"date": "2026-12-10", "condition": "sunny", "highC": 21, "lowC": 8, "precipitationChance": 5},
+      {"date": "2026-12-11", "condition": "sunny", "highC": 22, "lowC": 9, "precipitationChance": 5},
+      {"date": "2026-12-12", "condition": "partly-cloudy", "highC": 23, "lowC": 8, "precipitationChance": 15},
+      {"date": "2026-12-13", "condition": "cloudy", "highC": 21, "lowC": 7, "precipitationChance": 25},
+      {"date": "2026-12-14", "condition": "sunny", "highC": 22, "lowC": 8, "precipitationChance": 5},
+      {"date": "2026-12-15", "condition": "sunny", "highC": 23, "lowC": 8, "precipitationChance": 5},
+      {"date": "2026-12-16", "condition": "partly-cloudy", "highC": 22, "lowC": 9, "precipitationChance": 15}
+    ]
+  }
+}

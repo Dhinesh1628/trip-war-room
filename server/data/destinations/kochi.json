@@ -1,0 +1,76 @@
+{
+  "datasetVersion": "kochi-2026.11-1",
+  "about": "Hand-authored mock dataset for development and testing. Landmarks, neighbourhoods and coordinates are real Kochi locations; restaurant, bar, hotel and tour-operator names are fictional. Prices are approximate, in USD (landmark tickets use the foreign-visitor fee). Opening hours are typical; weekly closing days are not modelled. Lodging pricePerPerson is per person per night. Weather is mocked: monthly normals plus a sample daily forecast.",
+  "destination": {
+    "slug": "kochi",
+    "name": "Kochi, India",
+    "country": "India",
+    "timezone": "Asia/Kolkata",
+    "currency": "USD",
+    "center": {
+      "lat": 9.9658,
+      "lng": 76.2421
+    }
+  },
+  "venues": [
+    {"venueId": "v_koc_001", "name": "Princess Street Appam House", "category": "breakfast", "neighborhood": "Fort Kochi", "pricePerPerson": 3, "dietaryTags": ["vegetarian", "dairy-free"], "hours": {"open": "07:30", "close": "11:30"}, "coordinates": {"lat": 9.965, "lng": 76.245}, "rating": 4.4, "reviewCount": 860, "indoor": true, "description": "Kerala breakfast of appam with vegetable stew, puttu and kadala curry."},
+    {"venueId": "v_koc_002", "name": "Jew Town Spice Cafe", "category": "cafe", "neighborhood": "Jew Town", "pricePerPerson": 4, "dietaryTags": ["vegetarian"], "hours": {"open": "09:00", "close": "19:00"}, "coordinates": {"lat": 9.9575, "lng": 76.259}, "rating": 4.5, "reviewCount": 1300, "indoor": true, "description": "Cafe above a spice warehouse serving cardamom coffee and banana fritters."},
+    {"venueId": "v_koc_003", "name": "Art Gallery Courtyard Cafe", "category": "cafe", "neighborhood": "Fort Kochi", "pricePerPerson": 6, "dietaryTags": ["vegetarian", "vegan"], "hours": {"open": "08:30", "close": "22:00"}, "coordinates": {"lat": 9.964, "lng": 76.244}, "rating": 4.6, "reviewCount": 2400, "indoor": true, "description": "Cafe in a gallery courtyard with vegan cakes and filter coffee."},
+    {"venueId": "v_koc_004", "name": "Sadya Leaf Kitchen", "category": "lunch", "neighborhood": "Ernakulam", "pricePerPerson": 4, "dietaryTags": ["vegetarian", "gluten-free"], "hours": {"open": "11:30", "close": "15:30"}, "coordinates": {"lat": 9.978, "lng": 76.281}, "rating": 4.6, "reviewCount": 3700, "indoor": true, "description": "Traditional Kerala sadya: over a dozen vegetarian dishes served on a banana leaf."},
+    {"venueId": "v_koc_005", "name": "Coconut Grove Vegan Kitchen", "category": "lunch", "neighborhood": "Fort Kochi", "pricePerPerson": 7, "dietaryTags": ["vegetarian", "vegan", "gluten-free", "dairy-free", "nut-free"], "hours": {"open": "10:00", "close": "21:30"}, "coordinates": {"lat": 9.9645, "lng": 76.2435}, "rating": 4.5, "reviewCount": 520, "indoor": true, "description": "Plant-based Kerala curries with red rice, made without gluten, dairy or nuts."},
+    {"venueId": "v_koc_006", "name": "Malabar Biryani House", "category": "dinner", "neighborhood": "Mattancherry", "pricePerPerson": 5, "dietaryTags": ["halal"], "hours": {"open": "12:00", "close": "22:30"}, "coordinates": {"lat": 9.96, "lng": 76.258}, "rating": 4.5, "reviewCount": 2100, "indoor": true, "description": "Thalassery-style biryani with short-grain kaima rice, and Malabar parotta."},
+    {"venueId": "v_koc_007", "name": "Fort Kochi Catch of the Day", "category": "dinner", "neighborhood": "Fort Kochi", "pricePerPerson": 14, "dietaryTags": ["gluten-free", "dairy-free"], "hours": {"open": "12:00", "close": "23:00"}, "coordinates": {"lat": 9.966, "lng": 76.243}, "rating": 4.4, "reviewCount": 2600, "indoor": false, "description": "Pick fish from the stalls by the Chinese fishing nets and have it cooked in Kerala style."},
+    {"venueId": "v_koc_008", "name": "Ernakulam Kerala Meals", "category": "dinner", "neighborhood": "Ernakulam", "pricePerPerson": 5, "dietaryTags": ["vegetarian"], "hours": {"open": "18:00", "close": "22:30"}, "coordinates": {"lat": 9.98, "lng": 76.282}, "rating": 4.3, "reviewCount": 1800, "indoor": true, "description": "Vegetarian Kerala meals and dosas near the Ernakulam boat jetty."},
+    {"venueId": "v_koc_009", "name": "Harbour View Bar", "category": "bar", "neighborhood": "Fort Kochi", "pricePerPerson": 10, "dietaryTags": [], "hours": {"open": "11:00", "close": "23:00"}, "coordinates": {"lat": 9.967, "lng": 76.242}, "rating": 4.2, "reviewCount": 900, "indoor": false, "description": "Open-air bar watching ships and fishing boats pass the harbour mouth."},
+    {"venueId": "v_koc_010", "name": "Marine Drive Toddy Shop", "category": "bar", "neighborhood": "Ernakulam", "pricePerPerson": 6, "dietaryTags": [], "hours": {"open": "11:00", "close": "22:00"}, "coordinates": {"lat": 9.979, "lng": 76.276}, "rating": 4.1, "reviewCount": 700, "indoor": true, "description": "Toddy (palm wine) with spicy Kerala bar snacks such as kappa and fish fry."},
+    {"venueId": "v_koc_011", "name": "Paradesi Synagogue", "category": "attraction", "neighborhood": "Jew Town", "pricePerPerson": 1, "dietaryTags": [], "hours": {"open": "10:00", "close": "17:00"}, "coordinates": {"lat": 9.9573, "lng": 76.2593}, "rating": 4.5, "reviewCount": 6800, "indoor": true, "description": "Built in 1568, the oldest active synagogue in the Commonwealth, with hand-painted Chinese floor tiles."},
+    {"venueId": "v_koc_012", "name": "Mattancherry Palace", "category": "museum", "neighborhood": "Mattancherry", "pricePerPerson": 1, "dietaryTags": [], "hours": {"open": "09:30", "close": "17:00"}, "coordinates": {"lat": 9.9585, "lng": 76.2595}, "rating": 4.3, "reviewCount": 9200, "indoor": true, "description": "Portuguese-built palace given to the Kochi rajas, famous for its Ramayana murals."},
+    {"venueId": "v_koc_013", "name": "Indo-Portuguese Museum", "category": "museum", "neighborhood": "Fort Kochi", "pricePerPerson": 1, "dietaryTags": [], "hours": {"open": "10:00", "close": "17:00"}, "coordinates": {"lat": 9.9625, "lng": 76.244}, "rating": 4.2, "reviewCount": 900, "indoor": true, "description": "Church art and artefacts showing Portuguese influence on Kochi."},
+    {"venueId": "v_koc_014", "name": "Kerala Folklore Museum", "category": "museum", "neighborhood": "Thevara", "pricePerPerson": 3, "dietaryTags": [], "hours": {"open": "09:30", "close": "19:00"}, "coordinates": {"lat": 9.942, "lng": 76.269}, "rating": 4.7, "reviewCount": 4300, "indoor": true, "description": "Three floors of masks, costumes and carvings from Kerala's performing arts."},
+    {"venueId": "v_koc_015", "name": "Hill Palace Museum", "category": "museum", "neighborhood": "Tripunithura", "pricePerPerson": 1, "dietaryTags": [], "hours": {"open": "09:00", "close": "16:30"}, "coordinates": {"lat": 9.952, "lng": 76.364}, "rating": 4.4, "reviewCount": 8700, "indoor": true, "description": "Former royal palace of the Kochi rajas, now Kerala's largest archaeological museum."},
+    {"venueId": "v_koc_016", "name": "Fort Kochi Heritage Walk", "category": "tour", "neighborhood": "Fort Kochi", "pricePerPerson": 8, "dietaryTags": [], "hours": {"open": "07:00", "close": "10:00"}, "coordinates": {"lat": 9.9654, "lng": 76.2421}, "rating": 4.7, "reviewCount": 610, "indoor": false, "description": "Morning walk past St Francis Church, Santa Cruz Basilica and the Dutch colonial streets."},
+    {"venueId": "v_koc_017", "name": "Fishing Nets & Harbour Boat Ride", "category": "tour", "neighborhood": "Fort Kochi", "pricePerPerson": 6, "dietaryTags": [], "hours": {"open": "07:00", "close": "18:00"}, "coordinates": {"lat": 9.9682, "lng": 76.2424}, "rating": 4.3, "reviewCount": 2100, "indoor": false, "description": "Watch fishermen work the Chinese fishing nets, then take a short boat ride around the harbour."},
+    {"venueId": "v_koc_018", "name": "Backwater Canoe Tour", "category": "tour", "neighborhood": "Kumbalangi", "pricePerPerson": 20, "dietaryTags": [], "hours": {"open": "08:30", "close": "13:30"}, "coordinates": {"lat": 9.88, "lng": 76.29}, "rating": 4.6, "reviewCount": 1400, "indoor": false, "description": "Half-day country-boat trip through the narrow backwater canals of Kumbalangi village."},
+    {"venueId": "v_koc_019", "name": "Kathakali Performance", "category": "activity", "neighborhood": "Fort Kochi", "pricePerPerson": 6, "dietaryTags": [], "hours": {"open": "17:00", "close": "19:00"}, "coordinates": {"lat": 9.964, "lng": 76.247}, "rating": 4.7, "reviewCount": 2900, "indoor": true, "description": "Watch the performers apply their elaborate make-up, then a one-hour Kathakali dance-drama."},
+    {"venueId": "v_koc_020", "name": "Kalaripayattu Show", "category": "activity", "neighborhood": "Fort Kochi", "pricePerPerson": 5, "dietaryTags": [], "hours": {"open": "18:00", "close": "19:00"}, "coordinates": {"lat": 9.9645, "lng": 76.2485}, "rating": 4.5, "reviewCount": 1200, "indoor": true, "description": "Demonstration of Kerala's ancient martial art, with sticks, swords and acrobatics."},
+    {"venueId": "v_koc_021", "name": "Fort Kochi Homestay", "category": "lodging", "neighborhood": "Fort Kochi", "pricePerPerson": 20, "dietaryTags": [], "hours": {"open": "00:00", "close": "23:59"}, "coordinates": {"lat": 9.964, "lng": 76.244}, "rating": 4.6, "reviewCount": 700, "indoor": true, "description": "Family homestay in a colonial house; breakfast included."},
+    {"venueId": "v_koc_022", "name": "Bastion Heritage Hotel", "category": "lodging", "neighborhood": "Fort Kochi", "pricePerPerson": 85, "dietaryTags": [], "hours": {"open": "00:00", "close": "23:59"}, "coordinates": {"lat": 9.966, "lng": 76.241}, "rating": 4.6, "reviewCount": 1600, "indoor": true, "description": "Boutique hotel in a restored Dutch-era bungalow near the beach."},
+    {"venueId": "v_koc_023", "name": "Ernakulam City Hotel", "category": "lodging", "neighborhood": "Ernakulam", "pricePerPerson": 35, "dietaryTags": [], "hours": {"open": "00:00", "close": "23:59"}, "coordinates": {"lat": 9.981, "lng": 76.279}, "rating": 4.2, "reviewCount": 2100, "indoor": true, "description": "Business hotel near Marine Drive and the ferry jetty."}
+  ],
+  "transit": [
+    {"from": "Fort Kochi", "to": "Ernakulam", "mode": "ferry", "minutes": 20, "costPerPerson": 0.1, "line": "Water Metro"},
+    {"from": "Fort Kochi", "to": "Mattancherry", "mode": "walk", "minutes": 25, "costPerPerson": 0},
+    {"from": "Fort Kochi", "to": "Mattancherry", "mode": "taxi", "minutes": 8, "costPerPerson": 1.5},
+    {"from": "Mattancherry", "to": "Jew Town", "mode": "walk", "minutes": 3, "costPerPerson": 0},
+    {"from": "Ernakulam", "to": "Tripunithura", "mode": "metro", "minutes": 25, "costPerPerson": 0.6, "line": "Kochi Metro"},
+    {"from": "Ernakulam", "to": "Thevara", "mode": "taxi", "minutes": 15, "costPerPerson": 2},
+    {"from": "Fort Kochi", "to": "Kumbalangi", "mode": "taxi", "minutes": 30, "costPerPerson": 6}
+  ],
+  "weather": {
+    "monthly": [
+      {"month": 1, "condition": "sunny", "highC": 31, "lowC": 23, "rainDays": 1},
+      {"month": 2, "condition": "sunny", "highC": 32, "lowC": 24, "rainDays": 1},
+      {"month": 3, "condition": "sunny", "highC": 33, "lowC": 25, "rainDays": 2},
+      {"month": 4, "condition": "partly-cloudy", "highC": 33, "lowC": 26, "rainDays": 6},
+      {"month": 5, "condition": "showers", "highC": 32, "lowC": 26, "rainDays": 10},
+      {"month": 6, "condition": "rain", "highC": 30, "lowC": 24, "rainDays": 22},
+      {"month": 7, "condition": "rain", "highC": 29, "lowC": 23, "rainDays": 21},
+      {"month": 8, "condition": "rain", "highC": 29, "lowC": 24, "rainDays": 17},
+      {"month": 9, "condition": "showers", "highC": 30, "lowC": 24, "rainDays": 13},
+      {"month": 10, "condition": "showers", "highC": 30, "lowC": 24, "rainDays": 14},
+      {"month": 11, "condition": "showers", "highC": 31, "lowC": 24, "rainDays": 8},
+      {"month": 12, "condition": "sunny", "highC": 31, "lowC": 23, "rainDays": 3}
+    ],
+    "daily": [
+      {"date": "2026-12-08", "condition": "sunny", "highC": 31, "lowC": 23, "precipitationChance": 5},
+      {"date": "2026-12-09", "condition": "partly-cloudy", "highC": 32, "lowC": 22, "precipitationChance": 15},
+      {"date": "2026-12-10", "condition": "sunny", "highC": 30, "lowC": 23, "precipitationChance": 5},
+      {"date": "2026-12-11", "condition": "sunny", "highC": 31, "lowC": 24, "precipitationChance": 5},
+      {"date": "2026-12-12", "condition": "showers", "highC": 32, "lowC": 23, "precipitationChance": 55},
+      {"date": "2026-12-13", "condition": "partly-cloudy", "highC": 30, "lowC": 22, "precipitationChance": 15},
+      {"date": "2026-12-14", "condition": "sunny", "highC": 31, "lowC": 23, "precipitationChance": 5},
+      {"date": "2026-12-15", "condition": "sunny", "highC": 32, "lowC": 23, "precipitationChance": 5},
+      {"date": "2026-12-16", "condition": "partly-cloudy", "highC": 31, "lowC": 24, "precipitationChance": 15}
+    ]
+  }
+}

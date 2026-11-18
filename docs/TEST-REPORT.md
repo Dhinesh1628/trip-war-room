@@ -1,6 +1,6 @@
 # Test report (spec 12.1, 12.2)
 
-**Result: 351 tests in 16 files, all passing** (run on 2026-11-19, 82 s,
+**Result: 365 tests in 16 files, all passing** (run on 2026-11-19, 82 s,
 Node 24, Jest 30). Each test file starts its own in-memory MongoDB, so no
 setup is needed:
 
@@ -19,7 +19,7 @@ budget math, access control) are in bold.
 |---|---|---|
 | **`boardState.test.js`** | 24 | **Board state machine** on its own: pin, move, remove, lock, unlock; version checks (first valid write wins, stale writes change nothing, 50 stale moves in any order); slot validation; chat cleaning |
 | **`realtime.test.js`** | 44 | The board with real Socket.io clients: handshake auth (4 refusal cases), snapshots within 2 s, sync under 100 ms, **20 rounds of simultaneous moves where everyone agrees and the database matches**, locks, token expiry and renewal, leader disconnected state, presence, reconnects, room isolation, chat, moderation |
-| **`constraints.test.js`** | 27 | **Constraint matching**: 379 simulated requests checked against an independent re-implementation of the four rules (0 violations, and no valid venue wrongly rejected); opening hours past midnight; the 40/30/30 ranking |
+| **`constraints.test.js`** | 33 | **Constraint matching**: 379 simulated requests on Lisbon plus 378 on each of the five Indian cities checked against an independent re-implementation of the four rules (0 violations, and no valid venue wrongly rejected); opening hours past midnight; the 40/30/30 ranking |
 | `concierge.unit.test.js` | 42 | Reading questions, building constraints, the grounding check (invented prices, times, venues, walking minutes), the Claude call with a fake client (request shape and every fallback), the conflict detector, vote rules |
 | `concierge.test.js` | 16 | End to end: the spec's example question over REST and WebSocket, room broadcast, declines, rate limit, **conflicts flagged within 1 s in 20 of 20 tries**, budget breaches (including one that grows), votes resolving identically for all clients and surviving a reload |
 | `ollama.test.js` | 19 | The free local-model path against a fake Ollama server; quality check; time limits |
@@ -30,7 +30,7 @@ budget math, access control) are in bold.
 | `auth.test.js` | 23 | Register and login, token expiry, forgery, the `none` algorithm, deleted accounts, refresh rotation, reuse detection, a refresh race, hashed storage, logout, preferences, rate limiting |
 | `trips.test.js` | 24 | Trip creation and validation, invite codes, joining, capacity (5 people racing for the last seat), **invite brute-force limit**, listing and settings |
 | `venues.test.js` | 17 | Distance maths, proximity search compared with a brute-force calculation, query validation |
-| `dataset.test.js` | 33 | The Lisbon data covers every constraint type; 16 kinds of bad upload rejected with clear messages; re-loading; the admin upload endpoint |
+| `dataset.test.js` | 41 | The Lisbon data covers every constraint type; every destination file is valid, has every category, and venue ids are unique across files; 16 kinds of bad upload rejected with clear messages; re-loading; the admin upload endpoint |
 | `health.test.js` | 7 | Health checks and config safety (missing or short secrets, token lifetime cap) |
 | `gateway.test.js` | 2 | WebSocket ping/pong and connection counting |
 
@@ -42,7 +42,7 @@ budget math, access control) are in bold.
 | 6.1 Simultaneous moves never leave server and client disagreeing; the loser is told | `realtime.test.js` 20 rounds; load test 125 rounds across runs |
 | 6.1 Mid-session joiner gets full state within 2 s | `realtime.test.js` "a participant joining mid-session…" |
 | 6.1 Leader disconnect is deterministic and tested | `realtime.test.js` "leader disconnected state" (2 tests) |
-| 6.2 100% constraint compliance across ≥ 20 requests | `constraints.test.js`: 379 requests |
+| 6.2 100% constraint compliance across ≥ 20 requests | `constraints.test.js`: 379 requests on Lisbon, 378 on each other city |
 | 6.2 Answers cite metadata and never invent venues, prices or hours | `concierge.unit.test.js` grounding tests; `concierge.test.js` "if Claude invents a price…" |
 | 6.2 Conflicts flagged within 1 s in ≥ 95% of cases | `concierge.test.js`: 20 of 20, max 19 ms |
 | 6.2 Vote result applied identically and simultaneously | `concierge.test.js` "…the result is identical for all" |
