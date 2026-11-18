@@ -19,12 +19,13 @@ export function testConfig(overrides = {}) {
 
 // Starts a throwaway in-memory MongoDB and a real HTTP + Socket.io server on a
 // random free port. Returns everything a test needs plus a stop() function.
-export async function startTestServer({ seed = false, env = {} } = {}) {
+// `llm` replaces the Claude client (null = no key, template answers only).
+export async function startTestServer({ seed = false, env = {}, llm = null } = {}) {
   const mongo = await MongoMemoryServer.create();
   await connectDb(mongo.getUri());
   if (seed) await seedAllDestinations();
 
-  const config = { ...testConfig(env), mongoUri: mongo.getUri() };
+  const config = { ...testConfig(env), mongoUri: mongo.getUri(), llm };
   const { httpServer, app, gateway } = buildServer(config);
   await new Promise((resolve) => httpServer.listen(0, resolve));
   const url = `http://localhost:${httpServer.address().port}`;

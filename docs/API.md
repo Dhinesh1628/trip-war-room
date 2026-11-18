@@ -83,7 +83,12 @@ Revokes the refresh token's session and clears the cookie. `204`.
 ```
 All fields optional. `dietaryTags` must come from the vocabulary:
 `vegetarian, vegan, halal, kosher, gluten-free, dairy-free, nut-free`.
-`budgetCeiling` is USD per person per item, or `null`. `role` cannot be set here (`400`).
+`budgetCeiling` is the most this traveller wants to spend on the trip's
+itinerary in total (USD, per person), or `null`. The conflict detector flags a
+`budgetBreach` when the board pushes them past it, and the Concierge uses the
+traveller's remaining headroom as their price ceiling. `role` cannot be set
+here (`400`). Every open Trip Room the traveller is in picks up the change
+immediately.
 
 ## Destinations and venues *(auth)*
 
@@ -178,6 +183,70 @@ so two people can never both take the last seat.
 Any of `{ "maxParticipants": 10, "defaultJoinRole": "viewer", "aiVerbosity": "detailed" }`.
 `maxParticipants` cannot go below the current headcount.
 
+### `POST /trips/{id}/ai/ask` — Viewer+ (spec 7.3.3)
+
+Asks the AI Concierge. Only `question` is required. The other fields override
+what is read from the question text. A `userId` in the body is accepted for
+compatibility with the spec's example, but ignored: the caller is always the
+token's owner.
+
+```json
+{ "question": "Suggest a dinner spot near our 5 PM tour under $25/person",
+  "anchorItemId": "6745c2...", "category": "dinner", "maxPricePerPerson": 25,
+  "dietaryTags": ["vegetarian"], "time": "19:30", "dayIndex": 0, "radiusKm": 2 }
+```
+
+`200`, with the spec's fields first (the numbers here are examples):
+
+```json
+{ "answer": "Taberna da Rua is a 1-minute walk from Alfama Old Quarter Walking Tour, has vegetarian options, costs about $22 per person, and is open 11:00-22:00. Other options: Horta Verde ($18) and Petiscos do Castelo ($24).",
+  "suggestedVenueId": "v_lis_001",
+  "sourceEvents": ["venue:v_lis_001", "venue:v_lis_002", "venue:v_lis_017", "item:6745c2...", "weather:2026-12-10"],
+  "generatedAt": "2026-11-18T17:50:02.114Z",
+
+  "questionId": "6745d0...", "tripId": "...", "userId": "...", "question": "...",
+  "sources": [ { "venueId": "v_lis_001", "name": "Taberna da Rua", "category": "dinner", "pricePerPerson": 22,
+                 "dietaryTags": ["vegetarian"], "hours": { "open": "11:00", "close": "22:00" },
+                 "coordinates": { "lat": 38.7121, "lng": -9.1302 }, "distanceKm": 0.042, "walkMinutes": 1 } ],
+  "weather": { "date": "2026-12-10", "source": "forecast", "condition": "sunny", "highC": 17, "lowC": 10, "precipitationChance": 5 },
+  "constraints": {
+    "active": { "budget": true, "dietary": false, "hours": true, "proximity": true },
+    "category": "dinner", "maxPricePerPerson": 25, "budgetSource": "question", "dietaryTags": [],
+    "mustBeOpen": { "from": "19:30", "to": "21:00", "reason": "30 min after Alfama Old Quarter Walking Tour ends" },
+    "anchor": { "itemId": "...", "venueId": "v_lis_025", "name": "Alfama Old Quarter Walking Tour", "coordinates": { }, "dayIndex": 0, "startTime": "17:00", "endTime": "19:00" },
+    "radiusKm": 2, "notes": [] },
+  "candidates": [ { "venueId": "v_lis_001", "name": "Taberna da Rua", "pricePerPerson": 22, "distanceKm": 0.042, "score": 0.553,
+                    "scores": { "proximity": 0.979, "rating": 0.758, "headroom": 0.12 } } ],
+  "validCount": 9, "rejectedCount": 33, "nearMisses": [],
+  "mode": "llm", "model": "claude-opus-5-5", "latencyMs": 1840 }
+```
+
+- `mode` is `llm` (Claude wrote the wording), `template` (a fixed sentence
+  built from the same facts; `fallbackReason` says why: `no_api_key`,
+  `timeout`, `refusal`, `ungrounded`, `schema_mismatch`, `invalid_json`,
+  `max_tokens`, `rate_limited`, `bad_api_key`, `api_error_<status>`), or
+  `no_match` (nothing passed every rule: `suggestedVenueId` is `null`, and
+  the answer and `nearMisses` say which rules ruled the closest venues out).
+- The answer is also broadcast to the room as `trip.ai.suggestion` and saved
+  in the chat as an `ai_answer` message.
+- Errors: `400` (question under 3 or over 500 characters, bad field),
+  `403` (not a participant), `404` (`anchorItemId` not on the board),
+  `429 RATE_LIMITED` (20 questions per traveller per minute).
+
+How the hard rules work (spec 6.2):
+
+| Rule | Active when | Passes when |
+|---|---|---|
+| Budget | a price is in the question, or the asker/group has budget left | `pricePerPerson` ≤ ceiling. Ceiling: the question's price, else the asker's remaining `budgetCeiling`, else the group's remaining budget per person |
+| Dietary | someone in the trip declared a tag, or the question names one | (food venues only) the venue has **every** tag |
+| Hours | the question names a time, or there is an anchor | the venue is open for the whole visit: from the asked time, or 30 min after the anchor ends (30 min before it starts for "before"), for a category-based length (dinner 90 min, lunch 60, breakfast 45, ...) |
+| Proximity | the question refers to a pinned item ("near our 5 PM tour", "after the castle"), or `anchorItemId` is sent | within `radiusKm` (default 2 km, or "within 500 m") of the anchor |
+
+Ranking of the venues that pass: 40% proximity (1 at the anchor, 0 at the
+radius), 30% rating/popularity (75% rating, 25% log review count), 30% budget
+headroom (margin under the ceiling). Ties go to the lower venue id.
+Venues already on the board are not suggested again.
+
 ### `POST /trips/{id}/invite-code` — Leader+
 Replaces the invite code; the old one stops working. `200 { "inviteCode", "inviteUrl" }`.
 
@@ -253,7 +322,8 @@ every client can keep its board up to date from broadcasts alone.
 Error codes: `VALIDATION_FAILED`, `FORBIDDEN`, `MUTED`, `LEADER_DISCONNECTED`,
 `TOKEN_EXPIRED`, `NOT_FOUND`, `ITEM_NOT_FOUND`, `VERSION_CONFLICT`,
 `ITEM_LOCKED`, `ITEM_IN_VOTE`, `ITEM_NOT_LOCKED`, `BAD_SLOT`, `ROOM_CLOSED`,
-`INTERNAL`.
+`VOTE_NOT_FOUND`, `VOTE_CLOSED`, `VOTE_NEEDS_TWO`, `VOTE_TOO_MANY`,
+`NOT_CONTESTED`, `NOT_A_CANDIDATE`, `RATE_LIMITED`, `INTERNAL`.
 
 ### Item shape
 
@@ -269,8 +339,10 @@ Error codes: `VALIDATION_FAILED`, `FORBIDDEN`, `MUTED`, `LEADER_DISCONNECTED`,
 
 `dayIndex` 0 is the first day of the trip. Times are `HH:MM`, and an item ends
 on the same day it starts. `venue` is a snapshot taken when the item was pinned.
-Lifecycle: `drafting` → `locked` (Leader) → `drafting` (Leader override).
-`voting` arrives in Phase 3; an item in a vote cannot be moved, removed or locked.
+Lifecycle: `drafting` → `locked` (Leader) → `drafting` (Leader override), and
+`drafting` → `voting` (a contested-slot vote) → `locked` for the winner, while
+the losing options are removed (or back to `drafting` if the vote is
+cancelled). An item in a vote cannot be moved, removed or locked.
 
 ### Client → server
 
@@ -285,6 +357,10 @@ Lifecycle: `drafting` → `locked` (Leader) → `drafting` (Leader override).
 | `trip.chat.typing` | Viewer, not muted | `{ isTyping }` | `{}` |
 | `trip.chat.react` | Viewer | `{ messageId, emoji }` (toggles on/off) | `{ reactions }` |
 | `trip.chat.history` | Viewer | `{ before?: ISO time, limit?: 1-100 }` | `{ messages }` (oldest first) |
+| `trip.vote.open` | Leader | `{ itemIds: [2-6 ids], durationSeconds?: 10-3600 }` (items must compete for the same slot) | `{ vote }` |
+| `trip.vote.cast` | Viewer | `{ voteId, itemId }` (one ballot each; casting again changes it) | `{ vote }` |
+| `trip.vote.cancel` | Leader \* | `{ voteId }` | `{}` |
+| `trip.ai.ask` | Viewer | same body as `POST /trips/{id}/ai/ask` | `{ result }` (same as the REST response) |
 | `trip.mod.mute` | Leader \* | `{ userId, muted }` | `{}` |
 | `trip.mod.remove` | Leader \* | `{ userId }` | `{}` |
 | `trip.mod.lockRoom` | Leader \* | `{ locked }` | `{}` |
@@ -316,8 +392,15 @@ Re-sending with the same `clientMsgId` returns the original message
 
 | Event | Sent to | Payload |
 |---|---|---|
-| `trip.sync.state` | the new connection | full snapshot: `{ trip, me: { userId, role, muted }, items[], budget, participants[], onlineCount, leader, chat[] (last 50), serverTime }` |
-| `trip.board.update` | room | `{ action, itemId, dayIndex, startTime, endTime, lifecycleStage, positionVersion, item, byUserId }`; `action` is `pinned`, `moved`, `locked`, `unlocked` or `removed` (`removed` carries only `itemId`, `positionVersion` and `byUserId`) |
+| `trip.sync.state` | the new connection | full snapshot: `{ trip, me: { userId, role, muted }, items[], budget, participants[], onlineCount, leader, conflicts[], votes[], chat[] (last 50), serverTime }` |
+| `trip.board.update` | room | `{ action, itemId, dayIndex, startTime, endTime, lifecycleStage, positionVersion, item, byUserId }`; `action` is `pinned`, `moved`, `locked`, `unlocked`, `voting`, `vote_won`, `vote_cancelled` or `removed` (`removed` carries only `itemId`, `positionVersion`, `byUserId` and, for a lost vote, `reason: "lost_vote"`) |
+| `trip.board.conflict` | room | `{ conflictId, conflictType: overlap\|budgetBreach\|hours, itemIds, details: { message, ... }, status: "open", detectedAt }` |
+| `trip.board.conflictResolved` | room | `{ conflictId, conflictType, itemIds, resolvedAt }` |
+| `trip.vote.open` | room | `{ voteId, itemId, itemIds, candidates: [{ itemId, venueId, name }], candidateVenueIds, openedByUserId (null = the system), closesAt, status, ballotCount, tally }` |
+| `trip.vote.cast` | room | `{ voteId, itemId, userId, choiceVenueId, changed, ballotCount, tally }` |
+| `trip.vote.resolved` | room | `{ voteId, itemId (the winner), winningVenueId, tally, resolution: votes\|tie_earliest_pin\|no_votes_earliest_pin, removedItemIds }` |
+| `trip.vote.cancelled` | room | `{ voteId }` |
+| `trip.ai.suggestion` | room | `{ questionId, userId, displayName, question, answer, suggestedVenueId, sourceEvents, mode }` |
 | `trip.board.rejected` | the losing client | `{ itemId, reason: "VERSION_CONFLICT", message, current: item }` |
 | `trip.budget.update` | room | `{ currency, totalBudget, participantCount, perPersonCommitted, groupCommitted, remaining, overBudget, itemCount }` |
 | `trip.presence.update` | room | `{ participantId, displayName, action: "joined" or "left", participantCount (online), memberCount }` |
@@ -344,6 +427,38 @@ Re-sending with the same `clientMsgId` returns the original message
    `current` and let the user try again.
 3. Treat the `trip.board.update` broadcast as the truth. Either wait for it before
    moving the card, or move it straight away and undo the move if it is rejected.
+
+### Conflicts
+
+The server re-checks the board after every pin, move, remove, vote result,
+change of people in the trip, and change to a traveller's preferences. It
+announces each new problem once (`trip.board.conflict`), saves it in the chat
+as a `conflict` message, and announces when it goes away
+(`trip.board.conflictResolved`).
+
+| `conflictType` | `details.reason` / `scope` | When |
+|---|---|---|
+| `overlap` | `time` | two items on the same day overlap |
+| `overlap` | `travel` | the gap between consecutive items is shorter than the trip between them (walking up to 2.5 km, otherwise ~20 km/h plus 10 min waiting) |
+| `budgetBreach` | `traveller` | the board's per-person total is above a traveller's `budgetCeiling`; `itemIds` holds the item that pushed them over |
+| `budgetBreach` | `group` | the group total is above the trip's `totalBudget` |
+| `hours` | | an item is scheduled while its venue is closed |
+
+### Contested-slot votes
+
+- **The system** opens a vote by itself when two drafting items have the same
+  day and start time. **The Leader** can open one on any 2–6 drafting items
+  that overlap the same stretch of time.
+- Every participant, Viewers included, gets one ballot and can change it
+  until the vote closes.
+- The vote closes when its timer ends (`VOTE_SECONDS`, default 120 s) or as soon
+  as every participant has voted. The option with the most votes wins. A tie,
+  or no votes at all, goes to the option pinned first. The winner is locked in
+  its slot and the other options are removed, in one broadcast that every
+  client applies identically.
+- Open votes are saved. If everyone leaves the room, or the server restarts,
+  the vote is restored the next time the room opens; a vote whose time ran out
+  in the meantime closes straight away.
 
 ### Presence, reconnects and the leader
 

@@ -9,7 +9,8 @@ import { pinItem, moveItem, removeItem, lockItem, unlockItem, publicItem, ERR } 
 import { sanitizeChat, MAX_CHAT_LENGTH } from '../chat/sanitize.js';
 import { saveMessage, history, messageView, toggleReaction } from '../chat/chatService.js';
 import { HttpError, badRequest, forbidden, notFound, unauthorized } from '../lib/errors.js';
-import { bus, TRIP_CHANGED } from '../lib/bus.js';
+import { bus, TRIP_CHANGED, USER_CHANGED } from '../lib/bus.js';
+import { publicVote } from '../board/votes.js';
 import { log } from '../lib/logger.js';
 
 export const NAMESPACE = '/trips';
@@ -18,9 +19,9 @@ const qualityOf = (rttMs) => (rttMs < 150 ? 'good' : rttMs < 400 ? 'fair' : 'poo
 
 // The Trip Room namespace. One socket connection = one traveller in one room:
 //   io('/trips', { auth: { token, tripId } })
-export function attachTripNamespace(io, { config, registry }) {
+export function attachTripNamespace(io, { config, registry, actions, ask, emit }) {
   const nsp = io.of(NAMESPACE);
-  const emitRoom = (room, event, payload) => nsp.to(room.tripId).emit(event, envelope(event, room.tripId, payload));
+  const emitRoom = emit;
 
   // ---- handshake: same JWT and same membership rule as the REST API --------
   nsp.use(async (socket, next) => {
@@ -101,6 +102,8 @@ export function attachTripNamespace(io, { config, registry }) {
         participants: room.participantList(),
         onlineCount: room.presence.size,
         leader: room.leaderStatus(),
+        conflicts: room.conflicts.map((c) => ({ ...c, status: 'open' })),
+        votes: [...room.votes.values()].map(publicVote),
         chat: socket.data.chat.map((m) => messageView(m, room.names)),
         serverTime: Date.now(),
       }),
@@ -203,6 +206,7 @@ export function attachTripNamespace(io, { config, registry }) {
       boardUpdate(r, 'pinned', result.item, user.id);
       emitRoom(r, 'trip.budget.update', r.budget());
       r.markDirty(result.item._id, { immediate: true });
+      actions.afterBoardChange(r);
       return { item: publicItem(result.item) };
     });
 
@@ -211,6 +215,7 @@ export function attachTripNamespace(io, { config, registry }) {
       if (!result.ok) refuse(result);
       boardUpdate(r, 'moved', result.item, user.id);
       r.markDirty(result.item._id); // batched (spec 9.4: not on every micro-move)
+      actions.afterBoardChange(r);
       return { item: publicItem(result.item) };
     });
 
@@ -225,6 +230,7 @@ export function attachTripNamespace(io, { config, registry }) {
       });
       emitRoom(r, 'trip.budget.update', r.budget());
       r.markDeleted(result.item._id);
+      actions.afterBoardChange(r);
       return { itemId: String(result.item._id) };
     });
 
@@ -347,6 +353,7 @@ export function attachTripNamespace(io, { config, registry }) {
         finalizeLeave(r, payload.userId, { force: true });
         emitRoom(r, 'trip.participant.updated', { userId: payload.userId, removed: true, byUserId: user.id });
         emitRoom(r, 'trip.budget.update', r.budget());
+        actions.checkConflicts(r);
         await system(r, `${name} was removed from the trip`, { action: 'removed', userId: payload.userId });
         return {};
       },
@@ -395,6 +402,37 @@ export function attachTripNamespace(io, { config, registry }) {
       },
     );
 
+    // ---- contested-slot voting (spec 6.2) ---------------------------------
+    const voteFail = (result) => {
+      throw new HttpError(result.code === 'VOTE_NOT_FOUND' ? 404 : 409, result.code, result.message);
+    };
+
+    on('trip.vote.open', { schema: schemas.voteOpen, min: 'leader' }, ({ payload, room: r }) => {
+      const result = actions.startVote(r, {
+        itemIds: payload.itemIds,
+        openedByUserId: user.id,
+        durationSeconds: payload.durationSeconds ?? config.voteSeconds,
+      });
+      if (!result.ok) voteFail(result);
+      return { vote: result.vote };
+    });
+
+    // Viewers vote too: spec 5.1 lets the leader give some people "vote only".
+    on('trip.vote.cast', { schema: schemas.voteCast }, ({ payload, room: r }) => {
+      const result = actions.cast(r, { voteId: payload.voteId, userId: user.id, itemId: payload.itemId });
+      if (!result.ok) voteFail(result);
+      return { vote: result.vote };
+    });
+
+    on('trip.vote.cancel', { schema: schemas.voteCancel, min: 'leader', sensitive: true }, ({ payload, room: r }) => {
+      const result = actions.cancel(r, payload.voteId);
+      if (!result.ok) voteFail(result);
+      return {};
+    });
+
+    // ---- AI Concierge ------------------------------------------------------
+    on('trip.ai.ask', { schema: schemas.aiAsk }, async ({ payload, room: r }) => ({ result: await ask(r, user, payload) }));
+
     // ---- leaving -----------------------------------------------------------
     socket.on('disconnect', () => {
       const r = registry.get(tripId);
@@ -441,11 +479,33 @@ export function attachTripNamespace(io, { config, registry }) {
     try {
       await room.reloadTrip();
       emitRoom(room, 'trip.participants.update', { participants: room.participantList(), budget: room.budget() });
+      actions.checkConflicts(room);
     } catch (err) {
       log.error('room.reload_failed', { tripId, error: err.message });
     }
   };
   bus.on(TRIP_CHANGED, onTripChanged);
 
-  return { nsp, dispose: () => bus.off(TRIP_CHANGED, onTripChanged) };
+  // A traveller changed their dietary needs or budget ceiling.
+  const onUserChanged = async ({ userId }) => {
+    for (const room of registry.rooms.values()) {
+      if (!room.participants.has(userId)) continue;
+      try {
+        await room.loadNames();
+        emitRoom(room, 'trip.participants.update', { participants: room.participantList(), budget: room.budget() });
+        actions.checkConflicts(room);
+      } catch (err) {
+        log.error('room.reload_failed', { tripId: room.tripId, error: err.message });
+      }
+    }
+  };
+  bus.on(USER_CHANGED, onUserChanged);
+
+  return {
+    nsp,
+    dispose: () => {
+      bus.off(TRIP_CHANGED, onTripChanged);
+      bus.off(USER_CHANGED, onUserChanged);
+    },
+  };
 }

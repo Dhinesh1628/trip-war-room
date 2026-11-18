@@ -158,3 +158,87 @@ now run in parallel, and joining takes about 200 ms. The room's own operations
 **Budget totals are a placeholder until Phase 4.** The live panel currently
 assumes everyone attends everything (an even split), computed in integer cents.
 Phase 4 replaces it with the full engine (weighted splits, per-person totals).
+
+## Phase 3
+
+**The rules decide; Claude only writes the sentence.** The Concierge is a
+pipeline: read the question → apply the hard rules → rank → phrase. Only the
+last step uses the LLM. So every suggestion satisfies every active constraint
+whatever the model writes (spec 6.2, 14.2: "enforced in code"). Claude gets only
+the top 5 venues that passed, and structured output (`output_config.format`
+with a JSON schema) restricts `suggestedVenueId` and `citedVenueIds` to those
+ids, so it cannot name a venue that failed or doesn't exist.
+
+**Every reply is fact-checked before it is used.** Even with the ids locked
+down, free text could still contain an invented price or time. The server checks
+the reply: every `$` amount, every time (24-hour or "8 pm"), every "N-minute walk"
+and every dataset venue name it mentions must appear in the facts Claude was
+given. If anything fails, the deterministic template answer is used instead and
+`fallbackReason: "ungrounded"` is recorded. The same fallback covers no API
+key, timeouts, refusals, cut-off replies and API errors, so the Concierge
+always answers, and always truthfully.
+
+**Questions are read with rules, not with the LLM.** Turning "under $25",
+"vegan", "near our 5 PM tour" or "within 500 m" into constraints is done with
+small, tested patterns (`src/concierge/interpret.js`). An LLM extraction step
+would add a second model call (blowing the 3-second budget) and make the
+constraints themselves unpredictable. The trade-off is that unusual phrasing
+may be missed. When the question names nothing, the request body can pass
+`category`, `maxPricePerPerson`, `dietaryTags`, `time`, `anchorItemId` and so
+on explicitly.
+
+**Interpreting the spec's rules:**
+- *Budget ceiling:* the question's price wins; otherwise the asker's
+  remaining `budgetCeiling`; otherwise the group's remaining budget per person.
+- *`budgetCeiling` is a whole-trip ceiling per traveller.* Spec 5.3 talks about
+  a pinned item pushing "any traveller's running total over their declared
+  ceiling", so the ceiling has to be a total, not a per-item limit. (Phase 1
+  described it as per item; that is corrected here.)
+- *Dietary:* the tags of everyone in the trip (until Phase 4 adds per-item
+  attendance, everyone attends everything), plus any in the question. Only
+  food and drink venues are checked. A tag must match exactly; for example a
+  vegan venue does not automatically count as vegetarian unless it is tagged so.
+- *Hours with a buffer:* "near/after our tour" means the visit starts 30 min
+  after the anchor ends ("before" means it ends 30 min before the anchor
+  starts) and lasts a typical time for the category (dinner 90 min, lunch 60,
+  ...). The venue must be open for the whole visit. Venues open past midnight
+  are handled.
+- *Proximity:* only when the question refers to something on the board.
+  Without an anchor every venue scores the same 40% proximity share, and
+  ranking falls to rating and headroom.
+- *Ranking:* rating/popularity is 75% the rating and 25% the log of the review
+  count (so a 5,000-review 4.5 doesn't lose to a 3-review 4.6).
+
+**Model choice: `claude-opus-5-5` at `low` effort.** It's the current default
+model. The task is short phrasing from supplied facts, so low effort is
+enough, and thinking can't be switched off on this model. `CONCIERGE_MODEL`
+and `CONCIERGE_EFFORT` can change it. The call has a 2.5 s timeout and no
+retries, so the 3 s P95 target (spec 10.2) holds even when the API is slow:
+a slow reply is replaced by the template answer, and the fallback is logged.
+The request also opts into server-side refusal fallbacks
+(`fallbacks: "default"`), so a safety-classifier decline is retried on a
+recommended fallback model within the same call.
+
+**Cost control.** Claude is not called when nothing passes the rules, each
+traveller is limited to 20 questions a minute, and the prompt only carries
+the top 5 candidates (a few kilobytes of JSON; real token counts are logged
+with every answer as `inputTokens` / `outputTokens`).
+
+**Conflict detector.** A pure function over the board and the travellers,
+re-run after every change. Each conflict has a stable id, so it is announced
+once when it appears and once when it is resolved. Besides the spec's two types
+(time overlap, budget breach), it flags two problems that the spec's "overlapping
+in time or location" points at: not enough time to travel between consecutive
+items, and an item scheduled while its venue is closed. Flags are broadcast
+synchronously after the change (19 ms at most over 20 tests, against the
+1-second target) and also saved as `conflict` chat messages for the analytics in Phase 4.
+
+**Voting.** Spec 6.2 says the system opens a vote "when two items are pinned
+to the same slot": this is read as same day and same start time. The leader can
+open a vote on any items that overlap. Viewers can vote (spec 5.1: some people
+"only vote"). The vote closes when its timer ends or everyone has voted. A tie,
+or no votes, goes to the option pinned first, so the outcome is always
+deterministic. The winner is locked (finalised by the group) and the other
+options are removed. Open votes are saved and restored when a room reloads.
+Votes are not frozen while the leader is away, because only lock/unlock (the
+leader's own finalise actions) are.

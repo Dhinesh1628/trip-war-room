@@ -6,11 +6,13 @@ tracks a shared budget, chats, and asks an AI Concierge questions that are
 answered only from a locally authored venue dataset and always obey the
 group's budget, dietary, opening-hours and distance constraints.
 
-> Status: **Phase 2 done.** Auth, four-role access control, the Lisbon venue
-> dataset, trips and invites, plus the live board: pin, move, lock, conflict
-> handling for simultaneous moves, presence, chat, reconnects and leader
-> moderation over WebSockets. The AI Concierge comes in Phase 3 and the full UI
-> in Phase 5 (see [Roadmap](#roadmap)).
+> Status: **Phase 3 done.** Auth, four-role access control, the Lisbon venue
+> dataset, trips and invites; the live board (pin, move, lock, conflict
+> handling for simultaneous moves, presence, chat, reconnects, leader
+> moderation); and the AI Concierge (rule-checked suggestions with cited
+> sources, a conflict detector, and contested-slot voting). The budget engine
+> and recommendations come in Phase 4 and the full UI in Phase 5 (see
+> [Roadmap](#roadmap)).
 
 Docs: [API reference](docs/API.md) · [Decisions and deviations](docs/DECISIONS.md) ·
 [Postman collection](docs/postman/trip-war-room.postman_collection.json)
@@ -34,8 +36,10 @@ trip-war-room/
     src/board/      board state machine, in-memory rooms, background saving
     src/chat/       chat messages, cleaning, reactions
     src/realtime/   Board Sync Gateway: /trips namespace and event handlers
+    src/concierge/  AI Concierge: question reading, hard-rule matcher, ranking,
+                    grounded answers (Claude or template), conflict detector
     data/destinations/  authored venue datasets (lisbon.json)
-    scripts/        seed, make-admin, smoke test, live room demo, dev:memory
+    scripts/        seed, make-admin, smoke test, live room demo, Concierge eval, dev:memory
     test/           Jest tests (use an in-memory MongoDB, no setup needed)
   client/   React app (Vite dev server proxies /api and /socket.io)
 ```
@@ -68,6 +72,11 @@ trip-war-room/
      `node -e "console.log(require('crypto').randomBytes(48).toString('hex'))"`
    - If Atlas fails with `querySrv ECONNREFUSED` (common on Windows), uncomment
      `DNS_SERVERS=8.8.8.8,1.1.1.1`.
+   - Optional: `ANTHROPIC_API_KEY` (from <https://platform.claude.com>) lets
+     Claude write the Concierge's answers. Without it the Concierge still
+     works: it gives the same rule-checked suggestions, worded with a fixed
+     template. Each question with at least one matching venue is one paid API
+     call (`claude-opus-5-5`, low effort).
 
    `.env` is git-ignored. Never commit real secrets.
 
@@ -136,6 +145,9 @@ What the suites cover:
 | `dataset.test.js` | the Lisbon data covers every constraint type; bad uploads are rejected with clear messages |
 | `boardState.test.js` | the board state machine on its own: lifecycle, version checks, exact budget cents, chat cleaning |
 | `realtime.test.js` | real Socket.io clients: handshake auth, snapshots, sync under 100 ms, 20 rounds of simultaneous moves, locks, leader disconnect, presence and reconnects, chat, moderation |
+| `constraints.test.js` | **100% constraint compliance**: 379 simulated Concierge requests checked against an independent re-implementation of the four rules; opening hours past midnight; the 40/30/30 ranking |
+| `concierge.unit.test.js` | reading questions, the grounding check, the Claude call (with a fake client: request shape, and falling back on bad ids, invented prices, refusals, timeouts), the conflict detector, voting rules |
+| `concierge.test.js` | end to end: the spec's example question over REST and WebSocket, room broadcast, declines, rate limit, conflicts flagged within 1 s (20 tries), budget breaches, votes resolving identically for every client |
 | `health.test.js`, `gateway.test.js` | health checks, config safety, WebSocket ping/pong |
 
 ### Smoke test against a running server
@@ -162,6 +174,20 @@ Three scripted travellers join one Trip Room. Two of them drag the same card at
 the same moment (one wins, the other is told), the leader locks a card, and
 someone chats. The script prints what each traveller saw, then the measured
 sync drift and whether all three boards agree.
+
+### Concierge evaluation
+
+With the server running:
+
+```bash
+npm run eval:concierge --prefix server
+```
+
+It creates a trip, pins a 5 PM walking tour, asks 12 fixed questions, and
+re-checks every suggestion against the venue data. It prints each answer, the
+answer mode (`llm`, `template` or `no_match`), the constraint compliance and the
+end-to-end latency (median and P95). **If `ANTHROPIC_API_KEY` is set, a run
+makes about 11 paid Claude API calls.**
 
 ### Postman
 

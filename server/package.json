@@ -14,10 +14,12 @@
     "make-admin": "node --env-file=.env scripts/make-admin.js",
     "smoke": "node scripts/smoke.js",
     "demo:room": "node scripts/demo-room.js",
+    "eval:concierge": "node scripts/eval-concierge.js",
     "start": "node src/server.js",
     "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js --runInBand"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^1.10.0",
     "bcryptjs": "^3.0.3",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.6",

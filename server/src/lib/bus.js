@@ -8,3 +8,4 @@ export const bus = new EventEmitter();
 bus.setMaxListeners(50);
 
 export const TRIP_CHANGED = 'trip.changed'; // payload: { tripId, reason }
+export const USER_CHANGED = 'user.changed'; // payload: { userId } (name or preferences changed)

@@ -2,11 +2,17 @@ import { Server } from 'socket.io';
 import { envelope } from './envelope.js';
 import { RoomRegistry } from '../board/room.js';
 import { attachTripNamespace, NAMESPACE } from './tripNamespace.js';
+import { roomActions } from './roomActions.js';
+import { createLlmClient } from '../concierge/answer.js';
+import { askConcierge, rateLimitAsk } from '../concierge/concierge.js';
+import { saveMessage, messageView } from '../chat/chatService.js';
 
 // Board Sync Gateway. Kept separate from the REST app so the two could be
 // scaled independently later (spec 9.4).
 //  - default namespace "/": only the latency ping/pong (used by the status page)
 //  - "/trips": one connection per traveller per Trip Room (board, chat, presence)
+// The AI Concierge Engine is a separate module (src/concierge) that both the
+// gateway and the REST API call.
 export function createGateway(httpServer, config) {
   const io = new Server(httpServer, {
     cors: { origin: config.clientOrigin, credentials: true },
@@ -15,6 +21,8 @@ export function createGateway(httpServer, config) {
 
   const startedAt = Date.now();
   const registry = new RoomRegistry({ flushIntervalMs: config.flushIntervalMs });
+  // Tests inject a fake client as config.llm; otherwise one is made from the API key.
+  const llm = config.llm !== undefined ? config.llm : createLlmClient(config);
 
   io.on('connection', (socket) => {
     // trip.sync.ping { clientSentAt } -> trip.sync.pong { clientSentAt, serverReceivedAt }
@@ -28,7 +36,47 @@ export function createGateway(httpServer, config) {
     });
   });
 
-  const trips = attachTripNamespace(io, { config, registry });
+  const nsp = io.of(NAMESPACE);
+  const emit = (room, event, payload) => nsp.to(room.tripId).emit(event, envelope(event, room.tripId, payload));
+  const actions = roomActions({ emit, config });
+  registry.onOpen = actions.onRoomOpen;
+
+  const askLog = new Map(); // userId -> recent question times
+
+  // Answers a Concierge question and shares the answer with the whole room.
+  async function ask(room, user, body) {
+    rateLimitAsk(askLog, user.id, config.conciergeRateLimit);
+    const { question, userId: _ignored, ...explicit } = body;
+    const result = await askConcierge({ room, userId: user.id, question, explicit, llm, config });
+    emit(room, 'trip.ai.suggestion', {
+      questionId: result.questionId,
+      userId: user.id,
+      displayName: room.names.get(user.id) ?? user.name,
+      question: result.question,
+      answer: result.answer,
+      suggestedVenueId: result.suggestedVenueId,
+      sourceEvents: result.sourceEvents,
+      mode: result.mode,
+    });
+    const { doc } = await saveMessage({
+      tripId: room.tripId,
+      type: 'ai_answer',
+      body: result.answer,
+      meta: {
+        questionId: result.questionId,
+        askedBy: user.id,
+        question: result.question,
+        suggestedVenueId: result.suggestedVenueId,
+        sourceEvents: result.sourceEvents,
+        mode: result.mode,
+        latencyMs: result.latencyMs,
+      },
+    });
+    emit(room, 'trip.chat.message', messageView(doc, room.names));
+    return result;
+  }
+
+  const trips = attachTripNamespace(io, { config, registry, actions, ask, emit });
 
   function health() {
     return {
@@ -36,6 +84,7 @@ export function createGateway(httpServer, config) {
       connectedClients: io.engine.clientsCount,
       openRooms: registry.rooms.size,
       tripConnections: io.of(NAMESPACE).sockets.size,
+      concierge: llm ? 'claude' : 'template',
       uptimeSeconds: Math.round((Date.now() - startedAt) / 1000),
     };
   }
@@ -47,5 +96,5 @@ export function createGateway(httpServer, config) {
     io.close();
   }
 
-  return { io, health, registry, shutdown };
+  return { io, health, registry, actions, ask, shutdown };
 }

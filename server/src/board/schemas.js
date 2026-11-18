@@ -1,6 +1,7 @@
 import mongoose from 'mongoose';
 import { z } from 'zod';
 import { REACTIONS } from '../chat/chatMessage.model.js';
+import { DIETARY_TAGS, VENUE_CATEGORIES } from '../venues/vocabulary.js';
 
 // Payload rules for every client -> server WebSocket event.
 const TIME = /^([01]\d|2[0-3]):[0-5]\d$/;
@@ -13,6 +14,26 @@ const slot = {
   startTime: time,
   endTime: time,
 };
+// A Concierge question (REST body and WebSocket payload). The optional fields
+// override what is read from the question text.
+export function concierge() {
+  return z
+    .object({
+      question: z.string().min(1).max(2000),
+      anchorItemId: objectId('anchorItemId').optional(),
+      category: z.enum(VENUE_CATEGORIES).optional(),
+      maxPricePerPerson: z.number().min(0).max(100000).optional(),
+      dietaryTags: z.array(z.enum(DIETARY_TAGS)).max(DIETARY_TAGS.length).optional(),
+      time: time.optional(),
+      dayIndex: z.number().int().min(0).max(60).optional(),
+      radiusKm: z.number().positive().max(50).optional(),
+      // Accepted for compatibility with the spec's example body; the server
+      // always uses the caller's own id from the token.
+      userId: z.string().max(64).optional(),
+    })
+    .strict();
+}
+
 const slotOrder = (s) => s.startTime < s.endTime;
 const slotOrderMsg = { message: 'endTime must be after startTime (items cannot run past midnight)', path: ['endTime'] };
 
@@ -43,6 +64,17 @@ export const schemas = {
   syncPing: z.object({ clientSentAt: z.number() }).strict(),
   syncReport: z.object({ rttMs: z.number().min(0).max(60000) }).strict(),
   authRenew: z.object({ token: z.string().min(10) }).strict(),
+
+  voteOpen: z
+    .object({
+      itemIds: z.array(objectId('itemId')).min(2).max(6),
+      durationSeconds: z.number().int().min(10).max(3600).optional(),
+    })
+    .strict(),
+  voteCast: z.object({ voteId: objectId('voteId'), itemId: objectId('itemId') }).strict(),
+  voteCancel: z.object({ voteId: objectId('voteId') }).strict(),
+
+  aiAsk: concierge(),
 
   mute: z.object({ userId: objectId('userId'), muted: z.boolean() }).strict(),
   removeParticipant: z.object({ userId: objectId('userId') }).strict(),

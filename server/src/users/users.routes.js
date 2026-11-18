@@ -4,9 +4,11 @@ import { User } from '../auth/user.model.js';
 import { requireAuth } from '../auth/middleware.js';
 import { validate } from '../lib/validate.js';
 import { DIETARY_TAGS } from '../venues/vocabulary.js';
+import { bus, USER_CHANGED } from '../lib/bus.js';
 
-// Travellers declare dietary needs and a per-item budget ceiling here; the AI
-// Concierge and conflict detector read them (Phase 3).
+// Travellers declare dietary needs and a budget ceiling here. budgetCeiling is
+// the most this traveller wants to spend in total on the trip's itinerary
+// (USD, per person). The Concierge and the conflict detector read both.
 const updateMeSchema = z
   .object({
     displayName: z.string().trim().min(1).max(60).optional(),
@@ -35,6 +37,7 @@ export function usersRouter(config) {
     if (preferences?.budgetCeiling !== undefined) set['preferences.budgetCeiling'] = preferences.budgetCeiling;
 
     const user = await User.findByIdAndUpdate(req.user.id, { $set: set }, { returnDocument: 'after', runValidators: true });
+    bus.emit(USER_CHANGED, { userId: req.user.id });
     res.json({ user: user.toPublic() });
   });
 

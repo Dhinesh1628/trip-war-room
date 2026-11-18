@@ -37,5 +37,15 @@ export function loadConfig(env = process.env) {
     // Moves are saved in batches at most this often (pins, removes, locks are saved at once).
     flushIntervalMs: env.FLUSH_INTERVAL_MS !== undefined ? Number(env.FLUSH_INTERVAL_MS) : 250,
     chatHistoryLimit: Number(env.CHAT_HISTORY_LIMIT) || 50,
+    // AI Concierge. With no key, answers use the deterministic template.
+    anthropicApiKey: env.ANTHROPIC_API_KEY || null,
+    conciergeModel: env.CONCIERGE_MODEL || 'claude-opus-5-5',
+    conciergeEffort: env.CONCIERGE_EFFORT || 'low',
+    // Spec target is < 3 s end to end; past this the template answer is used.
+    conciergeTimeoutMs: Number(env.CONCIERGE_TIMEOUT_MS) || 2500,
+    // Max Concierge questions per traveller per minute (cost control).
+    conciergeRateLimit: Number(env.CONCIERGE_RATE_LIMIT) || 20,
+    // Default length of a contested-slot vote.
+    voteSeconds: Number(env.VOTE_SECONDS) || 120,
   };
 }

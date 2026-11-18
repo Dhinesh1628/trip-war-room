@@ -11,6 +11,7 @@ import { findDestination } from '../venues/venues.routes.js';
 import { validate, assertObjectId } from '../lib/validate.js';
 import { badRequest, conflict, forbidden, notFound, HttpError } from '../lib/errors.js';
 import { bus, TRIP_CHANGED } from '../lib/bus.js';
+import { concierge } from '../board/schemas.js';
 
 const MAX_TRIP_DAYS = 30;
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -107,7 +108,7 @@ async function withUniqueInviteCode(fn) {
   throw new Error('Could not generate a unique invite code');
 }
 
-export function tripsRouter(config) {
+export function tripsRouter(config, { gateway } = {}) {
   const router = express.Router();
   router.use(requireAuth(config));
 
@@ -252,6 +253,22 @@ export function tripsRouter(config) {
     await trip.save();
     bus.emit(TRIP_CHANGED, { tripId: String(trip._id), reason: 'settings' });
     res.json({ trip: await tripView(trip, req.user, config) });
+  });
+
+  // Spec 7.3.3: ask the AI Concierge. Viewer+ (any participant). The answer is
+  // also broadcast to the room (trip.ai.suggestion) and saved in the chat.
+  router.post('/:id/ai/ask', validate(concierge()), async (req, res) => {
+    if (!gateway) throw new HttpError(503, 'UNAVAILABLE', 'The Concierge is not running');
+    const { trip } = await loadTripWithRole(req.params.id, req.user, 'viewer');
+    const room = await gateway.registry.open(String(trip._id));
+    room.pendingJoins += 1; // keep the room open for the duration of the question
+    try {
+      const result = await gateway.ask(room, req.user, req.valid.body);
+      res.json(result);
+    } finally {
+      room.pendingJoins -= 1;
+      gateway.registry.close(room.tripId); // only closes if nobody is connected
+    }
   });
 
   // Leader only: replace the invite code (the old one stops working).

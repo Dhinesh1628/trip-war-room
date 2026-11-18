@@ -3,11 +3,14 @@ import { ItineraryItem } from './itineraryItem.model.js';
 import { Trip } from '../trips/trip.model.js';
 import { User } from '../auth/user.model.js';
 import { Venue } from '../venues/venue.model.js';
+import { Destination } from '../venues/destination.model.js';
+import { Vote } from './vote.model.js';
 import { budgetSummary } from './budgetSummary.js';
 import { sortedItems } from './boardState.js';
 import { log } from '../lib/logger.js';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
+const strip = ({ _id, date, month, ...rest }) => rest;
 const dayCountOf = (trip) =>
   (Date.parse(`${trip.endDate}T00:00:00Z`) - Date.parse(`${trip.startDate}T00:00:00Z`)) / DAY_MS + 1;
 
@@ -17,12 +20,17 @@ const dayCountOf = (trip) =>
 //  - moves are batched and saved at most every `flushIntervalMs`.
 // Saves are serialised through one promise chain, so they land in order.
 export class Room {
-  constructor({ trip, items, venues, names, flushIntervalMs }) {
+  constructor({ trip, items, venues, names, flushIntervalMs, weather = null, votes = [] }) {
     this.tripId = String(trip._id);
     this.correlationId = `room_${this.tripId.slice(-6)}_${crypto.randomBytes(3).toString('hex')}`;
     this.items = new Map(items.map((i) => [String(i._id), i]));
     this.venues = venues; // Map venueId -> venue (this destination only)
     this.names = names; // Map userId -> displayName
+    this.travellers = new Map(); // userId -> { dietaryTags, budgetCeiling }
+    this.weather = weather; // { monthly, daily } for the destination
+    this.votes = new Map(votes.map((v) => [String(v._id), v])); // open votes
+    this.voteTimers = new Map();
+    this.conflicts = []; // current conflicts (see concierge/conflicts.js)
     this.flushIntervalMs = flushIntervalMs;
     // userId -> { sockets: Set<socketId>, rttMs, quality, leaveTimer }
     this.presence = new Map();
@@ -63,10 +71,58 @@ export class Room {
     return trip;
   }
 
+  // Names and declared preferences of everyone in the trip.
   async loadNames() {
     const ids = [...this.participants.keys()];
-    const users = await User.find({ _id: { $in: ids } }).select('displayName').lean();
+    const users = await User.find({ _id: { $in: ids } }).select('displayName preferences').lean();
     this.names = new Map(users.map((u) => [String(u._id), u.displayName]));
+    this.travellers = new Map(
+      users.map((u) => [
+        String(u._id),
+        { dietaryTags: u.preferences?.dietaryTags ?? [], budgetCeiling: u.preferences?.budgetCeiling ?? null },
+      ]),
+    );
+  }
+
+  get participantIds() {
+    return [...this.participants.keys()];
+  }
+
+  // Forecast for a trip day: the daily forecast if there is one, else the
+  // month's normal. Returns null when there is no weather data.
+  weatherFor(dayIndex) {
+    if (dayIndex == null || !this.weather) return null;
+    const date = new Date(Date.parse(`${this.trip.startDate}T00:00:00Z`) + dayIndex * DAY_MS).toISOString().slice(0, 10);
+    const daily = this.weather.daily?.find((d) => d.date === date);
+    if (daily) return { date, source: 'forecast', ...strip(daily) };
+    const month = Number(date.slice(5, 7));
+    const normal = this.weather.monthly?.find((m) => m.month === month);
+    return normal ? { date, source: 'monthly_normal', ...strip(normal) } : null;
+  }
+
+  // Saves a vote (whole document), in order with the item saves.
+  saveVote(vote) {
+    const doc = {
+      _id: vote._id,
+      tripId: this.tripId,
+      itemIds: vote.itemIds,
+      candidates: vote.candidates,
+      openedByUserId: vote.openedByUserId,
+      closesAt: vote.closesAt,
+      ballots: Object.fromEntries(vote.ballots),
+      status: vote.status,
+      winnerItemId: vote.winnerItemId ?? null,
+      winningVenueId: vote.winningVenueId ?? null,
+      tally: vote.tally ?? {},
+      resolvedAt: vote.resolvedAt ?? null,
+      resolution: vote.resolution ?? null,
+    };
+    this.saving = this.saving.then(() =>
+      Vote.replaceOne({ _id: vote._id }, doc, { upsert: true }).catch((err) =>
+        log.error('vote.save_failed', { tripId: this.tripId, correlationId: this.correlationId, error: err.message }),
+      ),
+    );
+    return this.saving;
   }
 
   async reloadVenues() {
@@ -218,9 +274,11 @@ export class RoomRegistry {
           try {
             const trip = await Trip.findById(key);
             if (!trip) return null;
-            const [items, venues] = await Promise.all([
+            const [items, venues, destination, votes] = await Promise.all([
               ItineraryItem.find({ tripId: key }).lean(),
               Venue.find({ destination: trip.destination }),
+              Destination.findOne({ slug: trip.destination }).select('weather').lean(),
+              Vote.find({ tripId: key, status: 'open' }).lean(),
             ]);
             const room = new Room({
               trip,
@@ -228,8 +286,16 @@ export class RoomRegistry {
               venues: new Map(venues.map((v) => [v._id, v.toPublic()])),
               names: new Map(),
               flushIntervalMs: this.flushIntervalMs,
+              weather: destination?.weather ?? null,
+              votes: votes.map((v) => ({
+                ...v,
+                itemIds: v.itemIds.map(String),
+                ballots: new Map(Object.entries(v.ballots ?? {})),
+              })),
             });
             await room.loadNames();
+            // The gateway decides what to do with restored votes and conflicts.
+            this.onOpen?.(room);
             this.rooms.set(key, room);
             log.info('room.opened', { tripId: key, correlationId: room.correlationId, items: items.length });
             return room;
@@ -246,6 +312,8 @@ export class RoomRegistry {
     const room = this.rooms.get(String(tripId));
     if (!room || room.presence.size > 0 || room.pendingJoins > 0) return;
     this.rooms.delete(String(tripId));
+    for (const timer of room.voteTimers.values()) clearTimeout(timer);
+    room.voteTimers.clear();
     const done = room.drain().finally(() => this.closing.delete(String(tripId)));
     this.closing.set(String(tripId), done);
     await done;

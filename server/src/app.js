@@ -12,7 +12,7 @@ import { adminRouter } from './admin/admin.routes.js';
 
 // Builds the REST API. `gatewayHealth` is passed in so the API can report on
 // the real-time gateway without importing it (keeps the layers separate).
-export function createApp(config, { gatewayHealth = () => null } = {}) {
+export function createApp(config, { gatewayHealth = () => null, gateway = null } = {}) {
   const app = express();
 
   app.disable('x-powered-by');
@@ -40,7 +40,7 @@ export function createApp(config, { gatewayHealth = () => null } = {}) {
   api.use('/auth', authRouter(config));
   api.use('/users', usersRouter(config));
   api.use('/destinations', destinationsRouter(config));
-  api.use('/trips', tripsRouter(config));
+  api.use('/trips', tripsRouter(config, { gateway }));
   api.use('/admin', adminRouter(config));
 
   app.use('/api/v1', api);
