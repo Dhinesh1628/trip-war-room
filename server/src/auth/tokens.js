@@ -20,7 +20,7 @@ export function signAccessToken(user, config) {
   });
 }
 
-// Returns { id, role, name } or throws a 401. Used by both REST and WebSocket.
+// Returns { id, role, name, exp } or throws a 401. Used by both REST and WebSocket.
 export function verifyAccessToken(token, config) {
   if (!token) throw unauthorized();
   try {
@@ -29,7 +29,7 @@ export function verifyAccessToken(token, config) {
       audience: AUDIENCE,
       algorithms: ['HS256'],
     });
-    return { id: claims.sub, role: claims.role, name: claims.name };
+    return { id: claims.sub, role: claims.role, name: claims.name, exp: claims.exp };
   } catch (err) {
     if (err.name === 'TokenExpiredError') {
       throw unauthorized('Access token expired', 'TOKEN_EXPIRED');

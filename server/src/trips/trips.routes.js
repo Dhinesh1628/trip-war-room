@@ -9,7 +9,8 @@ import { atLeast, effectiveTripRole } from '../auth/roles.js';
 import { requireAuth } from '../auth/middleware.js';
 import { findDestination } from '../venues/venues.routes.js';
 import { validate, assertObjectId } from '../lib/validate.js';
-import { badRequest, conflict, forbidden, notFound } from '../lib/errors.js';
+import { badRequest, conflict, forbidden, notFound, HttpError } from '../lib/errors.js';
+import { bus, TRIP_CHANGED } from '../lib/bus.js';
 
 const MAX_TRIP_DAYS = 30;
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -78,8 +79,10 @@ async function tripView(trip, user, config) {
       displayName: names[String(p.userId)] ?? 'Unknown traveller',
       role: p.role,
       joinedAt: p.joinedAt,
+      muted: Boolean(p.muted),
     })),
     participantCount: trip.participants.length,
+    roomLocked: Boolean(trip.roomLocked),
     settings: {
       maxParticipants: trip.settings.maxParticipants,
       defaultJoinRole: trip.settings.defaultJoinRole,
@@ -180,6 +183,10 @@ export function tripsRouter(config) {
     if (existing.participants.some((p) => p.userId.equals(userId))) {
       return res.json({ joined: false, alreadyMember: true, trip: await tripView(existing, req.user, config) });
     }
+    if (existing.removedUserIds.some((id) => id.equals(userId))) {
+      throw forbidden('The trip leader removed you from this trip');
+    }
+    if (existing.roomLocked) throw new HttpError(403, 'ROOM_LOCKED', 'The trip leader has locked this room');
 
     // Capacity check and insert in ONE atomic update, so two people taking
     // the last seat at the same moment cannot both get in.
@@ -187,6 +194,8 @@ export function tripsRouter(config) {
       {
         _id: existing._id,
         'participants.userId': { $ne: userId },
+        removedUserIds: { $ne: userId },
+        roomLocked: { $ne: true },
         $expr: { $lt: [{ $size: '$participants' }, '$settings.maxParticipants'] },
       },
       { $push: { participants: { userId, role: existing.settings.defaultJoinRole, joinedAt: new Date() } } },
@@ -197,8 +206,13 @@ export function tripsRouter(config) {
       if (fresh.participants.some((p) => p.userId.equals(userId))) {
         return res.json({ joined: false, alreadyMember: true, trip: await tripView(fresh, req.user, config) });
       }
+      if (fresh.roomLocked) throw new HttpError(403, 'ROOM_LOCKED', 'The trip leader has locked this room');
+      if (fresh.removedUserIds.some((id) => id.equals(userId))) {
+        throw forbidden('The trip leader removed you from this trip');
+      }
       throw conflict('ROOM_FULL', `This trip is full (${fresh.settings.maxParticipants} travellers max)`);
     }
+    bus.emit(TRIP_CHANGED, { tripId: String(trip._id), reason: 'joined' });
     res.status(201).json({ joined: true, alreadyMember: false, trip: await tripView(trip, req.user, config) });
   });
 
@@ -218,6 +232,7 @@ export function tripsRouter(config) {
     }
     target.role = req.valid.body.role;
     await trip.save();
+    bus.emit(TRIP_CHANGED, { tripId: String(trip._id), reason: 'role' });
     res.json({ trip: await tripView(trip, req.user, config) });
   });
 
@@ -235,6 +250,7 @@ export function tripsRouter(config) {
     }
     Object.assign(trip.settings, changes);
     await trip.save();
+    bus.emit(TRIP_CHANGED, { tripId: String(trip._id), reason: 'settings' });
     res.json({ trip: await tripView(trip, req.user, config) });
   });
 

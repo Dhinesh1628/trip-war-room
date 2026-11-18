@@ -30,5 +30,12 @@ export function loadConfig(env = process.env) {
     secureCookies: nodeEnv === 'production',
     // Set TRUST_PROXY=1 behind a hosting proxy (e.g. Render) so rate limiting sees real IPs.
     trustProxy: env.TRUST_PROXY === '1',
+    // Real-time gateway tuning.
+    // How long a traveller can be disconnected before others see them leave
+    // (a quick reconnect inside this window is invisible to the room).
+    presenceGraceMs: env.PRESENCE_GRACE_MS !== undefined ? Number(env.PRESENCE_GRACE_MS) : 5000,
+    // Moves are saved in batches at most this often (pins, removes, locks are saved at once).
+    flushIntervalMs: env.FLUSH_INTERVAL_MS !== undefined ? Number(env.FLUSH_INTERVAL_MS) : 250,
+    chatHistoryLimit: Number(env.CHAT_HISTORY_LIMIT) || 50,
   };
 }

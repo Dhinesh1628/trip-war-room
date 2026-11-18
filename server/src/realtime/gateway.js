@@ -1,15 +1,20 @@
 import { Server } from 'socket.io';
 import { envelope } from './envelope.js';
+import { RoomRegistry } from '../board/room.js';
+import { attachTripNamespace, NAMESPACE } from './tripNamespace.js';
 
 // Board Sync Gateway. Kept separate from the REST app so the two could be
-// scaled independently later (spec 9.4). Phase 0 only has the latency
-// ping/pong; board, chat, presence and votes arrive in Phase 2.
-export function createGateway(httpServer, { clientOrigin }) {
+// scaled independently later (spec 9.4).
+//  - default namespace "/": only the latency ping/pong (used by the status page)
+//  - "/trips": one connection per traveller per Trip Room (board, chat, presence)
+export function createGateway(httpServer, config) {
   const io = new Server(httpServer, {
-    cors: { origin: clientOrigin },
+    cors: { origin: config.clientOrigin, credentials: true },
+    maxHttpBufferSize: 64 * 1024, // no client event needs more than this
   });
 
   const startedAt = Date.now();
+  const registry = new RoomRegistry({ flushIntervalMs: config.flushIntervalMs });
 
   io.on('connection', (socket) => {
     // trip.sync.ping { clientSentAt } -> trip.sync.pong { clientSentAt, serverReceivedAt }
@@ -23,13 +28,24 @@ export function createGateway(httpServer, { clientOrigin }) {
     });
   });
 
+  const trips = attachTripNamespace(io, { config, registry });
+
   function health() {
     return {
       status: 'ok',
       connectedClients: io.engine.clientsCount,
+      openRooms: registry.rooms.size,
+      tripConnections: io.of(NAMESPACE).sockets.size,
       uptimeSeconds: Math.round((Date.now() - startedAt) / 1000),
     };
   }
 
-  return { io, health };
+  // Saves every open room, then closes all connections.
+  async function shutdown() {
+    trips.dispose();
+    await registry.drainAll();
+    io.close();
+  }
+
+  return { io, health, registry, shutdown };
 }

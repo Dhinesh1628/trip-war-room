@@ -6,9 +6,11 @@ tracks a shared budget, chats, and asks an AI Concierge questions that are
 answered only from a locally authored venue dataset and always obey the
 group's budget, dietary, opening-hours and distance constraints.
 
-> Status: **Phase 1 done** (auth, four-role access control, Lisbon venue
-> dataset, venue search, trips and invites). The real-time board comes in
-> Phase 2 and the full UI in Phase 5 (see [Roadmap](#roadmap)).
+> Status: **Phase 2 done.** Auth, four-role access control, the Lisbon venue
+> dataset, trips and invites, plus the live board: pin, move, lock, conflict
+> handling for simultaneous moves, presence, chat, reconnects and leader
+> moderation over WebSockets. The AI Concierge comes in Phase 3 and the full UI
+> in Phase 5 (see [Roadmap](#roadmap)).
 
 Docs: [API reference](docs/API.md) · [Decisions and deviations](docs/DECISIONS.md) ·
 [Postman collection](docs/postman/trip-war-room.postman_collection.json)
@@ -29,9 +31,11 @@ trip-war-room/
     src/trips/      trip rooms, invite codes, per-trip access checks
     src/venues/     destinations, venues, dataset validator + loader
     src/admin/      admin-only dataset upload
-    src/realtime/   Board Sync Gateway (kept separate from the REST app)
+    src/board/      board state machine, in-memory rooms, background saving
+    src/chat/       chat messages, cleaning, reactions
+    src/realtime/   Board Sync Gateway: /trips namespace and event handlers
     data/destinations/  authored venue datasets (lisbon.json)
-    scripts/        seed, make-admin, smoke test, dev:memory
+    scripts/        seed, make-admin, smoke test, live room demo, dev:memory
     test/           Jest tests (use an in-memory MongoDB, no setup needed)
   client/   React app (Vite dev server proxies /api and /socket.io)
 ```
@@ -130,6 +134,8 @@ What the suites cover:
 | `trips.test.js` | trip creation and validation, invite codes, joining, capacity (including 5 people racing for the last seat) |
 | `venues.test.js` | distance maths, proximity search checked against a brute-force calculation, query validation |
 | `dataset.test.js` | the Lisbon data covers every constraint type; bad uploads are rejected with clear messages |
+| `boardState.test.js` | the board state machine on its own: lifecycle, version checks, exact budget cents, chat cleaning |
+| `realtime.test.js` | real Socket.io clients: handshake auth, snapshots, sync under 100 ms, 20 rounds of simultaneous moves, locks, leader disconnect, presence and reconnects, chat, moderation |
 | `health.test.js`, `gateway.test.js` | health checks, config safety, WebSocket ping/pong |
 
 ### Smoke test against a running server
@@ -143,6 +149,19 @@ npm run smoke --prefix server
 It registers two throwaway accounts, creates a trip, joins it, and checks that a
 Viewer and a Leader are blocked from actions above their role. It prints PASS or
 FAIL per check and the request timings.
+
+### Live room demo (several travellers at once)
+
+With the server running:
+
+```bash
+npm run demo:room --prefix server
+```
+
+Three scripted travellers join one Trip Room. Two of them drag the same card at
+the same moment (one wins, the other is told), the leader locks a card, and
+someone chats. The script prints what each traveller saw, then the measured
+sync drift and whether all three boards agree.
 
 ### Postman
 

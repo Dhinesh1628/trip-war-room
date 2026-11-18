@@ -13,6 +13,7 @@
     "seed": "node --env-file=.env scripts/seed.js",
     "make-admin": "node --env-file=.env scripts/make-admin.js",
     "smoke": "node scripts/smoke.js",
+    "demo:room": "node scripts/demo-room.js",
     "start": "node src/server.js",
     "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js --runInBand"
   },

@@ -9,7 +9,7 @@ export async function authenticate(token, config) {
   const claims = verifyAccessToken(token, config);
   const user = await User.findById(claims.id).select('role displayName').lean();
   if (!user) throw unauthorized('Account no longer exists', 'INVALID_TOKEN');
-  return { id: String(user._id), role: user.role, name: user.displayName };
+  return { id: String(user._id), role: user.role, name: user.displayName, tokenExp: claims.exp };
 }
 
 // Reads "Authorization: Bearer <token>" and sets req.user = { id, role, name }.

@@ -24,8 +24,9 @@ export async function main(env = process.env) {
     console.log(`API + gateway listening on http://localhost:${config.port}`);
   });
 
+  // Save every open room's board before exiting.
   const shutdown = async () => {
-    gateway.io.close();
+    await gateway.shutdown();
     httpServer.close();
     await disconnectDb();
     process.exit(0);

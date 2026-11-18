@@ -30,7 +30,7 @@ export async function startTestServer({ seed = false, env = {} } = {}) {
   const url = `http://localhost:${httpServer.address().port}`;
 
   async function stop() {
-    gateway.io.close();
+    await gateway.shutdown();
     await new Promise((resolve) => httpServer.close(resolve));
     await disconnectDb();
     await mongo.stop();
