@@ -1,6 +1,6 @@
 # Test report (spec 12.1, 12.2)
 
-**Result: 365 tests in 16 files, all passing** (run on 2026-11-19, 82 s,
+**Result: 371 tests in 16 files, all passing** (run on 2026-11-19, 82 s,
 Node 24, Jest 30). Each test file starts its own in-memory MongoDB, so no
 setup is needed:
 
@@ -30,7 +30,7 @@ budget math, access control) are in bold.
 | `auth.test.js` | 23 | Register and login, token expiry, forgery, the `none` algorithm, deleted accounts, refresh rotation, reuse detection, a refresh race, hashed storage, logout, preferences, rate limiting |
 | `trips.test.js` | 24 | Trip creation and validation, invite codes, joining, capacity (5 people racing for the last seat), **invite brute-force limit**, listing and settings |
 | `venues.test.js` | 17 | Distance maths, proximity search compared with a brute-force calculation, query validation |
-| `dataset.test.js` | 41 | The Lisbon data covers every constraint type; every destination file is valid, has every category, and venue ids are unique across files; 16 kinds of bad upload rejected with clear messages; re-loading; the admin upload endpoint |
+| `dataset.test.js` | 47 | The Lisbon data covers every constraint type; every destination file is valid, has every category and a vegetarian dinner under $20 at 8 PM, and venue ids are unique across files; 16 kinds of bad upload rejected with clear messages; re-loading; the admin upload endpoint |
 | `health.test.js` | 7 | Health checks and config safety (missing or short secrets, token lifetime cap) |
 | `gateway.test.js` | 2 | WebSocket ping/pong and connection counting |
 

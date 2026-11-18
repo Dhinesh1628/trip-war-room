@@ -7,6 +7,7 @@ import { ingestDataset } from '../src/venues/ingest.js';
 import { DATA_DIR } from '../src/venues/seedData.js';
 import { DIETARY_TAGS, FOOD_CATEGORIES, VENUE_CATEGORIES } from '../src/venues/vocabulary.js';
 import { Venue } from '../src/venues/venue.model.js';
+import { isOpenFor } from '../src/concierge/constraints.js';
 
 let lisbon;
 const clone = () => structuredClone(lisbon);
@@ -181,6 +182,14 @@ describe('every destination file in server/data/destinations', () => {
       expect(data.venues.some((v) => FOOD_CATEGORIES.includes(v.category) && v.dietaryTags.includes(tag))).toBe(true);
     }
     expect(data.weather.monthly).toHaveLength(12);
+  });
+
+  // Found on the live site: a plain "vegetarian dinner under $20 at 8 PM"
+  // returned no match in Delhi and Goa. Every city must be able to answer it.
+  test.each(files)('%s has a vegetarian dinner under $20 open 20:00-21:30', (f) => {
+    const ok = load(f).venues.filter((v) => v.category === 'dinner' && v.dietaryTags.includes('vegetarian') &&
+      v.pricePerPerson <= 20 && isOpenFor(v.hours, { start: 20 * 60, end: 21 * 60 + 30 }));
+    expect(ok.length).toBeGreaterThanOrEqual(1);
   });
 
   test('venue ids are unique across all destinations', () => {
