@@ -1,3 +1,15 @@
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const DEFAULT_DIST = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../../client/dist');
+
+function resolveClientDist(env) {
+  if (env.CLIENT_DIST) return path.resolve(env.CLIENT_DIST);
+  if (env.NODE_ENV === 'production' && fs.existsSync(path.join(DEFAULT_DIST, 'index.html'))) return DEFAULT_DIST;
+  return null;
+}
+
 // Reads settings from environment variables. Secrets are never hard-coded:
 // the server refuses to start without them (tests pass their own values).
 export function loadConfig(env = process.env) {
@@ -19,7 +31,12 @@ export function loadConfig(env = process.env) {
     port: Number(env.PORT) || 5080,
     mongoUri: env.MONGO_URI,
     jwtSecret: env.JWT_SECRET,
-    clientOrigin: env.CLIENT_ORIGIN || 'http://localhost:5180',
+    // Public address of the site (used in invite links and CORS). Render sets
+    // RENDER_EXTERNAL_URL automatically, so nothing is needed there.
+    clientOrigin: env.CLIENT_ORIGIN || env.RENDER_EXTERNAL_URL || 'http://localhost:5180',
+    // Folder with the built client, served by this process (production).
+    // Defaults to ../client/dist when NODE_ENV=production and it exists.
+    clientDist: resolveClientDist(env),
     nodeEnv,
     // Access tokens must be short-lived (spec 10.1: <= 1 hour).
     accessTokenTtlSeconds: Number(env.ACCESS_TOKEN_TTL_SECONDS) || 15 * 60,

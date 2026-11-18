@@ -1,0 +1,32 @@
+# Render Blueprint: one web service runs the API, the WebSocket gateway, and
+# serves the built React site, all at one URL. The database stays on Atlas.
+# Render reads this file when you create a "Blueprint" from the GitHub repo.
+services:
+  - type: web
+    name: trip-war-room
+    runtime: node
+    plan: free
+    # Installs server (production deps) and client, then builds client/dist.
+    buildCommand: npm run build
+    startCommand: npm start
+    # Render waits for this to answer 200 before sending traffic to a deploy.
+    healthCheckPath: /api/v1/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: NODE_VERSION
+        value: "24"
+      # Render's proxy sits in front of the app: needed for real visitor IPs
+      # (rate limits) and secure cookies.
+      - key: TRUST_PROXY
+        value: "1"
+      # Your MongoDB Atlas connection string. Render asks for it on setup.
+      - key: MONGO_URI
+        sync: false
+      # Render generates a long random secret. Never reuse your local one.
+      - key: JWT_SECRET
+        generateValue: true
+      # Concierge wording: "auto" uses Claude if ANTHROPIC_API_KEY is set
+      # (add it in Render's Environment tab), otherwise the template.
+      - key: CONCIERGE_PROVIDER
+        value: auto

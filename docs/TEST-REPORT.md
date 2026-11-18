@@ -65,6 +65,12 @@ These were checked by running scripts against a live server (outputs in
 - the full UI in a real browser, in light mode, dark mode and at 375 px, with
   two scripted travellers live in the same room (Phase 5).
 
+**Timing sensitivity:** a few tests assert real-time limits (for example "every
+client within 100 ms"). In one run out of about ten, made while three servers
+and a client build were competing for the laptop's CPU, one test failed and
+then passed on every re-run. On a busy machine, re-run before treating a single
+failure in `realtime.test.js` or `concierge.test.js` as a regression.
+
 **Not covered:** there are no automated tests for the React client. Its
 behaviour was verified in the browser, and every rule it relies on is enforced
 and tested on the server. A Playwright end-to-end suite is the next step

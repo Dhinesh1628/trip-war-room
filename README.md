@@ -26,6 +26,7 @@ group's budget, dietary, opening-hours and distance constraints.
 | [Test report](docs/TEST-REPORT.md) | What is tested, the results, and evidence for each acceptance criterion |
 | [Decisions](docs/DECISIONS.md) | Every decision and deviation from the spec, with reasons, phase by phase |
 | [Demo walkthrough](docs/DEMO.md) | A script for the live demo or recording |
+| [Deploying](docs/DEPLOY.md) | Putting it online on Render, step by step |
 | [Retrospective](docs/RETROSPECTIVE.md) | What was built, what was cut, what's next |
 | [Postman collection](docs/postman/trip-war-room.postman_collection.json) | The REST flow, with assertions |
 
@@ -346,7 +347,9 @@ project's history phase by phase.
   the card dialog.
 - **Data:** one hand-authored destination (Lisbon); prices and venues are
   fictional, and weather is mocked.
-- **Not deployed publicly**, which is out of scope per spec 4.2.
+- **Hosting:** public deployment is out of scope per spec 4.2, but the repo is
+  ready for Render (one service, see [docs/DEPLOY.md](docs/DEPLOY.md)). The free
+  plan sleeps after 15 minutes idle.
 
 ## AI assistance
 

@@ -1,3 +1,5 @@
+import fs from 'node:fs';
+import path from 'node:path';
 import express from 'express';
 import helmet from 'helmet';
 import cors from 'cors';
@@ -9,6 +11,23 @@ import { usersRouter } from './users/users.routes.js';
 import { destinationsRouter } from './venues/venues.routes.js';
 import { tripsRouter } from './trips/trips.routes.js';
 import { adminRouter } from './admin/admin.routes.js';
+
+// Serves the built client: real files from dist/, and index.html for any other
+// page URL (/trips/abc, /join/AB-7Q2K) so React Router can show the right page.
+// /api and /socket.io never reach this (Socket.io handles its own path).
+function serveClient(app, distDir) {
+  const indexFile = path.join(distDir, 'index.html');
+  if (!fs.existsSync(indexFile)) {
+    throw new Error(`CLIENT_DIST is set, but ${indexFile} doesn't exist. Run "npm run build" first.`);
+  }
+  // Vite puts a content hash in asset names, so they can be cached forever.
+  app.use('/assets', express.static(path.join(distDir, 'assets'), { immutable: true, maxAge: '1y', fallthrough: false }));
+  app.use(express.static(distDir, { index: false, maxAge: '1h' }));
+  app.get(/^(?!\/api(\/|$)).*/, (req, res) => {
+    res.set('Cache-Control', 'no-cache'); // always pick up a new deploy
+    res.sendFile(indexFile);
+  });
+}
 
 // Builds the REST API. `gatewayHealth` is passed in so the API can report on
 // the real-time gateway without importing it (keeps the layers separate).
@@ -44,6 +63,10 @@ export function createApp(config, { gatewayHealth = () => null, gateway = null }
   api.use('/admin', adminRouter(config));
 
   app.use('/api/v1', api);
+
+  // In production one service also serves the built React site, so the app
+  // lives at one URL (cookies and WebSockets stay same-origin).
+  if (config.clientDist) serveClient(app, config.clientDist);
 
   app.use((req, res) => {
     res.status(404).json({ error: { code: 'NOT_FOUND', message: 'Route not found' } });
