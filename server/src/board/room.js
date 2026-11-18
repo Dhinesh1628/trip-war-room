@@ -5,7 +5,9 @@ import { User } from '../auth/user.model.js';
 import { Venue } from '../venues/venue.model.js';
 import { Destination } from '../venues/destination.model.js';
 import { Vote } from './vote.model.js';
-import { budgetSummary } from './budgetSummary.js';
+import { TripEvent } from './tripEvent.model.js';
+import { Interaction } from '../recs/interaction.model.js';
+import { computeBudget, budgetPanel } from './budgetEngine.js';
 import { sortedItems } from './boardState.js';
 import { log } from '../lib/logger.js';
 
@@ -31,6 +33,9 @@ export class Room {
     this.votes = new Map(votes.map((v) => [String(v._id), v])); // open votes
     this.voteTimers = new Map();
     this.conflicts = []; // current conflicts (see concierge/conflicts.js)
+    this.eventBuffer = []; // event log rows waiting to be saved
+    this.interactionBuffer = []; // recommendation signals waiting to be saved
+    this.lastSeq = 0;
     this.flushIntervalMs = flushIntervalMs;
     // userId -> { sockets: Set<socketId>, rttMs, quality, leaveTimer }
     this.presence = new Map();
@@ -105,6 +110,9 @@ export class Room {
     const doc = {
       _id: vote._id,
       tripId: this.tripId,
+      kind: vote.kind ?? 'slot',
+      proposal: vote.proposal ?? null,
+      expectedVersion: vote.expectedVersion ?? null,
       itemIds: vote.itemIds,
       candidates: vote.candidates,
       openedByUserId: vote.openedByUserId,
@@ -149,12 +157,19 @@ export class Room {
     };
   }
 
-  budget() {
-    return budgetSummary({
+  // Full budget (cents, per-item shares, running totals) from the engine.
+  fullBudget() {
+    return computeBudget({
+      items: this.boardItems(),
+      participantIds: this.participantIds,
       totalBudget: this.trip.totalBudget,
-      participantCount: this.participants.size,
-      items: [...this.items.values()],
+      ceilings: new Map([...this.travellers].map(([id, t]) => [id, t.budgetCeiling])),
     });
+  }
+
+  // Compact figures for the live budget panel.
+  budget() {
+    return budgetPanel(this.fullBudget(), this.participants.size, this.items.size);
   }
 
   participantList() {
@@ -175,6 +190,44 @@ export class Room {
 
   boardItems() {
     return sortedItems(this.items);
+  }
+
+  // ---- event log ----------------------------------------------------------
+
+  // Adds one row to the trip's event log (saved with the next flush).
+  // `seq` is strictly increasing, so the order is exact even within one millisecond.
+  logEvent(type, { userId = null, itemId = null, ...data } = {}) {
+    const now = Date.now();
+    this.lastSeq = Math.max(now * 1000, this.lastSeq + 1);
+    this.eventBuffer.push({
+      tripId: this.tripId,
+      seq: this.lastSeq,
+      type,
+      userId: userId ? String(userId) : null,
+      itemId: itemId ? String(itemId) : null,
+      data,
+      ts: new Date(now),
+    });
+    this.scheduleFlush(false);
+  }
+
+  // A taste signal for the recommendation engine (saved with the next flush).
+  logInteraction(userId, venueId, { liked, weight = 1, source }) {
+    const venue = this.venues.get(venueId);
+    if (!venue || !userId) return;
+    this.interactionBuffer.push({
+      userId: String(userId),
+      tripId: this.tripId,
+      destination: this.trip.destination,
+      venueId,
+      category: venue.category,
+      liked,
+      weight,
+      source,
+      coTraveledWith: this.participantIds.filter((id) => id !== String(userId)),
+      createdAt: new Date(),
+    });
+    this.scheduleFlush(false);
   }
 
   // ---- persistence ----------------------------------------------------
@@ -207,9 +260,11 @@ export class Room {
   // whole-document upserts, so retrying after a failure is always safe.
   flush() {
     this.saving = this.saving.then(async () => {
-      if (!this.dirty.size && !this.deleted.size) return;
+      if (!this.dirty.size && !this.deleted.size && !this.eventBuffer.length && !this.interactionBuffer.length) return;
       const dirtyIds = [...this.dirty];
       const deletedIds = [...this.deleted];
+      const events = this.eventBuffer.splice(0);
+      const interactions = this.interactionBuffer.splice(0);
       this.dirty.clear();
       this.deleted.clear();
       try {
@@ -219,6 +274,21 @@ export class Room {
           .map((item) => ({ replaceOne: { filter: { _id: item._id }, replacement: item, upsert: true } }));
         if (ops.length) await ItineraryItem.bulkWrite(ops, { ordered: true });
         if (deletedIds.length) await ItineraryItem.deleteMany({ _id: { $in: deletedIds } });
+        if (events.length) {
+          try {
+            await TripEvent.insertMany(events, { ordered: false });
+          } catch (err) {
+            // Rows already saved by an earlier, half-finished attempt are fine.
+            const errors = err.writeErrors ?? [];
+            if (!(err.code === 11000 || (errors.length && errors.every((e) => (e.code ?? e.err?.code) === 11000)))) throw err;
+          }
+        }
+        if (interactions.length) {
+          await Interaction.insertMany(interactions, { ordered: false }).catch((err) =>
+            // A lost taste signal only nudges recommendations; never block the board for it.
+            log.error('interactions.save_failed', { tripId: this.tripId, error: err.message }),
+          );
+        }
         log.debug('board.flush', {
           tripId: this.tripId,
           correlationId: this.correlationId,
@@ -229,6 +299,7 @@ export class Room {
         // Put them back and retry shortly; the in-memory board is still correct.
         dirtyIds.forEach((id) => this.dirty.add(id));
         deletedIds.forEach((id) => this.deleted.add(id));
+        this.eventBuffer.unshift(...events);
         log.error('board.flush_failed', { tripId: this.tripId, correlationId: this.correlationId, error: err.message });
         setTimeout(() => this.scheduleFlush(true), 1000).unref?.();
       }

@@ -125,6 +125,30 @@ earlier than `open`, the venue is open past midnight.
 ### `GET /destinations/{destination}/venues/{venueId}`
 `200 { "destination": "Lisbon, Portugal", "venue": { ... } }`
 
+### `POST /destinations/{destination}/venues/{venueId}/feedback`
+`{ "liked": true }` → `201 { "venueId", "liked" }`. An explicit like or dislike,
+which the recommendations count twice as strongly as a pin.
+
+### `GET /users/me/dashboard` *(auth)*
+The personal dashboard (spec 6.3).
+
+```json
+{ "user": { "userId": "...", "displayName": "Sam" },
+  "trips": { "led": [ ], "joined": [ { "tripId": "...", "destination": "Lisbon, Portugal", "startDate": "...", "endDate": "...",
+                                       "status": "drafting", "myRole": "planner", "participantCount": 3, "onlineNow": 2 } ] },
+  "activeRooms": [ { "tripId": "...", "onlineNow": 2, "...": "same fields" } ],
+  "preferenceProfile": {
+    "declared": { "dietaryTags": ["vegan"], "budgetCeiling": 300 },
+    "fromHistory": { "signals": 12, "favouriteCategories": [ { "name": "dinner", "count": 5 } ],
+                     "dietaryTagsOfLikedPlaces": [ { "name": "vegan", "count": 4 } ],
+                     "priceRange": { "min": 9, "median": 18, "max": 48, "currency": "USD" } } },
+  "recommendations": [ ], "recommendationsFor": "Lisbon, Portugal" }
+```
+
+`activeRooms` lists trips with someone online right now, for a quick rejoin.
+`fromHistory` is built from what this traveller actually did: pins, votes,
+removes and likes.
+
 ## Trips *(auth)*
 
 ### `POST /trips`
@@ -247,6 +271,70 @@ radius), 30% rating/popularity (75% rating, 25% log review count), 30% budget
 headroom (margin under the ceiling). Ties go to the lower venue id.
 Venues already on the board are not suggested again.
 
+### `GET /trips/{id}/budget` — Viewer+
+
+The full breakdown from the budget engine. All arithmetic is in whole cents. Each item's
+shares add up to exactly its cost, and the people's totals add up to exactly
+the group total.
+
+```json
+{ "currency": "USD", "totalBudget": 1000, "groupTotal": 107, "remaining": 893, "overBudget": false,
+  "perPerson": [ { "userId": "...", "displayName": "Maya", "committed": 51.5, "ceiling": 200, "remaining": 148.5, "overCeiling": false } ],
+  "items": [ { "itemId": "...", "name": "Taberna da Rua", "dayIndex": 0, "startTime": "19:00",
+               "split": "even", "attendees": ["<maya>", "<sam>"], "total": 44,
+               "shares": { "<maya>": 22, "<sam>": 22 },
+               "runningTotals": { "<maya>": 22, "<sam>": 22, "<priya>": 0 } } ] }
+```
+
+How costs work: an item costs `pricePerPerson × attendees`. With an `even` split
+everyone attending pays the same; with `weighted` they pay in proportion to
+whole-number weights (0–100). Leftover cents from rounding go to whoever has the
+largest remainder (ties: lower user id), so nobody is ever more than one cent
+from their exact share. `runningTotals` is each person's total after that item,
+in board order.
+
+### `GET /trips/{id}/analytics` — Viewer+ (spec 6.3)
+
+Session analytics, computed **only from the trip's event log**. The final board
+is rebuilt by replaying the log, and `reconciliation` compares that replay with
+the stored board.
+
+```json
+{ "tripId": "...", "destination": "Lisbon, Portugal", "eventCount": 23,
+  "planning": { "firstEventAt": "...", "lastEventAt": "...", "durationMinutes": 4.2 },
+  "peakConcurrentPlanners": 3,
+  "board": { "pinned": 3, "moved": 1, "removed": 0, "locked": 1, "finalItemCount": 3 },
+  "concierge": { "questions": 2, "byMode": { "llm": 2 } },
+  "conflicts": { "flagged": 1, "resolved": 1, "stillOpen": 0, "byType": { "overlap": 1 } },
+  "votes": { "opened": 1, "resolved": 1, "cancelled": 0, "ballots": 3, "byKind": { "split": 1 } },
+  "chatMessages": 1,
+  "finalBudget": { "currency": "USD", "totalBudget": 1000, "groupTotal": 107, "remaining": 893,
+                   "perPerson": [ { "userId": "...", "displayName": "Maya", "total": 51.5 } ],
+                   "items": [ { "itemId": "...", "name": "...", "split": "weighted", "total": 51, "shares": { } } ] },
+  "reconciliation": { "reconciled": true, "differences": [] } }
+```
+
+`durationMinutes` runs from the first logged event to the last. `peakConcurrentPlanners`
+is the most travellers online at once, taken from the presence events.
+
+### `GET /trips/{id}/recommendations?limit=5` — Viewer+ (spec 6.3)
+
+"Recommended for your group". Venues already on the board are skipped, and
+food venues must carry every dietary tag the group has declared.
+
+```json
+{ "tripId": "...", "destination": "Lisbon, Portugal", "groupDietaryTags": ["vegan"],
+  "recommendations": [ { "venueId": "v_lis_017", "name": "Petiscos do Castelo", "category": "dinner",
+                         "neighborhood": "Alfama", "pricePerPerson": 24, "dietaryTags": ["vegetarian", "nut-free"],
+                         "rating": 4.5, "score": 0.612, "why": "liked by people you have travelled with" } ],
+  "model": { "type": "hybrid content + collaborative", "alpha": 0.5, "interactions": 1734, "travellers": 122, "builtAt": "..." } }
+```
+
+`why` is one of: "you like museums" (or another category), "matches your vegan
+picks", "fits your usual budget spending", "in Alfama, an area you like",
+"liked by travellers with similar taste", "liked by people you have travelled
+with", or "popular with visitors" (no history yet).
+
 ### `POST /trips/{id}/invite-code` — Leader+
 Replaces the invite code; the old one stops working. `200 { "inviteCode", "inviteUrl" }`.
 
@@ -361,6 +449,9 @@ cancelled). An item in a vote cannot be moved, removed or locked.
 | `trip.vote.cast` | Viewer | `{ voteId, itemId }` (one ballot each; casting again changes it) | `{ vote }` |
 | `trip.vote.cancel` | Leader \* | `{ voteId }` | `{}` |
 | `trip.ai.ask` | Viewer | same body as `POST /trips/{id}/ai/ask` | `{ result }` (same as the REST response) |
+| `trip.board.setSharing` | Planner | `{ itemId, attendeeIds?: [ids] ([] = everyone), split: { type: "even" } or { type: "weighted", weights: { userId: 0-100 } }, expectedVersion }` | `{ item }` |
+| `trip.split.propose` | Planner | `{ itemId, attendeeIds?, split, durationSeconds?: 10-3600 }` (opens a budget-split vote) | `{ vote }` |
+| `trip.split.cast` | Viewer | `{ voteId, choice: "yes" or "no" }` | `{ vote }` |
 | `trip.mod.mute` | Leader \* | `{ userId, muted }` | `{}` |
 | `trip.mod.remove` | Leader \* | `{ userId }` | `{}` |
 | `trip.mod.lockRoom` | Leader \* | `{ locked }` | `{}` |
@@ -393,16 +484,19 @@ Re-sending with the same `clientMsgId` returns the original message
 | Event | Sent to | Payload |
 |---|---|---|
 | `trip.sync.state` | the new connection | full snapshot: `{ trip, me: { userId, role, muted }, items[], budget, participants[], onlineCount, leader, conflicts[], votes[], chat[] (last 50), serverTime }` |
-| `trip.board.update` | room | `{ action, itemId, dayIndex, startTime, endTime, lifecycleStage, positionVersion, item, byUserId }`; `action` is `pinned`, `moved`, `locked`, `unlocked`, `voting`, `vote_won`, `vote_cancelled` or `removed` (`removed` carries only `itemId`, `positionVersion`, `byUserId` and, for a lost vote, `reason: "lost_vote"`) |
+| `trip.board.update` | room | `{ action, itemId, dayIndex, startTime, endTime, lifecycleStage, positionVersion, item, byUserId }`; `action` is `pinned`, `moved`, `locked`, `unlocked`, `sharing_changed`, `voting`, `vote_won`, `vote_cancelled` or `removed` (`removed` carries only `itemId`, `positionVersion`, `byUserId` and, for a lost vote, `reason: "lost_vote"`) |
 | `trip.board.conflict` | room | `{ conflictId, conflictType: overlap\|budgetBreach\|hours, itemIds, details: { message, ... }, status: "open", detectedAt }` |
 | `trip.board.conflictResolved` | room | `{ conflictId, conflictType, itemIds, resolvedAt }` |
 | `trip.vote.open` | room | `{ voteId, itemId, itemIds, candidates: [{ itemId, venueId, name }], candidateVenueIds, openedByUserId (null = the system), closesAt, status, ballotCount, tally }` |
 | `trip.vote.cast` | room | `{ voteId, itemId, userId, choiceVenueId, changed, ballotCount, tally }` |
 | `trip.vote.resolved` | room | `{ voteId, itemId (the winner), winningVenueId, tally, resolution: votes\|tie_earliest_pin\|no_votes_earliest_pin, removedItemIds }` |
 | `trip.vote.cancelled` | room | `{ voteId }` |
+| `trip.split.open` | room | `{ voteId, kind: "split", itemId, name, proposal: { attendeeIds, split }, openedByUserId, closesAt, status, ballotCount, tally: { yes, no } }` |
+| `trip.split.cast` | room | `{ voteId, userId, choice, changed, ballotCount, tally }` |
+| `trip.split.resolved` | room | `{ voteId, itemId, applied, tally, resolution: majority_yes\|majority_no\|tie_keeps_current\|item_changed }` |
 | `trip.ai.suggestion` | room | `{ questionId, userId, displayName, question, answer, suggestedVenueId, sourceEvents, mode }` |
 | `trip.board.rejected` | the losing client | `{ itemId, reason: "VERSION_CONFLICT", message, current: item }` |
-| `trip.budget.update` | room | `{ currency, totalBudget, participantCount, perPersonCommitted, groupCommitted, remaining, overBudget, itemCount }` |
+| `trip.budget.update` | room | `{ currency, totalBudget, participantCount, itemCount, groupCommitted, remaining, overBudget, perPersonCommitted (the largest per-person total), perPerson: [{ userId, committed, ceiling, remaining, overCeiling }] }` |
 | `trip.presence.update` | room | `{ participantId, displayName, action: "joined" or "left", participantCount (online), memberCount }` |
 | `trip.presence.quality` | room | `{ participantId, rttMs, quality }`, sent when the quality bucket changes (good under 150 ms, fair under 400 ms, otherwise poor) |
 | `trip.leader.status` | room | `{ leaderUserId, connected, awaySince, frozenActions }` |

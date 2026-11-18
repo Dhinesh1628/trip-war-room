@@ -50,6 +50,13 @@ export function createGateway(httpServer, config) {
     rateLimitAsk(askLog, user.id, config.conciergeRateLimit);
     const { question, userId: _ignored, ...explicit } = body;
     const result = await askConcierge({ room, userId: user.id, question, explicit, llm, config });
+    room.logEvent('ai_asked', {
+      userId: user.id,
+      questionId: result.questionId,
+      mode: result.mode,
+      suggestedVenueId: result.suggestedVenueId,
+      latencyMs: result.latencyMs,
+    });
     emit(room, 'trip.ai.suggestion', {
       questionId: result.questionId,
       userId: user.id,

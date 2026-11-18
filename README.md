@@ -6,13 +6,13 @@ tracks a shared budget, chats, and asks an AI Concierge questions that are
 answered only from a locally authored venue dataset and always obey the
 group's budget, dietary, opening-hours and distance constraints.
 
-> Status: **Phase 3 done.** Auth, four-role access control, the Lisbon venue
-> dataset, trips and invites; the live board (pin, move, lock, conflict
-> handling for simultaneous moves, presence, chat, reconnects, leader
-> moderation); and the AI Concierge (rule-checked suggestions with cited
-> sources, a conflict detector, and contested-slot voting). The budget engine
-> and recommendations come in Phase 4 and the full UI in Phase 5 (see
-> [Roadmap](#roadmap)).
+> Status: **Phase 4 done: the whole backend.** Auth and four-role access
+> control; trips and invites; the live board (pin, move, lock, simultaneous-move
+> conflicts, presence, chat, reconnects, moderation); the AI Concierge
+> (rule-checked, cited suggestions; conflict detector; contested-slot votes);
+> an exact budget engine (attendance, even and weighted splits, budget-split
+> votes); an event log with session analytics; hybrid recommendations; and the
+> dashboard. The full UI comes in Phase 5 (see [Roadmap](#roadmap)).
 
 Docs: [API reference](docs/API.md) · [Decisions and deviations](docs/DECISIONS.md) ·
 [Postman collection](docs/postman/trip-war-room.postman_collection.json)
@@ -37,9 +37,13 @@ trip-war-room/
     src/chat/       chat messages, cleaning, reactions
     src/realtime/   Board Sync Gateway: /trips namespace and event handlers
     src/concierge/  AI Concierge: question reading, hard-rule matcher, ranking,
-                    grounded answers (Claude or template), conflict detector
+                    grounded answers (Claude, local model or template), conflict detector
+    src/analytics/  session analytics from the event log
+    src/recs/       interactions, hybrid recommender, data generator, Precision@5
+    src/users/      profile, preferences, dashboard
     data/destinations/  authored venue datasets (lisbon.json)
-    scripts/        seed, make-admin, smoke test, live room demo, Concierge eval, dev:memory
+    scripts/        seed, make-admin, smoke test, live room demo, Concierge and
+                    recommender evaluations, interaction generator, dev:memory
     test/           Jest tests (use an in-memory MongoDB, no setup needed)
   client/   React app (Vite dev server proxies /api and /socket.io)
 ```
@@ -92,6 +96,13 @@ trip-war-room/
    ```
 
    Expected output: `lisbon.json: lisbon (lisbon-2026.11-1) - 42 venues ...`
+
+   Optional: give the recommendation engine some history to learn from
+   (120 synthetic travellers, about 1,700 interactions; safe to run again):
+
+   ```bash
+   npm run generate:interactions --prefix server
+   ```
 
 5. Optional: make an Admin. Register an account first (through the API or,
    from Phase 5, the app), then:
@@ -153,6 +164,10 @@ What the suites cover:
 | `constraints.test.js` | **100% constraint compliance**: 379 simulated Concierge requests checked against an independent re-implementation of the four rules; opening hours past midnight; the 40/30/30 ranking |
 | `concierge.unit.test.js` | reading questions, the grounding check, the Claude call (with a fake client: request shape, and falling back on bad ids, invented prices, refusals, timeouts), the conflict detector, voting rules |
 | `concierge.test.js` | end to end: the spec's example question over REST and WebSocket, room broadcast, declines, rate limit, conflicts flagged within 1 s (20 tries), budget breaches, votes resolving identically for every client |
+| `ollama.test.js` | the free local-model path against a fake Ollama server: request shape, quality check, every fallback |
+| `budget.test.js` | **budget math, 100% exact**: hand-worked splits and a hand-worked trip, 2,000 random splits and 300 random trips that must add up to the cent |
+| `recs.test.js` | content-based and collaborative parts, co-traveller boost, cold start, group filters, **Precision@5 ≥ 0.6** on the held-out set |
+| `phase4.test.js` | end to end: attendance and weighted splits, budget-split votes, **a hand-worked session whose analytics must reconcile exactly with the event log**, recommendations, the dashboard, feedback |
 | `health.test.js`, `gateway.test.js` | health checks, config safety, WebSocket ping/pong |
 
 ### Smoke test against a running server
@@ -177,8 +192,10 @@ npm run demo:room --prefix server
 
 Three scripted travellers join one Trip Room. Two of them drag the same card at
 the same moment (one wins, the other is told), the leader locks a card, and
-someone chats. The script prints what each traveller saw, then the measured
-sync drift and whether all three boards agree.
+someone chats. The script prints what each traveller saw, the measured sync
+drift, and whether all three boards agree. Then it prints the trip's session
+analytics, including whether the event log replays to exactly the stored
+board, and the group's recommendations.
 
 ### Concierge evaluation
 
@@ -193,6 +210,19 @@ re-checks every suggestion against the venue data. It prints each answer, the
 answer mode (`llm`, `template` or `no_match`), the constraint compliance and the
 end-to-end latency (median and P95). **If `ANTHROPIC_API_KEY` is set, a run
 makes about 11 paid Claude API calls.**
+
+### Recommendation evaluation
+
+No server needed:
+
+```bash
+npm run eval:recs --prefix server
+```
+
+It generates the synthetic interaction dataset with 5 different random seeds
+and prints Precision@5 on held-out "next trip" likes, for popularity,
+content-only, collaborative-only and the hybrid model. Last run: hybrid mean
+**0.735** (target ≥ 0.6).
 
 ### Postman
 

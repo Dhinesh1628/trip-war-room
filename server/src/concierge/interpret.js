@@ -110,7 +110,7 @@ export function resolveAnchor(items, ref) {
 
 // Builds the full constraint set for one request.
 //   ctx: { items, travellers: Map userId -> { dietaryTags, budgetCeiling },
-//          participantIds, requesterId, budget: { totalBudget, perPersonCommitted, ... } }
+//          participantIds, requesterId, budget: { remaining, participantCount, perPerson: [...] } }
 //   explicit: optional overrides from the request body (they win over parsing)
 export function buildConstraints(question, ctx, explicit = {}) {
   const parsed = parseQuestion(question);
@@ -133,7 +133,8 @@ export function buildConstraints(question, ctx, explicit = {}) {
   let maxPricePerPerson = explicit.maxPricePerPerson ?? parsed.maxPricePerPerson;
   let budgetSource = maxPricePerPerson != null ? 'question' : null;
   if (maxPricePerPerson == null) {
-    const committed = ctx.budget.perPersonCommitted;
+    const committed =
+      ctx.budget.perPerson?.find((p) => p.userId === ctx.requesterId)?.committed ?? ctx.budget.perPersonCommitted ?? 0;
     const mine = ctx.travellers.get(ctx.requesterId)?.budgetCeiling;
     if (mine != null) {
       maxPricePerPerson = round2(mine - committed);

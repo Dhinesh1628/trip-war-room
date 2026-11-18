@@ -252,3 +252,85 @@ deterministic. The winner is locked (finalised by the group) and the other
 options are removed. Open votes are saved and restored when a room reloads.
 Votes are not frozen while the leader is away, because only lock/unlock (the
 leader's own finalise actions) are.
+
+## Phase 4
+
+**Budget engine: whole cents and the largest-remainder method.** Every amount
+is an integer number of cents. An item costs `pricePerPerson × attendees` and
+is split evenly or by whole-number weights. Rounding leftovers go one cent at
+a time to whoever has the largest remainder (ties: lower user id). This makes
+the result deterministic and exact: each item's shares add up to its cost,
+people's totals add up to the group total, and nobody is ever more than one
+cent from their exact share. A randomised test checks this over 2,000 splits
+and 300 random trips, alongside hand-worked examples.
+
+**Who attends.** By default everyone attends every item. Planners can name the
+attendees (for example, only two people going sailing) and set weights (for
+example, 2:1:1 for a bigger room). Changing this uses the same version check as
+moving a card. The conflict detector and the Concierge's budget ceiling now use
+each person's real share, not an even split.
+
+**Budget-split vote.** Spec section 2 mentions running "a budget-split vote to
+resolution", but no section defines one. It is read as: anyone can propose a new
+sharing setup for one item; everyone votes yes or no; when the timer ends or
+everyone has voted, more yes than no applies it, and a tie keeps things as they
+are. If the item changed during the vote, the proposal is dropped, because people
+voted on something that no longer exists.
+
+**Event log.** Every board change, vote, conflict, Concierge question, chat
+message (counted, never the text) and presence change is written to
+`tripevents`, saved in the background with the board. Rows have a strictly
+increasing `seq` and a unique `(tripId, seq)` index, so a retried save can't
+duplicate them.
+
+**Analytics come only from the log.** `GET /trips/{id}/analytics` counts log
+rows, takes peak attendance from presence rows, rebuilds the final board by
+replaying item events, and computes the final budget from that rebuilt board.
+It also compares the replay with the stored board (`reconciliation`). That is
+how the spec's "reconcile exactly with the underlying event log" is checked,
+for a hand-worked session in the tests and for any trip on demand.
+"Planning duration" is the time from the first logged event to the last.
+
+**Interactions.** Each pin is a like; a ballot in a slot vote is a like for the
+option chosen; removing *someone else's* card is a dislike (removing your own is
+just a change of plan); an explicit like or dislike counts double. Each row
+records who the person was planning with, for group affinity.
+
+**Recommendations.** A hybrid of:
+- content-based: cosine similarity between a venue's features (category,
+  price band, dietary tags, area, indoor/outdoor) and the person's taste
+  profile (liked features minus disliked);
+- user-based collaborative filtering: what people with similar likes liked,
+  with people they've travelled with counting 1.5×.
+
+Scores are mixed 50/50. People with fewer than 3 signals get content-only, and
+people with none get a popularity ranking. α = 0.5 was fixed *before*
+measuring and not tuned on the test set; a sweep showed 0.2–0.5 perform about
+the same. Group recommendations average the members' scores, skip venues already
+on the board, and keep only food venues that fit everyone's dietary tags.
+
+**"Updates without a retrain cycle".** The model is rebuilt from the
+interactions collection whenever a new interaction has arrived since the last
+build, and cached until then. At this scale (about 1,700 rows) a rebuild takes
+milliseconds. A large system would update the matrix incrementally or retrain
+on a schedule; the spec explicitly allows a batch job.
+
+**Generated interaction data and the evaluation.** `src/recs/generate.js`
+creates 120 synthetic travellers with five personas (plant-based foodie,
+budget backpacker, culture seeker, night owl, luxury), puts them on trips
+mostly with like-minded people, and has them like the venues their persona
+would (85%), plus noise (4%), plus two dislikes each. Each traveller's likes
+are split into "past trips" (training, 55%) and "next trip" (held out). Precision@5
+asks whether the top 5 recommendations, from venues they haven't interacted
+with, are ones they go on to like. Only travellers with at least 5 held-out
+likes are scored (about 82 of 120), since otherwise a perfect model could not
+reach 1.0. Results over 5 seeds (`npm run eval:recs`): popularity 0.122,
+content-only 0.555, collaborative-only 0.726, **hybrid 0.735** (target ≥ 0.6).
+Caveat: synthetic personas are cleaner than real people, so real-world
+precision would be lower. The number shows the pipeline works, not how it would
+perform on real users.
+
+**Synthetic travellers in the live database.** `npm run generate:interactions`
+loads the same generated history into MongoDB with `source: "generated"`, under
+stable fake user ids that are not real accounts, so live recommendations have
+something to learn from. Re-running it replaces only those rows.

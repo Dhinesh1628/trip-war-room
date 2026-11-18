@@ -7,8 +7,11 @@ import { VENUE_CATEGORIES } from './vocabulary.js';
 import { requireAuth } from '../auth/middleware.js';
 import { validate } from '../lib/validate.js';
 import { notFound } from '../lib/errors.js';
+import { Interaction } from '../recs/interaction.model.js';
 
 const DEFAULT_RADIUS_KM = 2;
+
+const feedbackSchema = z.object({ liked: z.boolean() }).strict();
 
 const venueQuery = z
   .object({
@@ -108,6 +111,24 @@ export function destinationsRouter(config) {
       count: venues.length,
       venues,
     });
+  });
+
+  // An explicit like or dislike: a strong signal for recommendations.
+  router.post('/:destination/venues/:venueId/feedback', validate(feedbackSchema), async (req, res) => {
+    const d = await findDestination(req.params.destination);
+    if (!d) throw notFound('Destination not found');
+    const venue = await Venue.findOne({ _id: req.params.venueId, destination: d.slug }).lean();
+    if (!venue) throw notFound('Venue not found');
+    await Interaction.create({
+      userId: req.user.id,
+      destination: d.slug,
+      venueId: venue._id,
+      category: venue.category,
+      liked: req.valid.body.liked,
+      weight: 2,
+      source: 'feedback',
+    });
+    res.status(201).json({ venueId: venue._id, liked: req.valid.body.liked });
   });
 
   router.get('/:destination/venues/:venueId', async (req, res) => {

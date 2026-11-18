@@ -12,6 +12,11 @@ import { validate, assertObjectId } from '../lib/validate.js';
 import { badRequest, conflict, forbidden, notFound, HttpError } from '../lib/errors.js';
 import { bus, TRIP_CHANGED } from '../lib/bus.js';
 import { concierge } from '../board/schemas.js';
+import { ItineraryItem } from '../board/itineraryItem.model.js';
+import { TripEvent } from '../board/tripEvent.model.js';
+import { computeBudget } from '../board/budgetEngine.js';
+import { computeAnalytics, reconcile } from '../analytics/sessionAnalytics.js';
+import { recommendForTrip } from '../recs/service.js';
 
 const MAX_TRIP_DAYS = 30;
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -269,6 +274,91 @@ export function tripsRouter(config, { gateway } = {}) {
       room.pendingJoins -= 1;
       gateway.registry.close(room.tripId); // only closes if nobody is connected
     }
+  });
+
+  // Saves an open room's pending changes, so reads below see everything.
+  async function settle(tripId) {
+    const room = gateway?.registry.get(String(tripId));
+    if (room) await room.drain();
+  }
+
+  async function namesFor(ids) {
+    const users = await User.find({ _id: { $in: ids } }).select('displayName').lean();
+    return new Map(users.map((u) => [String(u._id), u.displayName]));
+  }
+
+  // The full budget breakdown: per item who pays what, running totals, per person.
+  router.get('/:id/budget', async (req, res) => {
+    const { trip } = await loadTripWithRole(req.params.id, req.user, 'viewer');
+    await settle(trip._id);
+    const participantIds = trip.participants.map((p) => String(p.userId));
+    const [items, users] = await Promise.all([
+      ItineraryItem.find({ tripId: trip._id }).lean(),
+      User.find({ _id: { $in: participantIds } }).select('displayName preferences.budgetCeiling').lean(),
+    ]);
+    items.sort((a, b) => a.dayIndex - b.dayIndex || a.startTime.localeCompare(b.startTime) || String(a._id).localeCompare(String(b._id)));
+    const budget = computeBudget({
+      items,
+      participantIds,
+      totalBudget: trip.totalBudget,
+      ceilings: new Map(users.map((u) => [String(u._id), u.preferences?.budgetCeiling ?? null])),
+    });
+    const names = new Map(users.map((u) => [String(u._id), u.displayName]));
+    res.json({
+      currency: 'USD',
+      totalBudget: budget.totalBudget,
+      groupTotal: budget.groupCommitted,
+      remaining: budget.remaining,
+      overBudget: budget.overBudget,
+      perPerson: budget.perPerson.map((p) => ({ ...p, displayName: names.get(p.userId) ?? null })),
+      items: budget.lines.map((l) => ({
+        itemId: l.itemId,
+        name: l.name,
+        dayIndex: l.dayIndex,
+        startTime: l.startTime,
+        split: l.split,
+        attendees: l.attendees,
+        total: l.totalCents / 100,
+        shares: Object.fromEntries(Object.entries(l.shares).map(([k, v]) => [k, v / 100])),
+        runningTotals: Object.fromEntries(Object.entries(l.runningCents).map(([k, v]) => [k, v / 100])),
+      })),
+    });
+  });
+
+  // Session analytics (spec 6.3), computed from the trip's event log, plus a
+  // check that the log replays to exactly the stored board.
+  router.get('/:id/analytics', async (req, res) => {
+    const { trip } = await loadTripWithRole(req.params.id, req.user, 'viewer');
+    await settle(trip._id);
+    const participantIds = trip.participants.map((p) => String(p.userId));
+    const [events, items, names] = await Promise.all([
+      TripEvent.find({ tripId: trip._id }).sort({ seq: 1 }).lean(),
+      ItineraryItem.find({ tripId: trip._id }).lean(),
+      namesFor(participantIds),
+    ]);
+    const { _finalItems, ...analytics } = computeAnalytics(events, { participantIds, totalBudget: trip.totalBudget, names });
+    res.json({ tripId: String(trip._id), destination: trip.destinationName, ...analytics, reconciliation: reconcile(_finalItems, items) });
+  });
+
+  // "Recommended for your group" (spec 6.3).
+  router.get('/:id/recommendations', async (req, res) => {
+    const { trip } = await loadTripWithRole(req.params.id, req.user, 'viewer');
+    await settle(trip._id);
+    const memberIds = trip.participants.map((p) => String(p.userId));
+    const [items, members] = await Promise.all([
+      ItineraryItem.find({ tripId: trip._id }).select('venueId').lean(),
+      User.find({ _id: { $in: memberIds } }).select('preferences.dietaryTags').lean(),
+    ]);
+    const dietaryTags = [...new Set(members.flatMap((m) => m.preferences?.dietaryTags ?? []))].sort();
+    const limit = Math.min(20, Math.max(1, Number(req.query.limit) || 5));
+    const result = await recommendForTrip({
+      destination: trip.destination,
+      memberIds,
+      excludeVenueIds: items.map((i) => i.venueId),
+      dietaryTags,
+      limit,
+    });
+    res.json({ tripId: String(trip._id), destination: trip.destinationName, groupDietaryTags: dietaryTags, ...result });
   });
 
   // Leader only: replace the invite code (the old one stops working).

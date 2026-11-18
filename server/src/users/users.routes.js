@@ -5,6 +5,7 @@ import { requireAuth } from '../auth/middleware.js';
 import { validate } from '../lib/validate.js';
 import { DIETARY_TAGS } from '../venues/vocabulary.js';
 import { bus, USER_CHANGED } from '../lib/bus.js';
+import { buildDashboard } from './dashboard.js';
 
 // Travellers declare dietary needs and a budget ceiling here. budgetCeiling is
 // the most this traveller wants to spend in total on the trip's itinerary
@@ -26,8 +27,13 @@ const updateMeSchema = z
   })
   .strict();
 
-export function usersRouter(config) {
+export function usersRouter(config, { gateway } = {}) {
   const router = express.Router();
+
+  // Personal dashboard (spec 6.3).
+  router.get('/me/dashboard', requireAuth(config), async (req, res) => {
+    res.json(await buildDashboard(req.user.id, { registry: gateway?.registry }));
+  });
 
   router.patch('/me', requireAuth(config), validate(updateMeSchema), async (req, res) => {
     const { displayName, preferences } = req.valid.body;

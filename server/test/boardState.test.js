@@ -1,5 +1,4 @@
 import { pinItem, moveItem, removeItem, lockItem, unlockItem, sortedItems, ERR } from '../src/board/boardState.js';
-import { budgetSummary } from '../src/board/budgetSummary.js';
 import { sanitizeChat } from '../src/chat/sanitize.js';
 
 // The board state machine on its own: no database, no sockets (spec 10 / 12.1).
@@ -143,24 +142,6 @@ test('board order is day, then start time, then id', () => {
   pin({ dayIndex: 0, startTime: '18:00', endTime: '19:00' });
   pin({ dayIndex: 0, startTime: '08:00', endTime: '09:00' });
   expect(sortedItems(items).map((i) => `${i.dayIndex}@${i.startTime}`)).toEqual(['0@08:00', '0@18:00', '1@09:00']);
-});
-
-describe('running budget totals are exact', () => {
-  test('prices that break floating point add up exactly in cents', () => {
-    const its = [0.1, 0.2, 0.7, 19.99].map((p) => ({ venue: { pricePerPerson: p } }));
-    const b = budgetSummary({ totalBudget: 100, participantCount: 3, items: its });
-    expect(b.perPersonCommitted).toBe(20.99);
-    expect(b.groupCommitted).toBe(62.97);
-    expect(b.remaining).toBe(37.03);
-    expect(b.overBudget).toBe(false);
-  });
-
-  test('flags going over the group budget', () => {
-    const b = budgetSummary({ totalBudget: 100, participantCount: 4, items: [{ venue: { pricePerPerson: 25.01 } }] });
-    expect(b.groupCommitted).toBe(100.04);
-    expect(b.remaining).toBe(-0.04);
-    expect(b.overBudget).toBe(true);
-  });
 });
 
 describe('chat sanitising (stored XSS defence)', () => {

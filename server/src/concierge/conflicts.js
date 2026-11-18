@@ -1,6 +1,6 @@
 import { distanceKm } from '../venues/geo.js';
 import { toMinutes, isOpenFor, walkMinutes } from './constraints.js';
-import { toCents, fromCents } from '../board/budgetSummary.js';
+import { computeBudget, toCents, fromCents } from '../board/budgetEngine.js';
 
 // The conflict detector (spec 5.3 / 6.2). Pure: given the board and the
 // travellers, it lists every current problem. The gateway runs it after each
@@ -97,47 +97,45 @@ export function detectConflicts({ items, participantIds, travellers, names = new
     }
   }
 
-  // ---- budget: running per-person total in pin order (everyone attends everything)
+  // ---- budget: per-person shares from the budget engine (attendance and
+  // weighted splits included), added up in the order items were pinned, so
+  // the item that "pushed" someone over is the one pinned when it happened.
   const inPinOrder = [...items].sort(
     (a, b) => new Date(a.createdAt ?? 0) - new Date(b.createdAt ?? 0) || idOf(a).localeCompare(idOf(b)),
   );
-  const perPersonCents = inPinOrder.reduce((s, i) => s + toCents(i.venue.pricePerPerson), 0);
-  for (const userId of participantIds) {
+  const budget = computeBudget({ items: inPinOrder, participantIds, totalBudget });
+  for (const userId of participantIds.map(String)) {
     const ceiling = travellers.get(userId)?.budgetCeiling;
-    if (ceiling == null || perPersonCents <= toCents(ceiling)) continue;
-    // The item that pushed this traveller over.
-    let running = 0;
-    const crossing = inPinOrder.find((i) => (running += toCents(i.venue.pricePerPerson)) > toCents(ceiling));
+    const cents = budget.perPersonCents[userId] ?? 0;
+    if (ceiling == null || cents <= toCents(ceiling)) continue;
+    const crossing = budget.lines.find((l) => l.runningCents[userId] > toCents(ceiling));
     conflicts.push({
       conflictId: `budget:traveller:${userId}`,
       conflictType: 'budgetBreach',
-      itemIds: [idOf(crossing)],
+      itemIds: [crossing.itemId],
       details: {
         scope: 'traveller',
         userId,
         ceiling,
-        committed: fromCents(perPersonCents),
-        over: fromCents(perPersonCents - toCents(ceiling)),
-        message: `${names.get(userId) ?? 'A traveller'} is $${fromCents(perPersonCents - toCents(ceiling))} over their $${ceiling} budget (now $${fromCents(perPersonCents)})`,
+        committed: fromCents(cents),
+        over: fromCents(cents - toCents(ceiling)),
+        message: `${names.get(userId) ?? 'A traveller'} is $${fromCents(cents - toCents(ceiling))} over their $${ceiling} budget (now $${fromCents(cents)})`,
       },
     });
   }
-  const groupCents = perPersonCents * participantIds.length;
-  if (groupCents > toCents(totalBudget)) {
+  if (budget.groupCents > budget.budgetCents) {
     let running = 0;
-    const crossing = inPinOrder.find(
-      (i) => (running += toCents(i.venue.pricePerPerson) * participantIds.length) > toCents(totalBudget),
-    );
+    const crossing = budget.lines.find((l) => (running += l.totalCents) > budget.budgetCents);
     conflicts.push({
       conflictId: 'budget:group',
       conflictType: 'budgetBreach',
-      itemIds: [idOf(crossing)],
+      itemIds: [crossing.itemId],
       details: {
         scope: 'group',
         ceiling: totalBudget,
-        committed: fromCents(groupCents),
-        over: fromCents(groupCents - toCents(totalBudget)),
-        message: `The group is $${fromCents(groupCents - toCents(totalBudget))} over the $${totalBudget} trip budget`,
+        committed: fromCents(budget.groupCents),
+        over: fromCents(budget.groupCents - budget.budgetCents),
+        message: `The group is $${fromCents(budget.groupCents - budget.budgetCents)} over the $${totalBudget} trip budget`,
       },
     });
   }

@@ -5,7 +5,7 @@ import { Trip } from '../trips/trip.model.js';
 import { envelope } from './envelope.js';
 import { makeHandler, BoardError } from './handler.js';
 import { schemas } from '../board/schemas.js';
-import { pinItem, moveItem, removeItem, lockItem, unlockItem, publicItem, ERR } from '../board/boardState.js';
+import { pinItem, moveItem, removeItem, lockItem, unlockItem, setSharing, checkSharing, publicItem, ERR } from '../board/boardState.js';
 import { sanitizeChat, MAX_CHAT_LENGTH } from '../chat/sanitize.js';
 import { saveMessage, history, messageView, toggleReaction } from '../chat/chatService.js';
 import { HttpError, badRequest, forbidden, notFound, unauthorized } from '../lib/errors.js';
@@ -122,6 +122,7 @@ export function attachTripNamespace(io, { config, registry, actions, ask, emit }
         }),
       );
       log.info('presence.joined', { tripId, correlationId: room.correlationId, userId: user.id });
+      room.logEvent('presence_joined', { userId: user.id, online: room.presence.size });
     }
     if (!leaderWasConnected && room.leaderConnected) {
       emitRoom(room, 'trip.leader.status', room.leaderStatus());
@@ -206,6 +207,17 @@ export function attachTripNamespace(io, { config, registry, actions, ask, emit }
       boardUpdate(r, 'pinned', result.item, user.id);
       emitRoom(r, 'trip.budget.update', r.budget());
       r.markDirty(result.item._id, { immediate: true });
+      r.logEvent('item_pinned', {
+        userId: user.id,
+        itemId: result.item._id,
+        venueId: venue.venueId,
+        name: venue.name,
+        pricePerPerson: venue.pricePerPerson,
+        dayIndex: result.item.dayIndex,
+        startTime: result.item.startTime,
+        endTime: result.item.endTime,
+      });
+      r.logInteraction(user.id, venue.venueId, { liked: true, weight: 1, source: 'pin' });
       actions.afterBoardChange(r);
       return { item: publicItem(result.item) };
     });
@@ -215,6 +227,14 @@ export function attachTripNamespace(io, { config, registry, actions, ask, emit }
       if (!result.ok) refuse(result);
       boardUpdate(r, 'moved', result.item, user.id);
       r.markDirty(result.item._id); // batched (spec 9.4: not on every micro-move)
+      r.logEvent('item_moved', {
+        userId: user.id,
+        itemId: result.item._id,
+        dayIndex: result.item.dayIndex,
+        startTime: result.item.startTime,
+        endTime: result.item.endTime,
+        positionVersion: result.item.positionVersion,
+      });
       actions.afterBoardChange(r);
       return { item: publicItem(result.item) };
     });
@@ -230,6 +250,11 @@ export function attachTripNamespace(io, { config, registry, actions, ask, emit }
       });
       emitRoom(r, 'trip.budget.update', r.budget());
       r.markDeleted(result.item._id);
+      r.logEvent('item_removed', { userId: user.id, itemId: result.item._id, venueId: result.item.venueId });
+      // Removing someone else's pick is a "not for me" signal; removing your own is a change of plan.
+      if (String(result.item.pinnedByUserId) !== user.id) {
+        r.logInteraction(user.id, result.item.venueId, { liked: false, weight: 1, source: 'remove' });
+      }
       actions.afterBoardChange(r);
       return { itemId: String(result.item._id) };
     });
@@ -242,6 +267,7 @@ export function attachTripNamespace(io, { config, registry, actions, ask, emit }
         if (!result.ok) refuse(result);
         boardUpdate(r, 'locked', result.item, user.id);
         r.markDirty(result.item._id, { immediate: true });
+        r.logEvent('item_locked', { userId: user.id, itemId: result.item._id });
         return { item: publicItem(result.item) };
       },
     );
@@ -255,9 +281,48 @@ export function attachTripNamespace(io, { config, registry, actions, ask, emit }
         if (!result.ok) refuse(result);
         boardUpdate(r, 'unlocked', result.item, user.id);
         r.markDirty(result.item._id, { immediate: true });
+        r.logEvent('item_unlocked', { userId: user.id, itemId: result.item._id });
         return { item: publicItem(result.item) };
       },
     );
+
+    // ---- who attends and who pays ------------------------------------------
+    on('trip.board.setSharing', { schema: schemas.setSharing, min: 'planner' }, ({ payload, room: r }) => {
+      const result = setSharing(r.items, payload, r.participantIds);
+      if (!result.ok) refuse(result);
+      boardUpdate(r, 'sharing_changed', result.item, user.id);
+      emitRoom(r, 'trip.budget.update', r.budget());
+      r.markDirty(result.item._id, { immediate: true });
+      r.logEvent('sharing_changed', {
+        userId: user.id,
+        itemId: result.item._id,
+        via: 'direct',
+        attendeeIds: result.item.attendeeIds.map(String),
+        split: result.item.split,
+      });
+      actions.checkConflicts(r);
+      return { item: publicItem(result.item) };
+    });
+
+    // A "budget-split vote" (spec 2): propose a new split; everyone votes yes/no.
+    on('trip.split.propose', { schema: schemas.splitPropose, min: 'planner' }, ({ payload, room: r }) => {
+      const clean = checkSharing(payload, r.participantIds);
+      if (clean.error) throw new HttpError(400, 'BAD_SHARING', clean.error);
+      const result = actions.startSplitVote(r, {
+        itemId: payload.itemId,
+        proposal: { attendeeIds: clean.attendeeIds, split: clean.split },
+        openedByUserId: user.id,
+        durationSeconds: payload.durationSeconds ?? config.voteSeconds,
+      });
+      if (!result.ok) voteFail(result);
+      return { vote: result.vote };
+    });
+
+    on('trip.split.cast', { schema: schemas.splitCast }, ({ payload, room: r }) => {
+      const result = actions.castSplit(r, { voteId: payload.voteId, userId: user.id, choice: payload.choice });
+      if (!result.ok) voteFail(result);
+      return { vote: result.vote };
+    });
 
     // ---- chat ------------------------------------------------------------
     on('trip.chat.send', { schema: schemas.chatSend, notMuted: true }, async ({ payload, room: r }) => {
@@ -271,7 +336,10 @@ export function attachTripNamespace(io, { config, registry, actions, ask, emit }
         clientMsgId: payload.clientMsgId ?? null,
       });
       const view = messageView(doc, r.names);
-      if (!duplicate) emitRoom(r, 'trip.chat.message', view);
+      if (!duplicate) {
+        emitRoom(r, 'trip.chat.message', view);
+        r.logEvent('chat_sent', { userId: user.id }); // count only, never the text
+      }
       return { message: view, duplicate };
     });
 
@@ -354,6 +422,7 @@ export function attachTripNamespace(io, { config, registry, actions, ask, emit }
         emitRoom(r, 'trip.participant.updated', { userId: payload.userId, removed: true, byUserId: user.id });
         emitRoom(r, 'trip.budget.update', r.budget());
         actions.checkConflicts(r);
+        r.logEvent('participant_removed', { userId: user.id, removedUserId: payload.userId });
         await system(r, `${name} was removed from the trip`, { action: 'removed', userId: payload.userId });
         return {};
       },
@@ -403,9 +472,9 @@ export function attachTripNamespace(io, { config, registry, actions, ask, emit }
     );
 
     // ---- contested-slot voting (spec 6.2) ---------------------------------
-    const voteFail = (result) => {
+    function voteFail(result) {
       throw new HttpError(result.code === 'VOTE_NOT_FOUND' ? 404 : 409, result.code, result.message);
-    };
+    }
 
     on('trip.vote.open', { schema: schemas.voteOpen, min: 'leader' }, ({ payload, room: r }) => {
       const result = actions.startVote(r, {
@@ -464,6 +533,7 @@ export function attachTripNamespace(io, { config, registry, actions, ask, emit }
       memberCount: room.participants.size,
     });
     log.info('presence.left', { tripId: room.tripId, correlationId: room.correlationId, userId });
+    room.logEvent('presence_left', { userId, online: room.presence.size });
     if (wasLeader) {
       // Spec 6.1: clearly indicated "leader disconnected" state; lock/unlock frozen.
       room.leaderAwaySince = Date.now();

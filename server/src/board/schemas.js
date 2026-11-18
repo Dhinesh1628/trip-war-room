@@ -34,6 +34,16 @@ export function concierge() {
     .strict();
 }
 
+function sharingSplit() {
+  return z
+    .object({
+      type: z.enum(['even', 'weighted']),
+      weights: z.record(z.string(), z.number().int().min(0).max(100)).optional(),
+    })
+    .strict()
+    .default({ type: 'even' });
+}
+
 const slotOrder = (s) => s.startTime < s.endTime;
 const slotOrderMsg = { message: 'endTime must be after startTime (items cannot run past midnight)', path: ['endTime'] };
 
@@ -75,6 +85,25 @@ export const schemas = {
   voteCancel: z.object({ voteId: objectId('voteId') }).strict(),
 
   aiAsk: concierge(),
+
+  // Who attends an item and how its cost is shared.
+  setSharing: z
+    .object({
+      itemId: objectId('itemId'),
+      attendeeIds: z.array(objectId('attendee')).max(50).optional(), // [] or omitted = everyone
+      split: sharingSplit(),
+      expectedVersion: z.number().int().min(1),
+    })
+    .strict(),
+  splitPropose: z
+    .object({
+      itemId: objectId('itemId'),
+      attendeeIds: z.array(objectId('attendee')).max(50).optional(),
+      split: sharingSplit(),
+      durationSeconds: z.number().int().min(10).max(3600).optional(),
+    })
+    .strict(),
+  splitCast: z.object({ voteId: objectId('voteId'), choice: z.enum(['yes', 'no']) }).strict(),
 
   mute: z.object({ userId: objectId('userId'), muted: z.boolean() }).strict(),
   removeParticipant: z.object({ userId: objectId('userId') }).strict(),

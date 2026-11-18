@@ -29,6 +29,12 @@ const itineraryItemSchema = new mongoose.Schema(
     positionVersion: { type: Number, required: true, default: 1 },
     lockedByUserId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
     votes: { type: mongoose.Schema.Types.Mixed, default: {} }, // used from Phase 3
+    // Who is going (empty = everyone in the trip) and how the cost is shared.
+    attendeeIds: { type: [mongoose.Schema.Types.ObjectId], default: [] },
+    split: {
+      type: { type: String, enum: ['even', 'weighted'], default: 'even' },
+      weights: { type: mongoose.Schema.Types.Mixed, default: null }, // { userId: whole number }
+    },
   },
   { timestamps: true },
 );

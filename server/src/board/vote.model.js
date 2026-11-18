@@ -5,7 +5,12 @@ import mongoose from 'mongoose';
 const voteSchema = new mongoose.Schema(
   {
     tripId: { type: mongoose.Schema.Types.ObjectId, ref: 'Trip', required: true, index: true },
+    // 'slot': which of several items keeps a contested slot.
+    // 'split': yes/no on a proposed change to who pays what for one item.
+    kind: { type: String, enum: ['slot', 'split'], default: 'slot' },
     itemIds: { type: [mongoose.Schema.Types.ObjectId], required: true },
+    proposal: { type: mongoose.Schema.Types.Mixed, default: null }, // split votes: { attendeeIds, split }
+    expectedVersion: { type: Number, default: null }, // split votes: item version when proposed
     candidates: [{ _id: false, itemId: mongoose.Schema.Types.ObjectId, venueId: String, name: String }],
     openedByUserId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null }, // null = the system
     closesAt: { type: Date, required: true },

@@ -38,7 +38,7 @@ export function createApp(config, { gatewayHealth = () => null, gateway = null }
   });
 
   api.use('/auth', authRouter(config));
-  api.use('/users', usersRouter(config));
+  api.use('/users', usersRouter(config, { gateway }));
   api.use('/destinations', destinationsRouter(config));
   api.use('/trips', tripsRouter(config, { gateway }));
   api.use('/admin', adminRouter(config));

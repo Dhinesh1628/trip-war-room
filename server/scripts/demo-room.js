@@ -126,4 +126,17 @@ const boards = [M, S, P].map((t) => {
 });
 console.log(`All three travellers agree on the dinner card: ${boards.every((b) => b === boards[0]) ? 'YES' : 'NO'} ${boards[0]}`);
 
+// ---- analytics and recommendations (Phase 4) -----------------------------
+await sleep(400); // let the background save finish
+const analytics = await call('GET', `/trips/${trip.tripId}/analytics`, { token: maya.accessToken });
+console.log('\n-- Session analytics (from the event log) --');
+console.log(`events logged: ${analytics.eventCount}, peak online: ${analytics.peakConcurrentPlanners}, pinned: ${analytics.board.pinned}, moved: ${analytics.board.moved}, locked: ${analytics.board.locked}`);
+console.log(`conflicts flagged/resolved: ${analytics.conflicts.flagged}/${analytics.conflicts.resolved}, chat messages: ${analytics.chatMessages}`);
+console.log(`final budget: ${analytics.finalBudget.perPerson.map((p) => `${p.displayName} $${p.total.toFixed(2)}`).join(', ')}; group $${analytics.finalBudget.groupTotal.toFixed(2)}`);
+console.log(`event log replays to the stored board exactly: ${analytics.reconciliation.reconciled ? 'YES' : `NO ${JSON.stringify(analytics.reconciliation.differences)}`}`);
+
+const recs = await call('GET', `/trips/${trip.tripId}/recommendations`, { token: maya.accessToken });
+console.log(`\n-- Recommended for the group (model trained on ${recs.model.interactions} interactions from ${recs.model.travellers} travellers) --`);
+for (const r of recs.recommendations) console.log(`  ${r.name.padEnd(36)} $${String(r.pricePerPerson).padEnd(4)} ${r.why}`);
+
 for (const t of [M, S, P]) t.socket.close();

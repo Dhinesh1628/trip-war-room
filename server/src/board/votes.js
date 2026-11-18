@@ -119,10 +119,81 @@ export function cancelVote(items, vote) {
   return { ok: true, restored };
 }
 
+// ---- budget-split votes ------------------------------------------------------
+// "Should we change who pays what for this item?" Ballots are 'yes' / 'no'.
+// The change applies if more people vote yes than no; a tie keeps things as
+// they are. If the item changed in the meantime, the proposal is dropped.
+
+export function openSplitVote(items, { voteId, itemId, proposal, openedByUserId, closesAt }) {
+  const item = items.get(String(itemId));
+  if (!item) return fail('ITEM_NOT_FOUND', 'Item not found');
+  if (item.lifecycleStage !== 'drafting') return fail('ITEM_LOCKED', `${item.venue.name} can't be changed right now`);
+  const vote = {
+    _id: voteId,
+    kind: 'split',
+    itemIds: [String(itemId)],
+    candidates: [{ itemId: String(itemId), venueId: item.venueId, name: item.venue.name }],
+    proposal,
+    expectedVersion: item.positionVersion,
+    openedByUserId: openedByUserId ?? null,
+    closesAt,
+    ballots: new Map(),
+    status: 'open',
+    createdAt: new Date(),
+  };
+  return { ok: true, vote, item };
+}
+
+export function castSplitBallot(vote, { userId, choice }) {
+  if (vote.status !== 'open') return fail('VOTE_CLOSED', 'This vote has already closed');
+  if (choice !== 'yes' && choice !== 'no') return fail('NOT_A_CANDIDATE', 'Vote yes or no');
+  const changed = vote.ballots.has(userId);
+  vote.ballots.set(userId, choice);
+  return { ok: true, changed };
+}
+
+export function splitTally(vote) {
+  const t = { yes: 0, no: 0 };
+  for (const c of vote.ballots.values()) if (c in t) t[c] += 1;
+  return t;
+}
+
+// Decides a split vote. Returns { ok, apply, reason, tally }; the caller
+// applies the proposal (through setSharing) when apply is true.
+export function decideSplitVote(items, vote) {
+  if (vote.status !== 'open') return fail('VOTE_CLOSED', 'This vote has already closed');
+  const tally = splitTally(vote);
+  const item = items.get(vote.itemIds[0]);
+  let apply = tally.yes > tally.no;
+  let reason = apply ? 'majority_yes' : tally.yes === tally.no ? 'tie_keeps_current' : 'majority_no';
+  if (apply && (!item || item.positionVersion !== vote.expectedVersion)) {
+    apply = false;
+    reason = 'item_changed';
+  }
+  Object.assign(vote, { status: 'resolved', tally, resolvedAt: new Date(), resolution: reason });
+  return { ok: true, apply, reason, tally, item };
+}
+
 // Public shape for clients.
 export function publicVote(vote) {
+  if (vote.kind === 'split') {
+    return {
+      voteId: String(vote._id),
+      kind: 'split',
+      itemId: vote.itemIds[0],
+      name: vote.candidates?.[0]?.name,
+      proposal: vote.proposal,
+      openedByUserId: vote.openedByUserId ? String(vote.openedByUserId) : null,
+      closesAt: new Date(vote.closesAt).toISOString(),
+      status: vote.status,
+      ballotCount: vote.ballots.size,
+      tally: splitTally(vote),
+      ...(vote.status !== 'open' ? { resolution: vote.resolution ?? null } : {}),
+    };
+  }
   return {
     voteId: String(vote._id),
+    kind: 'slot',
     itemIds: vote.itemIds,
     candidates: vote.candidates,
     candidateVenueIds: vote.candidates.map((c) => c.venueId),
