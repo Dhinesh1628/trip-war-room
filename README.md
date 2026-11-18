@@ -6,9 +6,12 @@ tracks a shared budget, chats, and asks an AI Concierge questions that are
 answered only from a locally authored venue dataset and always obey the
 group's budget, dietary, opening-hours and distance constraints.
 
-> Status: **Phase 0 — project setup.** The server, real-time gateway, client
-> and test suite are wired together. Features arrive phase by phase (see
-> [Roadmap](#roadmap)).
+> Status: **Phase 1 done** (auth, four-role access control, Lisbon venue
+> dataset, venue search, trips and invites). The real-time board comes in
+> Phase 2 and the full UI in Phase 5 (see [Roadmap](#roadmap)).
+
+Docs: [API reference](docs/API.md) · [Decisions and deviations](docs/DECISIONS.md) ·
+[Postman collection](docs/postman/trip-war-room.postman_collection.json)
 
 ## Track and stack
 
@@ -22,7 +25,13 @@ group's budget, dietary, opening-hours and distance constraints.
 trip-war-room/
   server/   Express REST API + Socket.io gateway (one process, one port)
     src/config/     environment + database connection
+    src/auth/       register/login/refresh, JWT, role rules
+    src/trips/      trip rooms, invite codes, per-trip access checks
+    src/venues/     destinations, venues, dataset validator + loader
+    src/admin/      admin-only dataset upload
     src/realtime/   Board Sync Gateway (kept separate from the REST app)
+    data/destinations/  authored venue datasets (lisbon.json)
+    scripts/        seed, make-admin, smoke test, dev:memory
     test/           Jest tests (use an in-memory MongoDB, no setup needed)
   client/   React app (Vite dev server proxies /api and /socket.io)
 ```
@@ -58,6 +67,23 @@ trip-war-room/
 
    `.env` is git-ignored. Never commit real secrets.
 
+4. Load the venue dataset into your database (safe to run again):
+
+   ```bash
+   npm run seed --prefix server
+   ```
+
+   Expected output: `lisbon.json: lisbon (lisbon-2026.11-1) - 42 venues ...`
+
+5. Optional: make an Admin. Register an account first (through the API or,
+   from Phase 5, the app), then:
+
+   ```bash
+   npm run make-admin --prefix server -- you@example.com
+   ```
+
+   Add `--revoke` to take the role away again.
+
 ## Run (development)
 
 Open two terminals:
@@ -71,16 +97,18 @@ npm run dev --prefix client
 ```
 
 No MongoDB yet? Use `npm run dev:memory --prefix server` instead of the first
-command. It starts a temporary in-memory database (no `.env` needed; all data
-is lost when you stop it).
+command. It starts a temporary in-memory database with the datasets already
+loaded (no `.env` or seed needed; all data is lost when you stop it).
 
 - Client: <http://localhost:5180>
-- API + WebSocket gateway: <http://localhost:5060>
+- API + WebSocket gateway: <http://localhost:5080>
 
-The Phase 0 page shows whether the REST API, the database and the real-time
-gateway are reachable, plus a measured WebSocket round trip.
+The client page is still a status page for now: it shows whether the REST API,
+the database and the real-time gateway are reachable, plus a measured WebSocket
+round trip.
 
-Ports 5060 and 5180 were chosen to avoid clashing with other local projects.
+Ports 5080 and 5180 were chosen to avoid clashing with other local projects
+(5060 would not work: browsers block it as an "unsafe" port).
 To change the server port, set `PORT` in `server/.env` and start the client
 with `VITE_API_PROXY=http://localhost:<port>`.
 
@@ -92,6 +120,35 @@ npm test
 
 This runs the server's Jest suite (against an in-memory MongoDB; the first run
 downloads a MongoDB binary, which can take a minute) and then builds the client.
+
+What the suites cover:
+
+| File | Covers |
+|---|---|
+| `auth.test.js` | register/login, token expiry and forgery, refresh rotation and reuse detection, logout, preferences, rate limiting |
+| `rbac.test.js` | every protected action tried by outsider, Viewer, Planner, Leader and Admin |
+| `trips.test.js` | trip creation and validation, invite codes, joining, capacity (including 5 people racing for the last seat) |
+| `venues.test.js` | distance maths, proximity search checked against a brute-force calculation, query validation |
+| `dataset.test.js` | the Lisbon data covers every constraint type; bad uploads are rejected with clear messages |
+| `health.test.js`, `gateway.test.js` | health checks, config safety, WebSocket ping/pong |
+
+### Smoke test against a running server
+
+With the server running (`npm run dev --prefix server`), in another terminal:
+
+```bash
+npm run smoke --prefix server
+```
+
+It registers two throwaway accounts, creates a trip, joins it, and checks that a
+Viewer and a Leader are blocked from actions above their role. It prints PASS or
+FAIL per check and the request timings.
+
+### Postman
+
+Import [docs/postman/trip-war-room.postman_collection.json](docs/postman/trip-war-room.postman_collection.json)
+and run it with the Collection Runner. Every request has assertions; folder 5
+shows the server rejecting requests above the caller's role.
 
 ## Health checks
 

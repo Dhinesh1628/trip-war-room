@@ -9,7 +9,7 @@ import { createGateway } from './realtime/gateway.js';
 export function buildServer(config) {
   const httpServer = http.createServer();
   const gateway = createGateway(httpServer, config);
-  const app = createApp({ clientOrigin: config.clientOrigin, gatewayHealth: gateway.health });
+  const app = createApp(config, { gatewayHealth: gateway.health });
   httpServer.on('request', app);
   return { httpServer, app, gateway };
 }

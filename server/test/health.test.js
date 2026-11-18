@@ -34,7 +34,7 @@ describe('health checks', () => {
 
   test('malformed JSON returns 400, not 500', async () => {
     const res = await request(server.app)
-      .post('/api/v1/health')
+      .post('/api/v1/auth/login')
       .set('Content-Type', 'application/json')
       .send('{"broken":');
     expect(res.status).toBe(400);
@@ -43,11 +43,19 @@ describe('health checks', () => {
 });
 
 describe('config', () => {
+  const secret = 'x'.repeat(32);
+
   test('refuses to start without required secrets', () => {
     expect(() => loadConfig({})).toThrow(/MONGO_URI, JWT_SECRET/);
   });
 
-  test('uses port 5060 by default', () => {
-    expect(loadConfig({ MONGO_URI: 'x', JWT_SECRET: 'y' }).port).toBe(5060);
+  test('refuses a short JWT secret', () => {
+    expect(() => loadConfig({ MONGO_URI: 'x', JWT_SECRET: 'short' })).toThrow(/at least 32/);
+  });
+
+  test('defaults: port 5080 and access tokens no longer than 1 hour', () => {
+    const config = loadConfig({ MONGO_URI: 'x', JWT_SECRET: secret });
+    expect(config.port).toBe(5080);
+    expect(config.accessTokenTtlSeconds).toBeLessThanOrEqual(3600);
   });
 });

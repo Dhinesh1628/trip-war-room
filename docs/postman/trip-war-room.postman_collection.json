@@ -1,0 +1,358 @@
+{
+  "info": {
+    "name": "Trip War Room API",
+    "description": "Phase 1 REST flow: auth, preferences, venue catalog, trips, invites and server-side RBAC checks. Run the folders top to bottom (Collection Runner or `npx newman run`). Each run registers fresh users with random emails, so it can be re-run safely. Set baseUrl if your server is not on http://localhost:5080.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:5080/api/v1" },
+    { "key": "password", "value": "postman test password" },
+    { "key": "leaderEmail", "value": "" },
+    { "key": "leaderToken", "value": "" },
+    { "key": "leaderId", "value": "" },
+    { "key": "friendToken", "value": "" },
+    { "key": "friendId", "value": "" },
+    { "key": "tripId", "value": "" },
+    { "key": "inviteCode", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "1. Health",
+      "item": [
+        {
+          "name": "API health",
+          "request": { "method": "GET", "url": "{{baseUrl}}/health" },
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('200 and database connected', () => {",
+            "  pm.response.to.have.status(200);",
+            "  pm.expect(pm.response.json().db).to.eql('connected');",
+            "});"
+          ] } }]
+        },
+        {
+          "name": "Gateway health",
+          "request": { "method": "GET", "url": "{{baseUrl}}/health/gateway" },
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('gateway ok', () => pm.expect(pm.response.json().status).to.eql('ok'));"
+          ] } }]
+        }
+      ]
+    },
+    {
+      "name": "2. Auth",
+      "item": [
+        {
+          "name": "Register (trip leader)",
+          "event": [
+            { "listen": "prerequest", "script": { "exec": [
+              "pm.collectionVariables.set('leaderEmail', `leader-${Date.now()}@example.test`);"
+            ] } },
+            { "listen": "test", "script": { "exec": [
+              "pm.test('201 with access token', () => {",
+              "  pm.response.to.have.status(201);",
+              "  const body = pm.response.json();",
+              "  pm.expect(body.accessToken).to.be.a('string');",
+              "  pm.expect(body.expiresIn).to.be.at.most(3600);",
+              "  pm.expect(body.user).to.not.have.property('passwordHash');",
+              "  pm.collectionVariables.set('leaderToken', body.accessToken);",
+              "  pm.collectionVariables.set('leaderId', body.user.id);",
+              "});",
+              "pm.test('sets httpOnly refresh cookie', () => pm.expect(pm.cookies.has('twr_refresh')).to.be.true);"
+            ] } }
+          ],
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/auth/register",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"email\": \"{{leaderEmail}}\",\n  \"password\": \"{{password}}\",\n  \"displayName\": \"Maya (Leader)\"\n}" }
+          }
+        },
+        {
+          "name": "Login",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('200 with access token', () => {",
+            "  pm.response.to.have.status(200);",
+            "  pm.collectionVariables.set('leaderToken', pm.response.json().accessToken);",
+            "});"
+          ] } }],
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/auth/login",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"email\": \"{{leaderEmail}}\",\n  \"password\": \"{{password}}\"\n}" }
+          }
+        },
+        {
+          "name": "Login with wrong password (expect 401)",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('401 BAD_CREDENTIALS', () => {",
+            "  pm.response.to.have.status(401);",
+            "  pm.expect(pm.response.json().error.code).to.eql('BAD_CREDENTIALS');",
+            "});"
+          ] } }],
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/auth/login",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"email\": \"{{leaderEmail}}\",\n  \"password\": \"definitely wrong\"\n}" }
+          }
+        },
+        {
+          "name": "Me",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('returns my profile', () => pm.expect(pm.response.json().user.id).to.eql(pm.collectionVariables.get('leaderId')));"
+          ] } }],
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/auth/me",
+            "header": [{ "key": "Authorization", "value": "Bearer {{leaderToken}}" }]
+          }
+        },
+        {
+          "name": "Refresh (uses the refresh cookie)",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('new access token', () => {",
+            "  pm.response.to.have.status(200);",
+            "  pm.collectionVariables.set('leaderToken', pm.response.json().accessToken);",
+            "});"
+          ] } }],
+          "request": { "method": "POST", "url": "{{baseUrl}}/auth/refresh" }
+        },
+        {
+          "name": "Set dietary preferences and budget ceiling",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('saved', () => pm.expect(pm.response.json().user.preferences.dietaryTags).to.eql(['vegetarian']));"
+          ] } }],
+          "request": {
+            "method": "PATCH",
+            "url": "{{baseUrl}}/users/me",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{leaderToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"preferences\": { \"dietaryTags\": [\"vegetarian\"], \"budgetCeiling\": 40 }\n}" }
+          }
+        }
+      ]
+    },
+    {
+      "name": "3. Venue catalog",
+      "item": [
+        {
+          "name": "List destinations",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('Lisbon is seeded', () => pm.expect(pm.response.json().destinations.map(d => d.slug)).to.include('lisbon'));"
+          ] } }],
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/destinations",
+            "header": [{ "key": "Authorization", "value": "Bearer {{leaderToken}}" }]
+          }
+        },
+        {
+          "name": "Venues near the Alfama tour (1 km)",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('all within radius, nearest first', () => {",
+            "  const v = pm.response.json().venues;",
+            "  pm.expect(v.length).to.be.above(0);",
+            "  v.forEach(x => pm.expect(x.distanceKm).to.be.at.most(1));",
+            "  for (let i = 1; i < v.length; i++) pm.expect(v[i].distanceKm).to.be.at.least(v[i-1].distanceKm);",
+            "});"
+          ] } }],
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/destinations/lisbon/venues?near=38.7118,-9.1296&radiusKm=1",
+            "header": [{ "key": "Authorization", "value": "Bearer {{leaderToken}}" }]
+          }
+        },
+        {
+          "name": "Bad query (expect 400)",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('400 VALIDATION_FAILED', () => pm.response.to.have.status(400));"
+          ] } }],
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/destinations/lisbon/venues?near=not-a-point",
+            "header": [{ "key": "Authorization", "value": "Bearer {{leaderToken}}" }]
+          }
+        }
+      ]
+    },
+    {
+      "name": "4. Trips and invites",
+      "item": [
+        {
+          "name": "Create trip room",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('201 with invite code', () => {",
+            "  pm.response.to.have.status(201);",
+            "  const b = pm.response.json();",
+            "  pm.expect(b.inviteCode).to.match(/^[A-Z2-9]{2}-[A-Z2-9]{4}$/);",
+            "  pm.expect(b.status).to.eql('drafting');",
+            "  pm.collectionVariables.set('tripId', b.tripId);",
+            "  pm.collectionVariables.set('inviteCode', b.inviteCode);",
+            "});"
+          ] } }],
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/trips",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{leaderToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"destination\": \"Lisbon, Portugal\",\n  \"startDate\": \"2026-12-10\",\n  \"endDate\": \"2026-12-14\",\n  \"totalBudget\": 1200,\n  \"maxParticipants\": 8\n}" }
+          }
+        },
+        {
+          "name": "Register a co-traveller",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('201', () => {",
+            "  pm.response.to.have.status(201);",
+            "  pm.collectionVariables.set('friendToken', pm.response.json().accessToken);",
+            "  pm.collectionVariables.set('friendId', pm.response.json().user.id);",
+            "});"
+          ] } }],
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/auth/register",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"email\": \"friend-{{$timestamp}}{{$randomInt}}@example.test\",\n  \"password\": \"{{password}}\",\n  \"displayName\": \"Sam (Co-traveller)\"\n}" }
+          }
+        },
+        {
+          "name": "Preview invite",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('shows trip summary', () => pm.expect(pm.response.json().leaderName).to.eql('Maya (Leader)'));"
+          ] } }],
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/trips/invite/{{inviteCode}}",
+            "header": [{ "key": "Authorization", "value": "Bearer {{friendToken}}" }]
+          }
+        },
+        {
+          "name": "Join with invite code",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('joined as planner', () => {",
+            "  pm.response.to.have.status(201);",
+            "  pm.expect(pm.response.json().trip.myRole).to.eql('planner');",
+            "});"
+          ] } }],
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/trips/join",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{friendToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"inviteCode\": \"{{inviteCode}}\"\n}" }
+          }
+        },
+        {
+          "name": "Leader makes the co-traveller a Viewer",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('role changed', () => {",
+            "  const p = pm.response.json().trip.participants.find(x => x.userId === pm.collectionVariables.get('friendId'));",
+            "  pm.expect(p.role).to.eql('viewer');",
+            "});"
+          ] } }],
+          "request": {
+            "method": "PATCH",
+            "url": "{{baseUrl}}/trips/{{tripId}}/participants/{{friendId}}",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{leaderToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"role\": \"viewer\"\n}" }
+          }
+        },
+        {
+          "name": "Get trip (as viewer)",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('viewer can read but not see invite code', () => {",
+            "  const t = pm.response.json().trip;",
+            "  pm.expect(t.myRole).to.eql('viewer');",
+            "  pm.expect(t).to.not.have.property('inviteCode');",
+            "});"
+          ] } }],
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/trips/{{tripId}}",
+            "header": [{ "key": "Authorization", "value": "Bearer {{friendToken}}" }]
+          }
+        }
+      ]
+    },
+    {
+      "name": "5. RBAC evidence (all expect 403/401)",
+      "item": [
+        {
+          "name": "Viewer tries to change room settings (Leader-only)",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('403 FORBIDDEN', () => {",
+            "  pm.response.to.have.status(403);",
+            "  pm.expect(pm.response.json().error.code).to.eql('FORBIDDEN');",
+            "});"
+          ] } }],
+          "request": {
+            "method": "PATCH",
+            "url": "{{baseUrl}}/trips/{{tripId}}/settings",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{friendToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"maxParticipants\": 20\n}" }
+          }
+        },
+        {
+          "name": "Viewer tries to regenerate the invite code (Leader-only)",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('403', () => pm.response.to.have.status(403));"
+          ] } }],
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/trips/{{tripId}}/invite-code",
+            "header": [{ "key": "Authorization", "value": "Bearer {{friendToken}}" }]
+          }
+        },
+        {
+          "name": "Leader tries to list venue datasets (Admin-only)",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('403', () => pm.response.to.have.status(403));"
+          ] } }],
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/admin/datasets",
+            "header": [{ "key": "Authorization", "value": "Bearer {{leaderToken}}" }]
+          }
+        },
+        {
+          "name": "No token at all",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('401', () => pm.response.to.have.status(401));"
+          ] } }],
+          "request": { "method": "GET", "url": "{{baseUrl}}/trips/{{tripId}}" }
+        }
+      ]
+    },
+    {
+      "name": "6. Logout",
+      "item": [
+        {
+          "name": "Logout",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('204', () => pm.response.to.have.status(204));"
+          ] } }],
+          "request": { "method": "POST", "url": "{{baseUrl}}/auth/logout" }
+        },
+        {
+          "name": "Refresh after logout (expect 401)",
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('401', () => pm.response.to.have.status(401));"
+          ] } }],
+          "request": { "method": "POST", "url": "{{baseUrl}}/auth/refresh" }
+        }
+      ]
+    }
+  ]
+}

@@ -2,8 +2,8 @@ import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 
 // Ports 5173/5174 are taken by other projects on this machine, so the client
-// runs on 5180 and forwards API + WebSocket traffic to the server on 5060.
-const API = process.env.VITE_API_PROXY || 'http://localhost:5060';
+// runs on 5180 and forwards API + WebSocket traffic to the server on 5080.
+const API = process.env.VITE_API_PROXY || 'http://localhost:5080';
 
 export default defineConfig({
   plugins: [react()],

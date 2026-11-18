@@ -1,0 +1,353 @@
+{
+  "datasetVersion": "lisbon-2026.11-1",
+  "about": "Hand-authored mock dataset for development and testing. Venue names, prices, hours and ratings are fictional; neighbourhoods and coordinates are real Lisbon locations. All prices are USD. Lodging pricePerPerson is per person per night. Weather is mocked: monthly normals plus a sample daily forecast.",
+  "destination": {
+    "slug": "lisbon",
+    "name": "Lisbon, Portugal",
+    "country": "Portugal",
+    "timezone": "Europe/Lisbon",
+    "currency": "USD",
+    "center": { "lat": 38.7110, "lng": -9.1366 }
+  },
+  "venues": [
+    {
+      "venueId": "v_lis_001", "name": "Taberna da Rua", "category": "dinner", "neighborhood": "Alfama",
+      "pricePerPerson": 22, "dietaryTags": ["vegetarian"],
+      "hours": { "open": "11:00", "close": "22:00" }, "coordinates": { "lat": 38.7121, "lng": -9.1302 },
+      "rating": 4.4, "reviewCount": 812, "indoor": true,
+      "description": "Neighbourhood tavern serving grilled sardines, bean stews and a daily vegetarian plate, a few steps from the Alfama walking-tour meeting point."
+    },
+    {
+      "venueId": "v_lis_002", "name": "Horta Verde", "category": "dinner", "neighborhood": "Mouraria",
+      "pricePerPerson": 18, "dietaryTags": ["vegetarian", "vegan", "gluten-free", "dairy-free"],
+      "hours": { "open": "12:00", "close": "22:30" }, "coordinates": { "lat": 38.7153, "lng": -9.1352 },
+      "rating": 4.6, "reviewCount": 540, "indoor": true,
+      "description": "Plant-based kitchen cooking seasonal Portuguese vegetables, chickpea stews and gluten-free bread baked in-house."
+    },
+    {
+      "venueId": "v_lis_003", "name": "Casa do Bacalhau Velho", "category": "dinner", "neighborhood": "Baixa",
+      "pricePerPerson": 29, "dietaryTags": ["gluten-free"],
+      "hours": { "open": "12:00", "close": "23:00" }, "coordinates": { "lat": 38.7108, "lng": -9.1372 },
+      "rating": 4.2, "reviewCount": 1290, "indoor": true,
+      "description": "Traditional salt-cod house on a Baixa side street with a long menu of bacalhau dishes; most plates are naturally gluten-free."
+    },
+    {
+      "venueId": "v_lis_004", "name": "Marisqueira do Cais", "category": "dinner", "neighborhood": "Cais do Sodré",
+      "pricePerPerson": 48, "dietaryTags": ["gluten-free", "dairy-free"],
+      "hours": { "open": "12:00", "close": "23:30" }, "coordinates": { "lat": 38.7064, "lng": -9.1446 },
+      "rating": 4.5, "reviewCount": 2210, "indoor": true,
+      "description": "Busy riverside seafood hall selling clams, prawns and grilled fish by weight; simple preparations without butter or flour."
+    },
+    {
+      "venueId": "v_lis_005", "name": "Sabor de Marrakech", "category": "dinner", "neighborhood": "Mouraria",
+      "pricePerPerson": 21, "dietaryTags": ["halal", "vegetarian"],
+      "hours": { "open": "12:00", "close": "23:00" }, "coordinates": { "lat": 38.7161, "lng": -9.1361 },
+      "rating": 4.3, "reviewCount": 430, "indoor": true,
+      "description": "Moroccan family restaurant with halal-certified lamb tagines, couscous and several vegetable tagines."
+    },
+    {
+      "venueId": "v_lis_006", "name": "Mesa Kasher", "category": "dinner", "neighborhood": "Avenida da Liberdade",
+      "pricePerPerson": 34, "dietaryTags": ["kosher", "vegetarian", "nut-free"],
+      "hours": { "open": "18:00", "close": "22:00" }, "coordinates": { "lat": 38.7215, "lng": -9.1458 },
+      "rating": 4.1, "reviewCount": 120, "indoor": true,
+      "description": "Small kosher dairy restaurant open for dinner only, serving fish, pasta and vegetarian Sephardic dishes in a nut-free kitchen."
+    },
+    {
+      "venueId": "v_lis_007", "name": "Alma Lusa Degustação", "category": "dinner", "neighborhood": "Chiado",
+      "pricePerPerson": 135, "dietaryTags": ["vegetarian", "gluten-free"],
+      "hours": { "open": "19:30", "close": "22:30" }, "coordinates": { "lat": 38.7103, "lng": -9.1418 },
+      "rating": 4.8, "reviewCount": 960, "indoor": true,
+      "description": "Fine-dining tasting menu with a single evening seating; vegetarian and gluten-free menus on request. Reservations essential."
+    },
+    {
+      "venueId": "v_lis_008", "name": "Prado do Rio", "category": "dinner", "neighborhood": "Baixa",
+      "pricePerPerson": 62, "dietaryTags": ["vegetarian", "vegan", "gluten-free", "dairy-free", "nut-free"],
+      "hours": { "open": "18:30", "close": "23:00" }, "coordinates": { "lat": 38.7098, "lng": -9.1335 },
+      "rating": 4.7, "reviewCount": 705, "indoor": true,
+      "description": "Farm-to-table dining room near the river with an allergy-aware kitchen; every dish is labelled for the major dietary needs."
+    },
+    {
+      "venueId": "v_lis_009", "name": "Tasca do Fado Pequeno", "category": "dinner", "neighborhood": "Alfama",
+      "pricePerPerson": 26, "dietaryTags": [],
+      "hours": { "open": "19:00", "close": "23:30" }, "coordinates": { "lat": 38.7112, "lng": -9.1290 },
+      "rating": 4.0, "reviewCount": 388, "indoor": true,
+      "description": "Tiny tavern with informal fado sung between courses; meat and fish only, no dietary alternatives."
+    },
+    {
+      "venueId": "v_lis_010", "name": "Cantina da Graça", "category": "lunch", "neighborhood": "Graça",
+      "pricePerPerson": 12, "dietaryTags": ["vegetarian"],
+      "hours": { "open": "12:00", "close": "15:00" }, "coordinates": { "lat": 38.7175, "lng": -9.1315 },
+      "rating": 4.3, "reviewCount": 266, "indoor": true,
+      "description": "Lunch-only workers' canteen with a fixed daily menu of soup, main and coffee; one vegetarian main every day."
+    },
+    {
+      "venueId": "v_lis_011", "name": "Bairro Ramen", "category": "dinner", "neighborhood": "Bairro Alto",
+      "pricePerPerson": 17, "dietaryTags": ["vegan", "dairy-free"],
+      "hours": { "open": "18:00", "close": "01:00" }, "coordinates": { "lat": 38.7133, "lng": -9.1447 },
+      "rating": 4.2, "reviewCount": 615, "indoor": true,
+      "description": "Late-night noodle bar with a miso-mushroom vegan broth; open past midnight for the Bairro Alto crowd."
+    },
+    {
+      "venueId": "v_lis_012", "name": "Churrasqueira do Alto", "category": "dinner", "neighborhood": "Bairro Alto",
+      "pricePerPerson": 15, "dietaryTags": ["gluten-free", "dairy-free"],
+      "hours": { "open": "12:00", "close": "23:00" }, "coordinates": { "lat": 38.7138, "lng": -9.1455 },
+      "rating": 4.1, "reviewCount": 940, "indoor": true,
+      "description": "Charcoal-grill chicken house with piri-piri sauce, fries and salad; good value for groups."
+    },
+    {
+      "venueId": "v_lis_013", "name": "Pátio de Belém", "category": "lunch", "neighborhood": "Belém",
+      "pricePerPerson": 19, "dietaryTags": ["vegetarian", "gluten-free"],
+      "hours": { "open": "11:30", "close": "16:00" }, "coordinates": { "lat": 38.6975, "lng": -9.2040 },
+      "rating": 4.2, "reviewCount": 350, "indoor": false,
+      "description": "Courtyard lunch spot between the monastery and the river; salads, grilled fish and vegetarian rice dishes."
+    },
+    {
+      "venueId": "v_lis_014", "name": "Doca Sushi", "category": "dinner", "neighborhood": "Alcântara",
+      "pricePerPerson": 38, "dietaryTags": ["gluten-free", "dairy-free", "nut-free"],
+      "hours": { "open": "12:30", "close": "23:00" }, "coordinates": { "lat": 38.7035, "lng": -9.1770 },
+      "rating": 4.4, "reviewCount": 510, "indoor": true,
+      "description": "Dockside sushi counter in a converted warehouse; tamari instead of soy sauce on request."
+    },
+    {
+      "venueId": "v_lis_015", "name": "Tandoor Martim Moniz", "category": "dinner", "neighborhood": "Mouraria",
+      "pricePerPerson": 16, "dietaryTags": ["halal", "vegetarian", "vegan", "gluten-free"],
+      "hours": { "open": "11:30", "close": "23:30" }, "coordinates": { "lat": 38.7166, "lng": -9.1368 },
+      "rating": 4.3, "reviewCount": 870, "indoor": true,
+      "description": "North Indian curry house on Martim Moniz square with halal meat and a large vegan and vegetarian menu."
+    },
+    {
+      "venueId": "v_lis_016", "name": "Mercado da Ribeira Food Hall", "category": "lunch", "neighborhood": "Cais do Sodré",
+      "pricePerPerson": 20, "dietaryTags": ["vegetarian", "vegan", "halal", "gluten-free", "dairy-free", "nut-free"],
+      "hours": { "open": "10:00", "close": "00:00" }, "coordinates": { "lat": 38.7070, "lng": -9.1458 },
+      "rating": 4.5, "reviewCount": 5120, "indoor": true,
+      "description": "Large food hall with dozens of stalls, so mixed groups can each find something; communal tables, open until midnight."
+    },
+    {
+      "venueId": "v_lis_017", "name": "Petiscos do Castelo", "category": "dinner", "neighborhood": "Alfama",
+      "pricePerPerson": 24, "dietaryTags": ["vegetarian", "nut-free"],
+      "hours": { "open": "17:00", "close": "23:00" }, "coordinates": { "lat": 38.7128, "lng": -9.1325 },
+      "rating": 4.5, "reviewCount": 690, "indoor": true,
+      "description": "Small-plates bar below the castle walls serving cheeses, grilled vegetables and petiscos to share."
+    },
+    {
+      "venueId": "v_lis_018", "name": "Brasa do Parque", "category": "dinner", "neighborhood": "Parque das Nações",
+      "pricePerPerson": 33, "dietaryTags": ["gluten-free"],
+      "hours": { "open": "12:00", "close": "23:00" }, "coordinates": { "lat": 38.7676, "lng": -9.0960 },
+      "rating": 4.0, "reviewCount": 455, "indoor": true,
+      "description": "Steakhouse on the riverside promenade near the oceanarium; grilled meats and salads."
+    },
+    {
+      "venueId": "v_lis_019", "name": "Pastelaria Aurora", "category": "breakfast", "neighborhood": "Belém",
+      "pricePerPerson": 6, "dietaryTags": ["vegetarian"],
+      "hours": { "open": "08:00", "close": "19:00" }, "coordinates": { "lat": 38.6976, "lng": -9.2030 },
+      "rating": 4.6, "reviewCount": 3300, "indoor": true,
+      "description": "Historic pastry shop known for warm custard tarts and coffee; expect a queue mid-morning."
+    },
+    {
+      "venueId": "v_lis_020", "name": "Café Príncipe", "category": "cafe", "neighborhood": "Príncipe Real",
+      "pricePerPerson": 9, "dietaryTags": ["vegetarian", "vegan", "gluten-free", "dairy-free"],
+      "hours": { "open": "08:30", "close": "18:00" }, "coordinates": { "lat": 38.7168, "lng": -9.1488 },
+      "rating": 4.4, "reviewCount": 420, "indoor": false,
+      "description": "Garden kiosk café with oat-milk coffee, vegan cakes and gluten-free toast under the cedar tree."
+    },
+    {
+      "venueId": "v_lis_021", "name": "Brunch das Sete Colinas", "category": "breakfast", "neighborhood": "Chiado",
+      "pricePerPerson": 16, "dietaryTags": ["vegetarian", "vegan", "gluten-free", "dairy-free", "nut-free"],
+      "hours": { "open": "09:00", "close": "13:00" }, "coordinates": { "lat": 38.7110, "lng": -9.1430 },
+      "rating": 4.5, "reviewCount": 780, "indoor": true,
+      "description": "Morning-only brunch room with eggs, pancakes and bowls; separate allergy-safe preparation area."
+    },
+    {
+      "venueId": "v_lis_022", "name": "Leitaria da Baixa", "category": "breakfast", "neighborhood": "Baixa",
+      "pricePerPerson": 7, "dietaryTags": ["vegetarian"],
+      "hours": { "open": "07:30", "close": "12:00" }, "coordinates": { "lat": 38.7115, "lng": -9.1385 },
+      "rating": 4.1, "reviewCount": 510, "indoor": true,
+      "description": "Old-style dairy bar for a quick breakfast of toast, pastries and galão coffee; closes at noon."
+    },
+    {
+      "venueId": "v_lis_023", "name": "Miradouro Terrace Bar", "category": "bar", "neighborhood": "Graça",
+      "pricePerPerson": 14, "dietaryTags": ["vegetarian", "vegan"],
+      "hours": { "open": "16:00", "close": "01:00" }, "coordinates": { "lat": 38.7163, "lng": -9.1310 },
+      "rating": 4.6, "reviewCount": 1800, "indoor": false,
+      "description": "Open-air terrace beside a viewpoint, popular at sunset; drinks plus vegan snack boards."
+    },
+    {
+      "venueId": "v_lis_024", "name": "Cave do Bairro", "category": "bar", "neighborhood": "Bairro Alto",
+      "pricePerPerson": 11, "dietaryTags": [],
+      "hours": { "open": "22:00", "close": "03:00" }, "coordinates": { "lat": 38.7127, "lng": -9.1440 },
+      "rating": 4.0, "reviewCount": 670, "indoor": true,
+      "description": "Basement bar with DJ nights; opens late and runs until 3 AM. Drinks only."
+    },
+    {
+      "venueId": "v_lis_025", "name": "Alfama Old Quarter Walking Tour", "category": "tour", "neighborhood": "Alfama",
+      "pricePerPerson": 25, "dietaryTags": [],
+      "hours": { "open": "10:00", "close": "19:00" }, "coordinates": { "lat": 38.7118, "lng": -9.1296 },
+      "rating": 4.7, "reviewCount": 1450, "indoor": false,
+      "description": "Two-hour guided walk through Alfama's alleys and viewpoints; departs from Largo do Chafariz de Dentro, last departure 5 PM."
+    },
+    {
+      "venueId": "v_lis_026", "name": "Tram 28 Heritage Ride", "category": "activity", "neighborhood": "Mouraria",
+      "pricePerPerson": 4, "dietaryTags": [],
+      "hours": { "open": "07:00", "close": "22:00" }, "coordinates": { "lat": 38.7158, "lng": -9.1364 },
+      "rating": 4.3, "reviewCount": 4100, "indoor": false,
+      "description": "Ride the vintage yellow tram from Martim Moniz up through Graça and Alfama; board early to avoid crowds."
+    },
+    {
+      "venueId": "v_lis_027", "name": "Castelo Hilltop Fortress", "category": "attraction", "neighborhood": "Alfama",
+      "pricePerPerson": 17, "dietaryTags": [],
+      "hours": { "open": "09:00", "close": "21:00" }, "coordinates": { "lat": 38.7139, "lng": -9.1334 },
+      "rating": 4.5, "reviewCount": 6200, "indoor": false,
+      "description": "Moorish castle ramparts with the widest view over the city and river; allow 90 minutes."
+    },
+    {
+      "venueId": "v_lis_028", "name": "Casa dos Azulejos Museum", "category": "museum", "neighborhood": "Xabregas",
+      "pricePerPerson": 8, "dietaryTags": [],
+      "hours": { "open": "10:00", "close": "18:00" }, "coordinates": { "lat": 38.7247, "lng": -9.1137 },
+      "rating": 4.6, "reviewCount": 2300, "indoor": true,
+      "description": "Museum of Portuguese decorative tiles in a former convent; a good rainy-day option."
+    },
+    {
+      "venueId": "v_lis_029", "name": "Belém Riverside Tower", "category": "attraction", "neighborhood": "Belém",
+      "pricePerPerson": 9, "dietaryTags": [],
+      "hours": { "open": "10:00", "close": "17:30" }, "coordinates": { "lat": 38.6916, "lng": -9.2160 },
+      "rating": 4.4, "reviewCount": 5400, "indoor": false,
+      "description": "Sixteenth-century fortified tower on the river bank; narrow stairs and limited entry slots."
+    },
+    {
+      "venueId": "v_lis_030", "name": "Monastery Cloisters of Belém", "category": "museum", "neighborhood": "Belém",
+      "pricePerPerson": 12, "dietaryTags": [],
+      "hours": { "open": "09:30", "close": "18:00" }, "coordinates": { "lat": 38.6979, "lng": -9.2068 },
+      "rating": 4.7, "reviewCount": 4900, "indoor": true,
+      "description": "Ornate limestone cloisters of the riverside monastery; indoor and shaded, about one hour."
+    },
+    {
+      "venueId": "v_lis_031", "name": "Oceanário do Tejo", "category": "attraction", "neighborhood": "Parque das Nações",
+      "pricePerPerson": 28, "dietaryTags": [],
+      "hours": { "open": "10:00", "close": "20:00" }, "coordinates": { "lat": 38.7635, "lng": -9.0938 },
+      "rating": 4.7, "reviewCount": 7600, "indoor": true,
+      "description": "Large aquarium built around a central ocean tank; indoor, two to three hours."
+    },
+    {
+      "venueId": "v_lis_032", "name": "Fado Night at Casa Mouraria", "category": "activity", "neighborhood": "Mouraria",
+      "pricePerPerson": 45, "dietaryTags": ["vegetarian"],
+      "hours": { "open": "20:00", "close": "23:30" }, "coordinates": { "lat": 38.7157, "lng": -9.1347 },
+      "rating": 4.6, "reviewCount": 980, "indoor": true,
+      "description": "Seated evening fado performance with a set dinner (vegetarian option available); one show per night."
+    },
+    {
+      "venueId": "v_lis_033", "name": "LX Factory Market Walk", "category": "activity", "neighborhood": "Alcântara",
+      "pricePerPerson": 5, "dietaryTags": [],
+      "hours": { "open": "10:00", "close": "20:00" }, "coordinates": { "lat": 38.7030, "lng": -9.1780 },
+      "rating": 4.4, "reviewCount": 2100, "indoor": false,
+      "description": "Self-guided wander through a converted industrial complex of shops, bookstores and street art; small map fee."
+    },
+    {
+      "venueId": "v_lis_034", "name": "Tagus Sunset Sailing", "category": "tour", "neighborhood": "Alcântara",
+      "pricePerPerson": 55, "dietaryTags": [],
+      "hours": { "open": "17:30", "close": "20:00" }, "coordinates": { "lat": 38.7025, "lng": -9.1735 },
+      "rating": 4.8, "reviewCount": 640, "indoor": false,
+      "description": "Two-hour sailboat trip on the river at sunset, leaving from the Santo Amaro dock; weather dependent."
+    },
+    {
+      "venueId": "v_lis_035", "name": "Sintra Palaces Day Trip", "category": "tour", "neighborhood": "Avenida da Liberdade",
+      "pricePerPerson": 79, "dietaryTags": [],
+      "hours": { "open": "08:30", "close": "18:30" }, "coordinates": { "lat": 38.7253, "lng": -9.1500 },
+      "rating": 4.6, "reviewCount": 1320, "indoor": false,
+      "description": "Full-day guided coach trip to the hilltop palaces of Sintra; pick-up at Marquês de Pombal."
+    },
+    {
+      "venueId": "v_lis_036", "name": "Riverside Art and Technology Centre", "category": "museum", "neighborhood": "Belém",
+      "pricePerPerson": 11, "dietaryTags": [],
+      "hours": { "open": "10:00", "close": "19:00" }, "coordinates": { "lat": 38.6957, "lng": -9.1938 },
+      "rating": 4.3, "reviewCount": 1900, "indoor": true,
+      "description": "Contemporary art and design exhibitions in a curved riverside building with a walkable roof."
+    },
+    {
+      "venueId": "v_lis_037", "name": "Bairro Alto Street Art Tour", "category": "tour", "neighborhood": "Bairro Alto",
+      "pricePerPerson": 20, "dietaryTags": [],
+      "hours": { "open": "15:00", "close": "18:00" }, "coordinates": { "lat": 38.7135, "lng": -9.1450 },
+      "rating": 4.5, "reviewCount": 410, "indoor": false,
+      "description": "Afternoon walking tour of murals and paste-ups with a local artist; starts at 3 PM only."
+    },
+    {
+      "venueId": "v_lis_038", "name": "Sete Colinas Hostel", "category": "lodging", "neighborhood": "Baixa",
+      "pricePerPerson": 38, "dietaryTags": [],
+      "hours": { "open": "00:00", "close": "23:59" }, "coordinates": { "lat": 38.7120, "lng": -9.1390 },
+      "rating": 4.3, "reviewCount": 2600, "indoor": true,
+      "description": "Central hostel with private twin rooms and dorms, 24-hour reception and a shared kitchen."
+    },
+    {
+      "venueId": "v_lis_039", "name": "Casa Alfama Guesthouse", "category": "lodging", "neighborhood": "Alfama",
+      "pricePerPerson": 64, "dietaryTags": [],
+      "hours": { "open": "00:00", "close": "23:59" }, "coordinates": { "lat": 38.7116, "lng": -9.1310 },
+      "rating": 4.6, "reviewCount": 730, "indoor": true,
+      "description": "Restored townhouse with eight rooms and a roof terrace; steep streets, no lift."
+    },
+    {
+      "venueId": "v_lis_040", "name": "Hotel Avenida Jardim", "category": "lodging", "neighborhood": "Avenida da Liberdade",
+      "pricePerPerson": 112, "dietaryTags": [],
+      "hours": { "open": "00:00", "close": "23:59" }, "coordinates": { "lat": 38.7195, "lng": -9.1455 },
+      "rating": 4.4, "reviewCount": 1540, "indoor": true,
+      "description": "Mid-range hotel on the main boulevard next to a metro station; family rooms sleep four."
+    },
+    {
+      "venueId": "v_lis_041", "name": "Palácio Chiado Suites", "category": "lodging", "neighborhood": "Chiado",
+      "pricePerPerson": 215, "dietaryTags": [],
+      "hours": { "open": "00:00", "close": "23:59" }, "coordinates": { "lat": 38.7100, "lng": -9.1410 },
+      "rating": 4.9, "reviewCount": 880, "indoor": true,
+      "description": "Luxury suites in an eighteenth-century palace with concierge service; well above most group budgets."
+    },
+    {
+      "venueId": "v_lis_042", "name": "Cais Riverside Apartments", "category": "lodging", "neighborhood": "Cais do Sodré",
+      "pricePerPerson": 79, "dietaryTags": [],
+      "hours": { "open": "00:00", "close": "23:59" }, "coordinates": { "lat": 38.7058, "lng": -9.1435 },
+      "rating": 4.5, "reviewCount": 460, "indoor": true,
+      "description": "Two- and three-bedroom serviced apartments by the river station; self check-in, good for groups of four to six."
+    }
+  ],
+  "transit": [
+    { "from": "Baixa", "to": "Alfama", "mode": "walk", "minutes": 12, "costPerPerson": 0 },
+    { "from": "Baixa", "to": "Chiado", "mode": "walk", "minutes": 6, "costPerPerson": 0 },
+    { "from": "Chiado", "to": "Bairro Alto", "mode": "walk", "minutes": 5, "costPerPerson": 0 },
+    { "from": "Baixa", "to": "Mouraria", "mode": "walk", "minutes": 8, "costPerPerson": 0 },
+    { "from": "Mouraria", "to": "Graça", "mode": "tram", "minutes": 12, "costPerPerson": 3.10, "line": "Tram 28" },
+    { "from": "Mouraria", "to": "Alfama", "mode": "tram", "minutes": 15, "costPerPerson": 3.10, "line": "Tram 28" },
+    { "from": "Chiado", "to": "Príncipe Real", "mode": "walk", "minutes": 10, "costPerPerson": 0 },
+    { "from": "Baixa", "to": "Cais do Sodré", "mode": "walk", "minutes": 10, "costPerPerson": 0 },
+    { "from": "Baixa", "to": "Avenida da Liberdade", "mode": "metro", "minutes": 5, "costPerPerson": 1.85, "line": "Blue line" },
+    { "from": "Baixa", "to": "Belém", "mode": "tram", "minutes": 25, "costPerPerson": 3.10, "line": "Tram 15E" },
+    { "from": "Cais do Sodré", "to": "Belém", "mode": "train", "minutes": 8, "costPerPerson": 1.65, "line": "Cascais line" },
+    { "from": "Cais do Sodré", "to": "Alcântara", "mode": "train", "minutes": 5, "costPerPerson": 1.65, "line": "Cascais line" },
+    { "from": "Baixa", "to": "Parque das Nações", "mode": "metro", "minutes": 20, "costPerPerson": 1.85, "line": "Green + Red lines" },
+    { "from": "Alfama", "to": "Xabregas", "mode": "bus", "minutes": 15, "costPerPerson": 2.10, "line": "Bus 759" },
+    { "from": "Baixa", "to": "Alfama", "mode": "taxi", "minutes": 7, "costPerPerson": 4.50 },
+    { "from": "Cais do Sodré", "to": "Barreiro", "mode": "ferry", "minutes": 20, "costPerPerson": 2.75, "line": "Tagus ferry" }
+  ],
+  "weather": {
+    "monthly": [
+      { "month": 1, "condition": "showers", "highC": 15, "lowC": 8, "rainDays": 10 },
+      { "month": 2, "condition": "showers", "highC": 16, "lowC": 9, "rainDays": 9 },
+      { "month": 3, "condition": "partly-cloudy", "highC": 19, "lowC": 10, "rainDays": 7 },
+      { "month": 4, "condition": "partly-cloudy", "highC": 20, "lowC": 12, "rainDays": 9 },
+      { "month": 5, "condition": "sunny", "highC": 23, "lowC": 14, "rainDays": 6 },
+      { "month": 6, "condition": "sunny", "highC": 26, "lowC": 16, "rainDays": 2 },
+      { "month": 7, "condition": "sunny", "highC": 28, "lowC": 18, "rainDays": 1 },
+      { "month": 8, "condition": "sunny", "highC": 29, "lowC": 18, "rainDays": 1 },
+      { "month": 9, "condition": "sunny", "highC": 27, "lowC": 17, "rainDays": 4 },
+      { "month": 10, "condition": "partly-cloudy", "highC": 23, "lowC": 15, "rainDays": 9 },
+      { "month": 11, "condition": "showers", "highC": 18, "lowC": 11, "rainDays": 10 },
+      { "month": 12, "condition": "rain", "highC": 15, "lowC": 9, "rainDays": 11 }
+    ],
+    "daily": [
+      { "date": "2026-12-08", "condition": "partly-cloudy", "highC": 16, "lowC": 10, "precipitationChance": 20 },
+      { "date": "2026-12-09", "condition": "sunny", "highC": 17, "lowC": 9, "precipitationChance": 5 },
+      { "date": "2026-12-10", "condition": "sunny", "highC": 17, "lowC": 10, "precipitationChance": 5 },
+      { "date": "2026-12-11", "condition": "cloudy", "highC": 15, "lowC": 10, "precipitationChance": 40 },
+      { "date": "2026-12-12", "condition": "rain", "highC": 14, "lowC": 9, "precipitationChance": 85 },
+      { "date": "2026-12-13", "condition": "showers", "highC": 15, "lowC": 9, "precipitationChance": 60 },
+      { "date": "2026-12-14", "condition": "windy", "highC": 15, "lowC": 8, "precipitationChance": 25 },
+      { "date": "2026-12-15", "condition": "partly-cloudy", "highC": 16, "lowC": 9, "precipitationChance": 15 },
+      { "date": "2026-12-16", "condition": "sunny", "highC": 17, "lowC": 10, "precipitationChance": 5 }
+    ]
+  }
+}
