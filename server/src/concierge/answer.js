@@ -254,7 +254,11 @@ async function askModel(llm, facts, config) {
     if (err instanceof Anthropic.APIConnectionTimeoutError) return { ok: false, reason: 'timeout' };
     if (err instanceof Anthropic.RateLimitError) return { ok: false, reason: 'rate_limited' };
     if (err instanceof Anthropic.AuthenticationError) return { ok: false, reason: 'bad_api_key' };
-    if (err instanceof Anthropic.APIError) return { ok: false, reason: `api_error_${err.status ?? 'network'}` };
+    if (err instanceof Anthropic.APIError) {
+      // The API's own explanation (e.g. "credit balance is too low"); never contains the key.
+      const detail = err.error?.error?.message ?? err.message;
+      return { ok: false, reason: `api_error_${err.status ?? 'network'}`, detail: String(detail).slice(0, 300) };
+    }
     throw err;
   }
 }
@@ -276,6 +280,6 @@ export async function writeAnswer({ facts, llm, config, allVenueNames, tripId })
     log.warn('concierge.ungrounded', { tripId, problems });
     return { ...templateAnswer(facts), mode: 'template', fallbackReason: 'ungrounded', problems, llmMs };
   }
-  log.warn('concierge.llm_fallback', { tripId, reason: result.reason, llmMs });
+  log.warn('concierge.llm_fallback', { tripId, reason: result.reason, detail: result.detail, llmMs });
   return { ...templateAnswer(facts), mode: 'template', fallbackReason: result.reason, llmMs };
 }
