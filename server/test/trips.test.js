@@ -159,6 +159,21 @@ describe('joining a trip', () => {
     expect(res.body).not.toHaveProperty('participants');
   });
 
+  test('guessing invite codes is rate limited per account (brute-force guard)', async () => {
+    const guesser = await registerUser(app);
+    const statuses = [];
+    for (let i = 0; i < 31; i += 1) {
+      const res = await request(app).get(`/api/v1/trips/invite/ZZ-ZZ${String(i).padStart(2, '2').replace(/[01]/g, '2')}`).set('Authorization', guesser.auth);
+      statuses.push(res.status);
+    }
+    expect(statuses.slice(0, 30).every((s) => s === 404)).toBe(true);
+    expect(statuses[30]).toBe(429);
+    // Joining counts against the same budget.
+    expect((await joinTrip(app, guesser, 'ZZ-ZZZZ')).status).toBe(429);
+    // Other accounts are not affected.
+    expect((await request(app).get('/api/v1/trips/invite/ZZ-ZZZZ').set('Authorization', (await registerUser(app)).auth)).status).toBe(404);
+  });
+
   test('regenerating the invite code makes the old one stop working', async () => {
     const leader = await registerUser(app);
     const { inviteCode, tripId } = await createTrip(app, leader);

@@ -384,3 +384,31 @@ be the next step.
 whole server folder, so the dev server restarted at odd moments. The dev
 script now uses `--watch-path=src`. On Windows, Node's watcher may still fire
 once right after startup; this affects development only, not `npm start`.
+
+## Phase 6
+
+**Measure twice: local and Atlas.** Every measurement was run against a local
+in-memory database and against the real Atlas cluster. That separates the
+code (REST P95 ≤ 10 ms locally) from the network (about 60 ms per Atlas round
+trip from this laptop). See [PERFORMANCE.md](PERFORMANCE.md).
+
+**Two performance fixes; one deliberately not made.**
+- A venue catalog cache (`src/venues/catalog.js`), cleared whenever a dataset
+  is loaded. Above 2,000 venues, distance searches still go to the database
+  query on the spec's compound index.
+- Token refresh in two round trips instead of four, using one atomic claim.
+- Not done: caching the user lookup in `requireAuth`. It would save a round
+  trip per request, but then removing someone's admin rights would no longer
+  take effect immediately.
+
+**Security fix: invite codes can't be brute-forced.** Invite previews and
+joins are limited to 30 per 15 minutes per account (tested). The full review
+is in [SECURITY.md](SECURITY.md).
+
+**Load-test mode.** `dev:memory -- --bench` lifts the sign-up, Concierge and
+invite rate limits so a load test can create many accounts. It prints a
+warning, and it can't be switched on through the normal server.
+
+**Live role changes on the client.** A role change made over REST (for
+example "Make viewer") now updates the traveller's own role on screen
+straight away, not only the people list.

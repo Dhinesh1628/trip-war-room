@@ -11,6 +11,7 @@ import { saveMessage, history, messageView, toggleReaction } from '../chat/chatS
 import { HttpError, badRequest, forbidden, notFound, unauthorized } from '../lib/errors.js';
 import { bus, TRIP_CHANGED, USER_CHANGED } from '../lib/bus.js';
 import { publicVote } from '../board/votes.js';
+import { DATASET_CHANGED } from '../venues/catalog.js';
 import { log } from '../lib/logger.js';
 
 export const NAMESPACE = '/trips';
@@ -571,11 +572,21 @@ export function attachTripNamespace(io, { config, registry, actions, ask, emit }
   };
   bus.on(USER_CHANGED, onUserChanged);
 
+  // A destination's dataset was uploaded again: open rooms there reload it.
+  const onDatasetChanged = async ({ destination }) => {
+    for (const room of registry.rooms.values()) {
+      if (room.trip.destination !== destination) continue;
+      await room.reloadVenues().catch((err) => log.error('room.venues_reload_failed', { tripId: room.tripId, error: err.message }));
+    }
+  };
+  bus.on(DATASET_CHANGED, onDatasetChanged);
+
   return {
     nsp,
     dispose: () => {
       bus.off(TRIP_CHANGED, onTripChanged);
       bus.off(USER_CHANGED, onUserChanged);
+      bus.off(DATASET_CHANGED, onDatasetChanged);
     },
   };
 }

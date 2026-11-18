@@ -27,6 +27,8 @@ export function loadConfig(env = process.env) {
     bcryptRounds: Number(env.BCRYPT_ROUNDS) || 10,
     // Max login/register attempts per IP per 15 minutes.
     authRateLimit: Number(env.AUTH_RATE_LIMIT) || 20,
+    // Invite previews and joins per account per 15 minutes (brute-force guard).
+    inviteRateLimit: Number(env.INVITE_RATE_LIMIT) || 30,
     secureCookies: nodeEnv === 'production',
     // Set TRUST_PROXY=1 behind a hosting proxy (e.g. Render) so rate limiting sees real IPs.
     trustProxy: env.TRUST_PROXY === '1',

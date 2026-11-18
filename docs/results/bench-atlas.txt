@@ -1,0 +1,16 @@
+REST latency against http://localhost:5080, 40 sequential requests per endpoint (ms):
+
+endpoint                                    p50    p95    max  target p95 < 200
+GET /health                                   1      2      2  met
+GET /auth/me                                120    383    511  MISSED
+GET /destinations/lisbon/venues?near         59    110    302  met
+GET /trips/{id}                             180    207    277  MISSED
+GET /trips                                  180    344    698  MISSED
+GET /trips/{id}/budget                      195    318    577  MISSED
+GET /trips/{id}/recommendations             241    281    318  MISSED
+GET /trips/{id}/analytics                   178    229    352  MISSED
+GET /users/me/dashboard                     232    262    310  MISSED
+POST /auth/refresh                          123    137    140  met
+
+worst endpoint p95: 383 ms
+{"base":"http://localhost:5080","n":40,"rows":[{"name":"GET /health","p50":1,"p95":2,"max":2},{"name":"GET /auth/me","p50":120,"p95":383,"max":511},{"name":"GET /destinations/lisbon/venues?near","p50":59,"p95":110,"max":302},{"name":"GET /trips/{id}","p50":180,"p95":207,"max":277},{"name":"GET /trips","p50":180,"p95":344,"max":698},{"name":"GET /trips/{id}/budget","p50":195,"p95":318,"max":577},{"name":"GET /trips/{id}/recommendations","p50":241,"p95":281,"max":318},{"name":"GET /trips/{id}/analytics","p50":178,"p95":229,"max":352},{"name":"GET /users/me/dashboard","p50":232,"p95":262,"max":310},{"name":"POST /auth/refresh","p50":123,"p95":137,"max":140}]}

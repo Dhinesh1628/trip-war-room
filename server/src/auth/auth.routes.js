@@ -88,7 +88,7 @@ export function authRouter(config) {
       res.clearCookie(REFRESH_COOKIE, { path: '/api/v1/auth' });
       throw err;
     }
-    const user = await User.findById(rotated.userId);
+    const { user } = rotated;
     if (!user) throw unauthorized('Account no longer exists', 'REFRESH_INVALID');
     res.cookie(REFRESH_COOKIE, rotated.token, refreshCookieOptions(config, rotated.expiresAt));
     res.json({

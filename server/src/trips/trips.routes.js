@@ -1,4 +1,5 @@
 import express from 'express';
+import rateLimit from 'express-rate-limit';
 import mongoose from 'mongoose';
 import { z } from 'zod';
 import { Trip, MAX_ROOM_CAPACITY } from './trip.model.js';
@@ -117,6 +118,17 @@ export function tripsRouter(config, { gateway } = {}) {
   const router = express.Router();
   router.use(requireAuth(config));
 
+  // Invite codes must not be guessable by brute force: previews and joins are
+  // limited per account (31^6 codes, 30 tries per 15 minutes).
+  const inviteLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    limit: config.inviteRateLimit,
+    keyGenerator: (req) => `user:${req.user.id}`,
+    standardHeaders: 'draft-8',
+    legacyHeaders: false,
+    message: { error: { code: 'RATE_LIMITED', message: 'Too many invite attempts. Try again in a few minutes.' } },
+  });
+
   // Spec 7.3.1: POST /api/v1/trips. The creator becomes the trip's Leader.
   router.post('/', validate(createTripSchema), async (req, res) => {
     const body = req.valid.body;
@@ -160,7 +172,7 @@ export function tripsRouter(config, { gateway } = {}) {
   });
 
   // Preview before joining: enough to recognise the trip, nothing private.
-  router.get('/invite/:code', async (req, res) => {
+  router.get('/invite/:code', inviteLimiter, async (req, res) => {
     const code = normalizeInviteCode(req.params.code);
     const trip = code && (await Trip.findOne({ inviteCode: code }));
     if (!trip) throw notFound('Invite code not found');
@@ -179,7 +191,7 @@ export function tripsRouter(config, { gateway } = {}) {
   });
 
   // Join with an invite code. Joining twice is harmless (returns the trip).
-  router.post('/join', validate(joinSchema), async (req, res) => {
+  router.post('/join', inviteLimiter, validate(joinSchema), async (req, res) => {
     const code = normalizeInviteCode(req.valid.body.inviteCode);
     if (!code) throw notFound('Invite code not found');
     const existing = await Trip.findOne({ inviteCode: code });

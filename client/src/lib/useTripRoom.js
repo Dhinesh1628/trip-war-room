@@ -53,8 +53,12 @@ function reducer(state, { type, payload: p }) {
       return { ...state, rejection: null };
     case 'trip.budget.update':
       return { ...state, budget: p };
-    case 'trip.participants.update':
-      return { ...state, participants: p.participants, budget: p.budget ?? state.budget };
+    case 'trip.participants.update': {
+      // A role change made over REST: update "me" too, so the UI follows at once.
+      const mine = state.me && p.participants.find((x) => x.userId === state.me.userId);
+      const me = mine && state.me.role !== 'admin' ? { ...state.me, role: mine.role, muted: mine.muted } : state.me;
+      return { ...state, me, participants: p.participants, budget: p.budget ?? state.budget };
+    }
     case 'trip.presence.update':
       return {
         ...state,

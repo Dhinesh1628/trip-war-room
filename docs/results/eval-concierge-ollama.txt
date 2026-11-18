@@ -1,0 +1,55 @@
+Concierge evaluation against http://localhost:5080
+
+Q: Suggest a dinner spot near our 5 PM tour under $25/person
+   llm | Horta Verde $18 | rules: ok | 13656 ms
+   For a 5 PM dinner spot near the Alfama Old Quarter Walking Tour, I recommend Horta Verde due to its affordable price of $18 and extensive vegetarian options.
+
+Q: vegetarian dinner near our 5 PM tour
+   llm | Taberna da Rua $22 | rules: ok | 12169 ms
+   For a delicious vegetarian dinner near your 5 PM tour, I recommend trying Taberna da Rua with its $22 price tag and great location in Alfama. It's an excellent choice because it offers a variety of vegetarian options.
+
+Q: a vegan lunch under $20
+   llm | Mercado da Ribeira Food Hall $20 | rules: ok | 10660 ms
+   The Mercado da Ribeira Food Hall is a great option for a vegan lunch under $20, as it offers a variety of plant-based options at affordable prices.
+
+Q: gluten free breakfast at 9am
+   llm | Brunch das Sete Colinas $16 | rules: ok | 9060 ms
+   Brunch das Sete Colinas is a great option for gluten free breakfast at 9am, priced at $16. It fits the group's rules as it offers a variety of dietary options including gluten-free.
+
+Q: halal dinner within 1 km of our 5 PM tour
+   llm | Sabor de Marrakech $21 | rules: ok | 9619 ms
+   For a halal dinner within 1 km of your tour, I recommend Sabor de Marrakech ($21). It fits the bill as it is both halal and vegetarian, making it an ideal choice for your group.
+
+Q: a bar after our 5 PM tour
+   llm | Miradouro Terrace Bar $14 | rules: ok | 11952 ms
+   For a bar after your tour, I recommend the Miradouro Terrace Bar ($14), which fits perfectly as it's located in the Graça area and offers a nice view, making it an ideal spot to relax after your Alfama Old Quarter Walking Tour.
+
+Q: cheap hotel under $70
+   llm | Sete Colinas Hostel $38 | rules: ok | 10157 ms
+   For a budget-friendly option, I recommend staying at the Sete Colinas Hostel for $38, which fits your criteria of being under $70. This hostel is located in the Baixa area and has a rating of 4.3 out of 5 stars.
+
+Q: a museum to visit on day 2
+   llm | Casa dos Azulejos Museum $8 | rules: ok | 13442 ms
+   I recommend visiting the Casa dos Azulejos Museum on day 2, as it fits your budget of $8 and is located in a nearby area, making it an ideal choice for a cloudy day.
+
+Q: coffee near the castle
+   llm | Café Príncipe $9 | rules: ok | 7806 ms
+   I recommend visiting Café Príncipe for a great cup of coffee near the castle, priced at $9.
+
+Q: dinner at 21:00 under $40, dairy free
+   llm | Horta Verde $18 | rules: ok | 14823 ms
+   I recommend trying Horta Verde, it fits your criteria with a price of $18 and offers dairy-free options. Its location in Mouraria area also makes it a great choice for dinner at 21:00.
+
+Q: kosher lunch under $10
+   no_match | (none) | rules: ok | 203 ms
+   I couldn't find a lunch option that meets every rule. Of the 3 I checked: 3 over budget, 3 missing a dietary option. Closest miss: Cantina da Graça ($12 is over the $10 ceiling; no kosher option). Try a higher budget, a different time, or a wider distance.
+
+Q: something to do near our 5 PM tour
+   llm | Tram 28 Heritage Ride $4 | rules: ok | 8150 ms
+   Consider taking the Tram 28 Heritage Ride, which is a great way to experience Alfama's history and culture at $4.
+
+Summary
+  questions: 12, answered: 12, with a suggestion: 11
+  constraint compliance: 11/11
+  modes: {"llm":11,"no_match":1}
+  latency (end to end): median 10157 ms, p95 14823 ms, max 14823 ms (target p95 < 3000 ms)

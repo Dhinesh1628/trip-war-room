@@ -2,8 +2,7 @@ import crypto from 'node:crypto';
 import { ItineraryItem } from './itineraryItem.model.js';
 import { Trip } from '../trips/trip.model.js';
 import { User } from '../auth/user.model.js';
-import { Venue } from '../venues/venue.model.js';
-import { Destination } from '../venues/destination.model.js';
+import { venuesFor, findDestination } from '../venues/catalog.js';
 import { Vote } from './vote.model.js';
 import { TripEvent } from './tripEvent.model.js';
 import { Interaction } from '../recs/interaction.model.js';
@@ -134,8 +133,9 @@ export class Room {
   }
 
   async reloadVenues() {
-    const venues = await Venue.find({ destination: this.trip.destination });
+    const [venues, destination] = await Promise.all([venuesFor(this.trip.destination), findDestination(this.trip.destination)]);
     this.venues = new Map(venues.map((v) => [v._id, v.toPublic()]));
+    this.weather = destination?.weather ?? null;
   }
 
   // Role in this room from the cache: 'admin' | 'leader' | 'planner' | 'viewer' | null.
@@ -347,8 +347,8 @@ export class RoomRegistry {
             if (!trip) return null;
             const [items, venues, destination, votes] = await Promise.all([
               ItineraryItem.find({ tripId: key }).lean(),
-              Venue.find({ destination: trip.destination }),
-              Destination.findOne({ slug: trip.destination }).select('weather').lean(),
+              venuesFor(trip.destination),
+              findDestination(trip.destination),
               Vote.find({ tripId: key, status: 'open' }).lean(),
             ]);
             const room = new Room({

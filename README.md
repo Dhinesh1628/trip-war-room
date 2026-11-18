@@ -6,17 +6,43 @@ tracks a shared budget, chats, and asks an AI Concierge questions that are
 answered only from a locally authored venue dataset and always obey the
 group's budget, dietary, opening-hours and distance constraints.
 
-> Status: **Phase 5 done: the full app works end to end in the browser.**
-> Auth and four-role access control; trips and invites; the live board (pin,
-> drag to move, lock, simultaneous-move conflicts, presence, chat, reconnects,
-> moderation); the AI Concierge (rule-checked, cited suggestions; conflict
-> detector; contested-slot votes); an exact budget engine (attendance, even and
-> weighted splits, budget-split votes); session analytics from an event log;
-> hybrid recommendations; the dashboard; and admin dataset upload. Phase 6
-> (load testing, measured performance, final docs) is next (see [Roadmap](#roadmap)).
+> Status: **complete (all six phases).** Auth and four-role access control;
+> trips and invites; the live board (pin, drag to move, lock, simultaneous-move
+> conflicts, presence, chat, reconnects, moderation); the AI Concierge
+> (rule-checked, cited suggestions; conflict detector; contested-slot votes);
+> an exact budget engine (attendance, even and weighted splits, budget-split
+> votes); session analytics from an event log; hybrid recommendations; the
+> dashboard; admin dataset upload; load-tested, measured and reviewed.
 
-Docs: [API reference](docs/API.md) · [Decisions and deviations](docs/DECISIONS.md) ·
-[Postman collection](docs/postman/trip-war-room.postman_collection.json)
+## Documentation
+
+| Document | What's in it |
+|---|---|
+| [Architecture](docs/ARCHITECTURE.md) | The system as built, with a diagram and the main request paths |
+| [Data model](docs/DATA-MODEL.md) | Collections, indexes and the ER diagram |
+| [API reference](docs/API.md) | Every REST endpoint and WebSocket event, with example payloads |
+| [Performance](docs/PERFORMANCE.md) | Measured numbers against every target in spec 10.2 |
+| [Security](docs/SECURITY.md) | The security review |
+| [Test report](docs/TEST-REPORT.md) | What is tested, the results, and evidence for each acceptance criterion |
+| [Decisions](docs/DECISIONS.md) | Every decision and deviation from the spec, with reasons, phase by phase |
+| [Demo walkthrough](docs/DEMO.md) | A script for the live demo or recording |
+| [Retrospective](docs/RETROSPECTIVE.md) | What was built, what was cut, what's next |
+| [Postman collection](docs/postman/trip-war-room.postman_collection.json) | The REST flow, with assertions |
+
+## Results at a glance
+
+| Spec target | Result |
+|---|---|
+| Sync drift < 100 ms | P95 **1–6 ms**, including 50 travellers in one room |
+| Fan-out < 500 ms | P95 **1–6 ms** |
+| Simultaneous moves on one card | 125 of 125 rounds: one applied, one told, every board identical |
+| 100% constraint compliance (≥ 20 requests) | **379 requests, 0 violations** |
+| Conflicts flagged within 1 s | max **19 ms** (20 of 20) |
+| Budget math 100% accurate | exact to the cent over 2,000 random splits and 300 random trips |
+| Precision@5 ≥ 0.6 | **0.735** |
+| Analytics reconcile with the event log | exact (test and live trip) |
+| REST P95 < 200 ms | **≤ 10 ms** with a local database; 110–383 ms over a remote free-tier Atlas cluster (network-bound; explained in the performance report) |
+| AI Concierge P95 < 3 s | template 230 ms; free local model 14.8 s; Claude not measured (no API credits); a 2.5 s timeout caps Claude by design |
 
 ## Track and stack
 
@@ -264,6 +290,25 @@ Import [docs/postman/trip-war-room.postman_collection.json](docs/postman/trip-wa
 and run it with the Collection Runner. Every request has assertions; folder 5
 shows the server rejecting requests above the caller's role.
 
+### Load test and API benchmark
+
+See [docs/PERFORMANCE.md](docs/PERFORMANCE.md) for results and the exact commands:
+
+```bash
+npm run dev:memory --prefix server -- --port 5090 --bench
+```
+
+```bash
+npm run load-test --prefix server -- http://localhost:5090 8 2 25
+```
+
+```bash
+npm run bench:api --prefix server -- http://localhost:5090 40
+```
+
+`--bench` lifts the rate limits for load testing only. Never use it on a real
+deployment.
+
 ## Health checks
 
 | Endpoint | Meaning |
@@ -283,7 +328,29 @@ shows the server rejecting requests above the caller's role.
 | 5 | Full UI (after mockup approval) |
 | 6 | Load testing, measured performance, security pass, final docs |
 
+All six phases are done. Each has its own commit, so `git log` shows the
+project's history phase by phase.
+
+## Known limitations
+
+- **One server process.** Rooms, the event bus and rate-limit counters live in
+  memory. Scaling out needs Redis (see the architecture doc).
+- **REST latency over a remote database.** It misses the 200 ms target from this
+  laptop to a free-tier Atlas cluster, while meeting it easily with a local or
+  same-region database.
+- **The AI latency target wasn't measured with Claude** (no API credits at
+  test time). The free local model is too slow on a CPU-only laptop.
+- **No automated UI tests.** The client was verified in the browser, and all
+  rules are enforced and tested on the server.
+- **Touch screens:** drag and drop needs a mouse; on touch, change the day in
+  the card dialog.
+- **Data:** one hand-authored destination (Lisbon); prices and venues are
+  fictional, and weather is mocked.
+- **Not deployed publicly**, which is out of scope per spec 4.2.
+
 ## AI assistance
 
-This project was built with help from an AI coding assistant (Claude). All
-design decisions, code and results are reviewed and understood by the author.
+This project was built with help from an AI coding assistant (Claude), which
+wrote much of the code and documentation under the author's direction. The
+author planned the work phase by phase, approved the design, and reviewed the
+results. Disclose this as your course's AI-use policy requires.

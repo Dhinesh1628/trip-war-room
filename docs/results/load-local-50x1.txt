@@ -1,0 +1,44 @@
+Load test: 1 room(s) x 50 travellers, 25 rounds, against http://localhost:5090
+setup: 9449 ms (accounts, trips, 50 connections)
+
+{
+  "config": {
+    "rooms": 1,
+    "travellersPerRoom": 50,
+    "rounds": 25,
+    "base": "http://localhost:5090"
+  },
+  "durationMs": 29568,
+  "boardUpdatesDelivered": 31300,
+  "syncDriftMs": {
+    "n": 31300,
+    "p50": 2,
+    "p95": 6,
+    "p99": 8,
+    "max": 17
+  },
+  "fanoutSpreadMs": {
+    "n": 626,
+    "p50": 3,
+    "p95": 6,
+    "p99": 10,
+    "max": 17
+  },
+  "ackLatencyMs": {
+    "n": 1226,
+    "p50": 682,
+    "p95": 1865,
+    "p99": 2057,
+    "max": 2119
+  },
+  "concurrentMoves": {
+    "rounds": 25,
+    "applied": 25,
+    "rejectedAsConflict": 25
+  },
+  "otherErrors": 0,
+  "errorCodes": {},
+  "allClientsAgree": true
+}
+
+sync drift p95 6 ms (target < 100) | fan-out p95 6 ms (target < 500) | every simultaneous pair: 1 applied + 1 rejected = YES | boards agree: YES

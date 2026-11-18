@@ -2,6 +2,8 @@ import { Destination } from './destination.model.js';
 import { Venue } from './venue.model.js';
 import { validateDataset } from './datasetSchema.js';
 import { badRequest } from '../lib/errors.js';
+import { bus } from '../lib/bus.js';
+import { DATASET_CHANGED } from './catalog.js';
 
 // Validates a destination dataset and loads it, replacing that destination's
 // previous venues. Used by the seed script and (Phase 4) the admin upload.
@@ -34,6 +36,8 @@ export async function ingestDataset(input) {
   }));
   const write = await Venue.bulkWrite(ops, { ordered: true });
   const removed = await Venue.deleteMany({ destination: destination.slug, _id: { $nin: ids } });
+  // Cached catalogs and open rooms reload the new data.
+  bus.emit(DATASET_CHANGED, { destination: destination.slug });
 
   return {
     destination: destination.slug,

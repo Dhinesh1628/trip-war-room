@@ -1,5 +1,5 @@
 import { Interaction } from './interaction.model.js';
-import { Venue } from '../venues/venue.model.js';
+import { venuesFor } from '../venues/catalog.js';
 import { buildModel, recommendForGroup, ALPHA } from './recommender.js';
 
 // Live recommendations. The model is rebuilt from the interactions
@@ -21,7 +21,7 @@ async function modelFor(destination) {
 
   const [rows, venues] = await Promise.all([
     Interaction.find({ destination }).select('userId venueId liked weight coTraveledWith').lean(),
-    Venue.find({ destination }),
+    venuesFor(destination),
   ]);
   const model = buildModel(
     rows.map((r) => ({ ...r, userId: String(r.userId) })),

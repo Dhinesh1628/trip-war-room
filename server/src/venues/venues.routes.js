@@ -1,7 +1,7 @@
 import express from 'express';
 import { z } from 'zod';
-import { Destination } from './destination.model.js';
 import { Venue } from './venue.model.js';
+import { allDestinations, findDestination, venuesFor } from './catalog.js';
 import { boundingBox, distanceKm, parseLatLng } from './geo.js';
 import { VENUE_CATEGORIES } from './vocabulary.js';
 import { requireAuth } from '../auth/middleware.js';
@@ -29,28 +29,38 @@ const venueQuery = z
   .strict();
 
 // Accepts a slug ("lisbon") or the display name ("Lisbon, Portugal").
-export async function findDestination(key) {
-  const text = String(key).trim();
-  const byName = new RegExp(`^${text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, 'i');
-  return Destination.findOne({ $or: [{ slug: text.toLowerCase() }, { name: byName }] });
-}
+export { findDestination };
+
+// Above this many venues, searches go to the database (bounding box on the
+// (destination, lat, lng) index) instead of the in-memory catalog.
+const IN_MEMORY_LIMIT = 2000;
 
 // Finds venues in a destination, optionally within radiusKm of a point.
-// The bounding box narrows the query using the (destination, lat, lng)
-// index; the exact haversine check then removes the corners.
+// A lat/lng bounding box narrows the candidates; the exact haversine check
+// then removes the box's corners.
 export async function searchVenues(slug, { near, radiusKm, category } = {}) {
-  const filter = { destination: slug };
-  if (category) filter.category = category;
-
   let radius = null;
+  let box = null;
   if (near) {
     radius = radiusKm ?? DEFAULT_RADIUS_KM;
-    const box = boundingBox(near, radius);
-    filter['coordinates.lat'] = { $gte: box.minLat, $lte: box.maxLat };
-    filter['coordinates.lng'] = { $gte: box.minLng, $lte: box.maxLng };
+    box = boundingBox(near, radius);
   }
+  const inBox = (v) =>
+    !box || (v.coordinates.lat >= box.minLat && v.coordinates.lat <= box.maxLat && v.coordinates.lng >= box.minLng && v.coordinates.lng <= box.maxLng);
 
-  const docs = await Venue.find(filter).sort({ _id: 1 });
+  const cached = await venuesFor(slug);
+  let docs;
+  if (cached.length <= IN_MEMORY_LIMIT) {
+    docs = cached.filter((v) => (!category || v.category === category) && inBox(v));
+  } else {
+    const filter = { destination: slug };
+    if (category) filter.category = category;
+    if (box) {
+      filter['coordinates.lat'] = { $gte: box.minLat, $lte: box.maxLat };
+      filter['coordinates.lng'] = { $gte: box.minLng, $lte: box.maxLng };
+    }
+    docs = await Venue.find(filter).sort({ _id: 1 });
+  }
   let venues = docs.map((d) => d.toPublic());
   if (near) {
     venues = venues
@@ -66,11 +76,10 @@ export function destinationsRouter(config) {
   router.use(requireAuth(config));
 
   router.get('/', async (req, res) => {
-    const [destinations, counts] = await Promise.all([
-      Destination.find().sort({ name: 1 }).lean(),
-      Venue.aggregate([{ $group: { _id: '$destination', count: { $sum: 1 } } }]),
-    ]);
-    const countBy = Object.fromEntries(counts.map((c) => [c._id, c.count]));
+    const destinations = await allDestinations();
+    const countBy = Object.fromEntries(
+      await Promise.all(destinations.map(async (d) => [d.slug, (await venuesFor(d.slug)).length])),
+    );
     res.json({
       destinations: destinations.map((d) => ({
         slug: d.slug,
@@ -117,7 +126,7 @@ export function destinationsRouter(config) {
   router.post('/:destination/venues/:venueId/feedback', validate(feedbackSchema), async (req, res) => {
     const d = await findDestination(req.params.destination);
     if (!d) throw notFound('Destination not found');
-    const venue = await Venue.findOne({ _id: req.params.venueId, destination: d.slug }).lean();
+    const venue = (await venuesFor(d.slug)).find((v) => v._id === req.params.venueId);
     if (!venue) throw notFound('Venue not found');
     await Interaction.create({
       userId: req.user.id,
@@ -134,7 +143,7 @@ export function destinationsRouter(config) {
   router.get('/:destination/venues/:venueId', async (req, res) => {
     const d = await findDestination(req.params.destination);
     if (!d) throw notFound('Destination not found');
-    const venue = await Venue.findOne({ _id: req.params.venueId, destination: d.slug });
+    const venue = (await venuesFor(d.slug)).find((v) => v._id === req.params.venueId);
     if (!venue) throw notFound('Venue not found');
     res.json({ destination: d.name, venue: venue.toPublic() });
   });

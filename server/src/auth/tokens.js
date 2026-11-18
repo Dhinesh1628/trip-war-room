@@ -1,6 +1,7 @@
 import crypto from 'node:crypto';
 import jwt from 'jsonwebtoken';
 import { RefreshToken } from './refreshToken.model.js';
+import { User } from './user.model.js';
 import { unauthorized } from '../lib/errors.js';
 
 const ISSUER = 'trip-war-room';
@@ -50,28 +51,37 @@ export async function issueRefreshToken(userId, config, family = crypto.randomUU
 }
 
 // Exchanges a refresh token for a new one (rotation). Returns { userId, token, expiresAt }.
+// Two database round trips on the happy path: one atomic claim, then the new
+// token and the user load in parallel. The slower diagnosis (why a claim
+// failed) only runs when something is wrong.
 export async function rotateRefreshToken(token, config) {
   if (!token) throw unauthorized('Refresh token missing', 'REFRESH_MISSING');
+  const tokenHash = hash(token);
+  const now = new Date();
 
-  const record = await RefreshToken.findOne({ tokenHash: hash(token) });
-  if (!record) throw unauthorized('Refresh token invalid', 'REFRESH_INVALID');
-
-  if (record.revokedAt) {
-    // Reuse of a replaced token: assume theft and log out that whole session.
-    await RefreshToken.updateMany({ family: record.family, revokedAt: null }, { revokedAt: new Date() });
-    throw unauthorized('Refresh token was already used', 'REFRESH_REUSED');
-  }
-  if (record.expiresAt <= new Date()) throw unauthorized('Refresh token expired', 'REFRESH_EXPIRED');
-
-  // Atomic claim so two parallel refreshes cannot both succeed.
+  // Atomic claim: only an unused, unexpired token matches, so two parallel
+  // refreshes with the same token cannot both succeed.
   const claimed = await RefreshToken.findOneAndUpdate(
-    { _id: record._id, revokedAt: null },
-    { revokedAt: new Date() },
+    { tokenHash, revokedAt: null, expiresAt: { $gt: now } },
+    { revokedAt: now },
   );
-  if (!claimed) throw unauthorized('Refresh token was already used', 'REFRESH_REUSED');
 
-  const next = await issueRefreshToken(record.userId, config, record.family);
-  return { userId: record.userId, ...next };
+  if (!claimed) {
+    const record = await RefreshToken.findOne({ tokenHash });
+    if (!record) throw unauthorized('Refresh token invalid', 'REFRESH_INVALID');
+    if (record.revokedAt) {
+      // Reuse of a replaced token: assume theft and log out that whole session.
+      await RefreshToken.updateMany({ family: record.family, revokedAt: null }, { revokedAt: new Date() });
+      throw unauthorized('Refresh token was already used', 'REFRESH_REUSED');
+    }
+    throw unauthorized('Refresh token expired', 'REFRESH_EXPIRED');
+  }
+
+  const [next, user] = await Promise.all([
+    issueRefreshToken(claimed.userId, config, claimed.family),
+    User.findById(claimed.userId),
+  ]);
+  return { userId: claimed.userId, user, ...next };
 }
 
 export async function revokeRefreshFamily(token) {
