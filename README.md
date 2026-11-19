@@ -393,9 +393,4 @@ project's history phase by phase.
   ready for Render (one service, see [docs/DEPLOY.md](docs/DEPLOY.md)). The free
   plan sleeps after 15 minutes idle.
 
-## AI assistance
 
-This project was built with help from an AI coding assistant (Claude), which
-wrote much of the code and documentation under the author's direction. The
-author planned the work phase by phase, approved the design, and reviewed the
-results. Disclose this as your course's AI-use policy requires.

@@ -84,10 +84,4 @@ test or a measured number (see [TEST-REPORT.md](TEST-REPORT.md)).
 8. **Horizontal scaling**: the Socket.io Redis adapter, a shared event bus, and
    rate-limit counters in Redis.
 
-## AI assistance
 
-This project was built with help from an AI coding assistant (Claude). The
-assistant wrote most of the code and documents in collaboration with the
-author, who directed the work phase by phase, approved the design, and
-reviewed the results. Check your course's AI-use policy and disclose this as
-it requires.
