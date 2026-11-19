@@ -4,6 +4,7 @@ import { User } from '../src/auth/user.model.js';
 import { atLeast, effectiveTripRole } from '../src/auth/roles.js';
 import { readFile } from 'node:fs/promises';
 import { DATA_DIR } from '../src/venues/seedData.js';
+import { FIXTURE_DIR } from './fixtures.js';
 
 // Server-side enforcement of the four roles (spec 10.1, evidence item 12.2).
 // One trip, one person per role, plus an outsider, then every protected
@@ -35,7 +36,7 @@ beforeAll(async () => {
     .send({ role: 'viewer' });
 
   people = { leader, planner, viewer, admin, outsider };
-  lisbon = JSON.parse(await readFile(`${DATA_DIR}/lisbon.json`, 'utf8'));
+  lisbon = JSON.parse(await readFile(`${FIXTURE_DIR}/lisbon.json`, 'utf8'));
 });
 
 afterAll(async () => {

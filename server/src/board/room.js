@@ -1,3 +1,4 @@
+import { DEFAULT_CURRENCY } from '../lib/money.js';
 import crypto from 'node:crypto';
 import { ItineraryItem } from './itineraryItem.model.js';
 import { Trip } from '../trips/trip.model.js';
@@ -21,7 +22,7 @@ const dayCountOf = (trip) =>
 //  - moves are batched and saved at most every `flushIntervalMs`.
 // Saves are serialised through one promise chain, so they land in order.
 export class Room {
-  constructor({ trip, items, venues, names, flushIntervalMs, weather = null, votes = [] }) {
+  constructor({ trip, items, venues, names, flushIntervalMs, weather = null, votes = [], currency = DEFAULT_CURRENCY }) {
     this.tripId = String(trip._id);
     this.correlationId = `room_${this.tripId.slice(-6)}_${crypto.randomBytes(3).toString('hex')}`;
     this.items = new Map(items.map((i) => [String(i._id), i]));
@@ -29,6 +30,7 @@ export class Room {
     this.names = names; // Map userId -> displayName
     this.travellers = new Map(); // userId -> { dietaryTags, budgetCeiling }
     this.weather = weather; // { monthly, daily } for the destination
+    this.currency = currency; // the destination's currency (INR, or USD for the Lisbon fixture)
     this.votes = new Map(votes.map((v) => [String(v._id), v])); // open votes
     this.voteTimers = new Map();
     this.conflicts = []; // current conflicts (see concierge/conflicts.js)
@@ -136,6 +138,7 @@ export class Room {
     const [venues, destination] = await Promise.all([venuesFor(this.trip.destination), findDestination(this.trip.destination)]);
     this.venues = new Map(venues.map((v) => [v._id, v.toPublic()]));
     this.weather = destination?.weather ?? null;
+    this.currency = destination?.currency ?? this.currency;
   }
 
   // Role in this room from the cache: 'admin' | 'leader' | 'planner' | 'viewer' | null.
@@ -164,6 +167,7 @@ export class Room {
       participantIds: this.participantIds,
       totalBudget: this.trip.totalBudget,
       ceilings: new Map([...this.travellers].map(([id, t]) => [id, t.budgetCeiling])),
+      currency: this.currency,
     });
   }
 
@@ -358,6 +362,7 @@ export class RoomRegistry {
               names: new Map(),
               flushIntervalMs: this.flushIntervalMs,
               weather: destination?.weather ?? null,
+              currency: destination?.currency ?? DEFAULT_CURRENCY,
               // Ids come back from MongoDB as ObjectIds; the room works with strings.
               votes: votes.map((v) => ({
                 ...v,

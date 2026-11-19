@@ -24,7 +24,7 @@ const tripSchema = new mongoose.Schema(
     startDate: { type: String, required: true },
     endDate: { type: String, required: true },
     totalBudget: { type: Number, required: true, min: 0 },
-    currency: { type: String, default: 'USD' },
+    currency: { type: String, default: 'INR' },
     inviteCode: { type: String, required: true, unique: true },
     status: { type: String, enum: TRIP_STATUSES, default: 'drafting' },
     participants: { type: [participantSchema], default: [] },

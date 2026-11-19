@@ -13,6 +13,12 @@ const destinationSchema = new mongoose.Schema(
     timezone: { type: String, required: true },
     currency: { type: String, required: true },
     center: point,
+    image: { type: {
+      url: String,
+      credit: String,
+      license: String,
+      source: String,
+    }, default: undefined },
     transit: [
       {
         _id: false,

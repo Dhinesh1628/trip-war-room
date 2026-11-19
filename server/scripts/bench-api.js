@@ -31,12 +31,12 @@ const pct = (xs, q) => [...xs].sort((a, b) => a - b)[Math.min(xs.length - 1, Mat
 const reg = await timed('POST', '/auth/register', { body: { email: `bench-${stamp}@example.test`, password: 'bench test password', displayName: 'Bench' } });
 const token = reg.json.accessToken;
 let cookie = reg.cookie;
-const trip = (await timed('POST', '/trips', { token, body: { destination: 'lisbon', startDate: '2026-12-10', endDate: '2026-12-14', totalBudget: 1200 } })).json;
+const trip = (await timed('POST', '/trips', { token, body: { destination: 'jaipur', startDate: '2026-12-10', endDate: '2026-12-14', totalBudget: 40000 } })).json;
 
 const endpoints = [
   ['GET /health', () => timed('GET', '/health')],
   ['GET /auth/me', () => timed('GET', '/auth/me', { token })],
-  ['GET /destinations/lisbon/venues?near', () => timed('GET', '/destinations/lisbon/venues?near=38.7118,-9.1296&radiusKm=1', { token })],
+  ['GET /destinations/jaipur/venues?near', () => timed('GET', '/destinations/jaipur/venues?near=26.9239,75.8267&radiusKm=1', { token })],
   ['GET /trips/{id}', () => timed('GET', `/trips/${trip.tripId}`, { token })],
   ['GET /trips', () => timed('GET', '/trips', { token })],
   ['GET /trips/{id}/budget', () => timed('GET', `/trips/${trip.tripId}/budget`, { token })],

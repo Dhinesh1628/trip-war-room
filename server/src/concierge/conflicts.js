@@ -1,3 +1,4 @@
+import { DEFAULT_CURRENCY, formatMoney } from '../lib/money.js';
 import { distanceKm } from '../venues/geo.js';
 import { toMinutes, isOpenFor, walkMinutes } from './constraints.js';
 import { computeBudget, toCents, fromCents } from '../board/budgetEngine.js';
@@ -25,7 +26,8 @@ export function travelMinutes(a, b) {
 const slotOf = (item) => ({ start: toMinutes(item.startTime), end: toMinutes(item.endTime) });
 const idOf = (item) => String(item.itemId ?? item._id);
 
-export function detectConflicts({ items, participantIds, travellers, names = new Map(), totalBudget }) {
+export function detectConflicts({ items, participantIds, travellers, names = new Map(), totalBudget, currency = DEFAULT_CURRENCY }) {
+  const fmt = (n) => formatMoney(n, currency);
   const conflicts = [];
 
   // ---- time overlaps and impossible travel, day by day
@@ -103,7 +105,7 @@ export function detectConflicts({ items, participantIds, travellers, names = new
   const inPinOrder = [...items].sort(
     (a, b) => new Date(a.createdAt ?? 0) - new Date(b.createdAt ?? 0) || idOf(a).localeCompare(idOf(b)),
   );
-  const budget = computeBudget({ items: inPinOrder, participantIds, totalBudget });
+  const budget = computeBudget({ items: inPinOrder, participantIds, totalBudget, currency });
   for (const userId of participantIds.map(String)) {
     const ceiling = travellers.get(userId)?.budgetCeiling;
     const cents = budget.perPersonCents[userId] ?? 0;
@@ -119,7 +121,7 @@ export function detectConflicts({ items, participantIds, travellers, names = new
         ceiling,
         committed: fromCents(cents),
         over: fromCents(cents - toCents(ceiling)),
-        message: `${names.get(userId) ?? 'A traveller'} is $${fromCents(cents - toCents(ceiling))} over their $${ceiling} budget (now $${fromCents(cents)})`,
+        message: `${names.get(userId) ?? 'A traveller'} is ${fmt(fromCents(cents - toCents(ceiling)))} over their ${fmt(ceiling)} budget (now ${fmt(fromCents(cents))})`,
       },
     });
   }
@@ -135,7 +137,7 @@ export function detectConflicts({ items, participantIds, travellers, names = new
         ceiling: totalBudget,
         committed: fromCents(budget.groupCents),
         over: fromCents(budget.groupCents - budget.budgetCents),
-        message: `The group is $${fromCents(budget.groupCents - budget.budgetCents)} over the $${totalBudget} trip budget`,
+        message: `The group is ${fmt(fromCents(budget.groupCents - budget.budgetCents))} over the ${fmt(totalBudget)} trip budget`,
       },
     });
   }

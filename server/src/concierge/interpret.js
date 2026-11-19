@@ -1,6 +1,7 @@
 import { DIETARY_TAGS, VENUE_CATEGORIES } from '../venues/vocabulary.js';
 import { DEFAULTS, VISIT_MINUTES, toMinutes } from './constraints.js';
 import { HttpError, notFound } from '../lib/errors.js';
+import { DEFAULT_CURRENCY, parseAmount } from '../lib/money.js';
 
 // Turns a traveller's question (plus optional explicit fields) into the hard
 // constraints the matcher enforces. This is deliberately rule-based, not
@@ -9,21 +10,21 @@ import { HttpError, notFound } from '../lib/errors.js';
 // The LLM only phrases the answer from venues that already passed.
 
 const CATEGORY_WORDS = [
-  ['breakfast', ['breakfast', 'brunch', 'pastry', 'pastries']],
-  ['lunch', ['lunch']],
+  ['breakfast', ['breakfast', 'brunch', 'pastry', 'pastries', 'tiffin']],
+  ['lunch', ['lunch', 'thali']],
   ['dinner', ['dinner', 'supper', 'restaurant', 'eat tonight']],
-  ['cafe', ['cafe', 'café', 'coffee']],
+  ['cafe', ['cafe', 'café', 'coffee', 'chai', 'lassi']],
   ['bar', ['bar', 'drinks', 'cocktail', 'nightlife']],
-  ['lodging', ['hotel', 'hostel', 'stay', 'lodging', 'accommodation', 'guesthouse', 'apartment', 'sleep']],
-  ['tour', ['tour', 'guided', 'sailing', 'day trip']],
+  ['lodging', ['hotel', 'hostel', 'stay', 'lodging', 'accommodation', 'guesthouse', 'homestay', 'apartment', 'sleep']],
+  ['tour', ['tour', 'guided', 'sailing', 'day trip', 'heritage walk', 'food walk', 'cruise', 'backwater']],
   ['museum', ['museum', 'gallery', 'exhibition']],
-  ['attraction', ['attraction', 'sight', 'landmark', 'castle', 'tower', 'aquarium', 'oceanarium']],
-  ['activity', ['activity', 'something to do', 'things to do', 'show', 'fado', 'tram', 'market']],
+  ['attraction', ['attraction', 'sight', 'landmark', 'castle', 'fort', 'palace', 'monument', 'tower', 'aquarium', 'oceanarium']],
+  ['activity', ['activity', 'something to do', 'things to do', 'show', 'fado', 'tram', 'market', 'workshop', 'class']],
 ];
 
 const DIET_WORDS = [
   ['vegan', ['vegan', 'plant-based', 'plant based']],
-  ['vegetarian', ['vegetarian', 'veggie']],
+  ['vegetarian', ['vegetarian', 'veggie', 'veg', 'pure veg']],
   ['halal', ['halal']],
   ['kosher', ['kosher']],
   ['gluten-free', ['gluten-free', 'gluten free', 'coeliac', 'celiac']],
@@ -36,6 +37,18 @@ const ANCHOR_PHRASE = new RegExp(
   String.raw`\b(near|after|before|close to|next to|around|by|within\s+\d+(?:\.\d+)?\s*(?:km|m)\s+of)\s+(?:our|the|my)\s+((?:${TIME})\s*)?([a-z][a-z' -]{1,40}?)(?=[,.?!]|\s+(?:under|below|for|with|that|which|and|at|on|within)\b|$)`,
   'i',
 );
+
+// An amount: 1,20,000 / 1,200 / 450 / 12.50
+const AMOUNT = String.raw`(\d{1,3}(?:,\d{2,3})+(?:\.\d{1,2})?|\d+(?:\.\d{1,2})?)`;
+const CURRENCY_MARK = String.raw`(?:₹|rs\.?|inr|us\$|\$)`;
+const PRICE_PATTERNS = [
+  // "under ₹800", "below Rs 1,200", "under 800 rupees", "under $25"
+  new RegExp(String.raw`(?:under|below|less than|at most|max(?:imum)?|up to|cheaper than|<)\s*${CURRENCY_MARK}?\s*${AMOUNT}`, 'i'),
+  // "₹500 per person", "$25/person"
+  new RegExp(String.raw`${CURRENCY_MARK}\s*${AMOUNT}\s*(?:\/|per|a)\s*(?:person|head|pp)`, 'i'),
+  // "500 rupees a head"
+  new RegExp(String.raw`${AMOUNT}\s*(?:rupees?|rs\.?|inr|dollars?)\s*(?:\/|per|a)\s*(?:person|head|pp)`, 'i'),
+];
 
 const contains = (text, word) => new RegExp(String.raw`(^|[^a-z])${word.replace(/[-]/g, '[- ]?')}([^a-z]|$)`, 'i').test(text);
 
@@ -69,15 +82,14 @@ export function parseQuestion(question) {
   const category = CATEGORY_WORDS.find(([, words]) => words.some((w) => contains(rest, w)))?.[0] ?? null;
   const dietaryTags = DIET_WORDS.filter(([, words]) => words.some((w) => contains(text, w))).map(([tag]) => tag);
 
-  const price = /(?:under|below|less than|at most|max(?:imum)?|up to|cheaper than|<)\s*(?:us)?\$?\s*(\d+(?:\.\d{1,2})?)/i.exec(rest)
-    ?? /\$\s*(\d+(?:\.\d{1,2})?)\s*(?:\/|per|a)\s*(?:person|head|pp)/i.exec(rest);
+  const price = PRICE_PATTERNS.map((p) => p.exec(rest)).find(Boolean);
   const radius = /within\s+(\d+(?:\.\d+)?)\s*(km|kilometers?|kilometres?|m|meters?|metres?)\b/i.exec(text);
   const day = /\bday\s+(\d{1,2})\b/i.exec(text);
 
   return {
     category,
     dietaryTags,
-    maxPricePerPerson: price ? Number(price[1]) : null,
+    maxPricePerPerson: price ? parseAmount(price[1]) : null,
     radiusKm: radius ? Number(radius[1]) / (radius[2].toLowerCase().startsWith('k') ? 1 : 1000) : null,
     dayIndex: day ? Number(day[1]) - 1 : null,
     time: parseTime(rest),
@@ -169,6 +181,7 @@ export function buildConstraints(question, ctx, explicit = {}) {
   }
 
   return {
+    currency: ctx.currency ?? DEFAULT_CURRENCY,
     category,
     maxPricePerPerson: maxPricePerPerson == null ? null : Math.max(0, maxPricePerPerson),
     budgetSource,

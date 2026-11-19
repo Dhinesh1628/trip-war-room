@@ -13,6 +13,9 @@ import ChatPanel from './room/ChatPanel.jsx';
 import PeoplePanel from './room/PeoplePanel.jsx';
 import IdeasPanel from './room/IdeasPanel.jsx';
 import { get } from '../lib/api.js';
+import { useCatalog, findDestination } from '../lib/catalog.js';
+import Photo from '../components/Photo.jsx';
+import { IconArrowLeft } from '@tabler/icons-react';
 
 const TABS = [
   ['budget', 'Budget'],
@@ -25,6 +28,7 @@ const TABS = [
 export default function TripRoom() {
   const { tripId } = useParams();
   const room = useTripRoom(tripId);
+  const { catalog } = useCatalog();
   const [pin, setPin] = useState(null); // { dayIndex, venueId?, startTime? }
   const [openItem, setOpenItem] = useState(null);
   const [tab, setTab] = useState('concierge');
@@ -53,7 +57,7 @@ export default function TripRoom() {
   }, [room.rejection]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (room.status === 'error') {
-    return <main className="page"><div className="banner danger">{room.error}</div><p><Link to="/">Back to your trips</Link></p></main>;
+    return <main className="page"><div className="banner danger">{room.error}</div><p><Link to="/trips">Back to your trips</Link></p></main>;
   }
   if (room.status === 'removed') {
     return <main className="page"><div className="banner danger">The trip leader removed you from this trip.</div><p><Link to="/">Back to your trips</Link></p></main>;
@@ -65,23 +69,28 @@ export default function TripRoom() {
   const conflictItemIds = new Set(room.conflicts.flatMap((c) => c.itemIds));
   const item = openItem ? room.items[openItem] : null;
 
+  const dest = findDestination(catalog, t.destinationSlug) ?? findDestination(catalog, t.destination);
+  const photos = new Map((catalog?.venues ?? []).map((v) => [v.venueId, v.image]));
   return (
     <main className="page stack">
-      <div className="room-head">
+      <Link to="/trips" className="small muted row" style={{ textDecoration: 'none', gap: 4 }}><IconArrowLeft size={14} aria-hidden="true" /> Trips</Link>
+      <Photo image={dest?.image} alt="" className="room-hero" eager>
+        <div className="hero-shade" aria-hidden="true" />
+        <div className="room-hero-text">
         <div>
-          <h1 style={{ marginBottom: 0 }}>{t.destination}</h1>
-          <div className="small muted">
+          <h1>{t.destination}</h1>
+          <div className="small on-photo">
             {dateRange(t.startDate, t.endDate)} · {t.dayCount} days · budget {money(t.totalBudget)}
           </div>
         </div>
-        <div className="row wrap">
+        <div className="row wrap on-photo">
           <div className="row" aria-label={`${online.length} of ${room.participants.length} online`}>
             {room.participants.map((p) => (
               <span key={p.userId} className={`avatar ${p.online ? 'online' : ''}`} title={`${p.displayName} (${p.role}${p.online ? ', online' : ''})`}>
                 {initials(p.displayName)}
               </span>
             ))}
-            <span className="small muted">{online.length} online</span>
+            <span className="small">{online.length} online</span>
           </div>
           {t.roomLocked && <span className="tag"><IconLock size={12} aria-hidden="true" /> room closed</span>}
           {inviteCode && (
@@ -97,9 +106,10 @@ export default function TripRoom() {
               {copied ? <IconCheck size={12} aria-hidden="true" /> : <IconCopy size={12} aria-hidden="true" />} {inviteCode}
             </button>
           )}
-          <Link className="btn ghost small" to={`/trips/${tripId}/analytics`}><IconChartBar size={16} aria-hidden="true" /> Analytics</Link>
+          <Link className="btn small" to={`/trips/${tripId}/analytics`}><IconChartBar size={16} aria-hidden="true" /> Analytics</Link>
         </div>
-      </div>
+        </div>
+      </Photo>
 
       {room.status === 'reconnecting' && (
         <div className="banner info" role="status"><IconWifiOff size={16} aria-hidden="true" /> Connection lost. Reconnecting; your board will catch up.</div>
@@ -127,6 +137,7 @@ export default function TripRoom() {
           names={names}
           onOpen={setOpenItem}
           onAdd={(dayIndex) => setPin({ dayIndex })}
+          photos={photos}
         />
 
         <aside className="side">

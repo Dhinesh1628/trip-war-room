@@ -1,6 +1,7 @@
 import { readFile } from 'node:fs/promises';
 import { readdirSync, readFileSync } from 'node:fs';
 import { DATA_DIR } from '../src/venues/seedData.js';
+import { FIXTURE_DIR } from './fixtures.js';
 import {
   filterCandidates,
   rankCandidates,
@@ -21,7 +22,7 @@ import { DIETARY_TAGS, FOOD_CATEGORIES } from '../src/venues/vocabulary.js';
 let venues;
 
 beforeAll(async () => {
-  const data = JSON.parse(await readFile(`${DATA_DIR}/lisbon.json`, 'utf8'));
+  const data = JSON.parse(await readFile(`${FIXTURE_DIR}/lisbon.json`, 'utf8'));
   venues = data.venues;
 });
 
@@ -264,12 +265,15 @@ describe('100% constraint compliance in every destination', () => {
   });
 
   test.each(files)('%s: every suggestion satisfies every active rule, and every rejection is justified', (file) => {
-    const cityVenues = JSON.parse(readFileSync(`${DATA_DIR}/${file}`, 'utf8')).venues;
+    const city = JSON.parse(readFileSync(`${DATA_DIR}/${file}`, 'utf8'));
+    const cityVenues = city.venues;
+    // The matrix's price ceilings are in dollars; rupee cities use ~60x (₹600, ₹1,200, ...).
+    const scale = city.destination.currency === 'INR' ? 60 : 1;
     const anchors = cityVenues.filter((v) => ['tour', 'attraction', 'museum'].includes(v.category));
     const base = simulatedRequests().slice(0, -1); // the matrix, without the Lisbon-only spec example
     let withSuggestion = 0;
     base.forEach((req, i) => {
-      const r = { ...req, anchor: req.anchor ? anchors[i % anchors.length] : null };
+      const r = { ...req, maxPricePerPerson: req.maxPricePerPerson == null ? null : req.maxPricePerPerson * scale, anchor: req.anchor ? anchors[i % anchors.length] : null };
       const { valid, rejected } = filterCandidates(cityVenues, r);
       const ranked = rankCandidates(valid, r);
       if (ranked.length) withSuggestion += 1;

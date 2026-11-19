@@ -13,7 +13,7 @@ export default function ConciergePanel({ room, active, canPlan, onPin }) {
   async function ask(e) {
     e.preventDefault();
     const q = question.trim();
-    if (q.length < 3) return setError('Ask something a little longer, like "vegan lunch under $20"');
+    if (q.length < 3) return setError('Ask something a little longer, like "veg lunch under ₹500"');
     setBusy(true);
     setError(null);
     const r = await room.send('trip.ai.ask', { question: q });
@@ -33,7 +33,7 @@ export default function ConciergePanel({ room, active, canPlan, onPin }) {
         <textarea
           rows={2}
           aria-label="Ask the Concierge"
-          placeholder="Vegetarian dinner near our 5 PM tour under $25"
+          placeholder="Veg dinner near our 5 PM walk under ₹1,200"
           value={question}
           onChange={(e) => { setQuestion(e.target.value); setError(null); }}
           onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && ask(e)}

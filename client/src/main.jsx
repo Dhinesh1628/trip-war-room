@@ -9,6 +9,10 @@ import JoinPage from './pages/JoinPage.jsx';
 import TripRoom from './pages/TripRoom.jsx';
 import Analytics from './pages/Analytics.jsx';
 import Admin from './pages/Admin.jsx';
+import TripsPage from './pages/TripsPage.jsx';
+import SavedPage from './pages/SavedPage.jsx';
+import ProfilePage from './pages/ProfilePage.jsx';
+import { SavedProvider } from './lib/saved.jsx';
 import './index.css';
 
 // Signed-in pages; anyone else goes to sign in and comes back afterwards.
@@ -27,8 +31,11 @@ createRoot(document.getElementById('root')).render(
         <Routes>
           <Route path="/signin" element={<AuthPage mode="signin" />} />
           <Route path="/register" element={<AuthPage mode="register" />} />
-          <Route element={<Private><Shell /></Private>}>
+          <Route element={<Private><SavedProvider><Shell /></SavedProvider></Private>}>
             <Route path="/" element={<Dashboard />} />
+            <Route path="/trips" element={<TripsPage />} />
+            <Route path="/saved" element={<SavedPage />} />
+            <Route path="/profile" element={<ProfilePage />} />
             <Route path="/join/:code" element={<JoinPage />} />
             <Route path="/trips/:tripId" element={<TripRoom />} />
             <Route path="/trips/:tripId/analytics" element={<Analytics />} />

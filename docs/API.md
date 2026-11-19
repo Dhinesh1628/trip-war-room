@@ -1,5 +1,9 @@
 # API reference
 
+> **About the examples:** most payloads below were captured on the Lisbon test
+> fixture, so they show `USD` and Lisbon places. The app itself ships Indian
+> cities: the shapes are identical, with `"currency": "INR"` and rupee amounts.
+
 Base URL: `http://localhost:5080/api/v1`. All bodies are JSON.
 WebSocket events: see [Real-time (WebSocket) API](#real-time-websocket-api) below.
 
@@ -84,11 +88,24 @@ Revokes the refresh token's session and clears the cookie. `204`.
 All fields optional. `dietaryTags` must come from the vocabulary:
 `vegetarian, vegan, halal, kosher, gluten-free, dairy-free, nut-free`.
 `budgetCeiling` is the most this traveller wants to spend on the trip's
-itinerary in total (USD, per person), or `null`. The conflict detector flags a
+itinerary in total (in the trip's currency, per person), or `null`. The conflict detector flags a
 `budgetBreach` when the board pushes them past it, and the Concierge uses the
 traveller's remaining headroom as their price ceiling. `role` cannot be set
 here (`400`). Every open Trip Room the traveller is in picks up the change
 immediately.
+
+### `GET /users/me/saved` *(auth)*
+Places saved with the heart button, newest first, each with its city and currency:
+```json
+{ "saved": [ { "venueId": "v_jai_012", "name": "Hawa Mahal", "category": "attraction", "pricePerPerson": 50,
+               "destination": "jaipur", "destinationName": "Jaipur, India", "currency": "INR",
+               "image": { "url": "https://thumb.wikimedia.org/...", "credit": "...", "license": "CC BY-SA 4.0", "source": "https://commons.wikimedia.org/wiki/File:..." }, "...": "..." } ] }
+```
+
+### `PUT /users/me/saved/{venueId}` and `DELETE /users/me/saved/{venueId}` *(auth)*
+Save or unsave a place. Saving again moves it to the front. Saving also counts
+as a "like" for recommendations. Both return `{ "savedVenueIds": [...] }`;
+`404` for an unknown venue.
 
 ## Destinations and venues *(auth)*
 
@@ -119,7 +136,7 @@ Spec 7.3.2. All query parameters are optional. With `near`, only venues within
       "rating": 4.7, "reviewCount": 1450, "indoor": false,
       "description": "...", "distanceKm": 0 } ] }
 ```
-Prices are USD per person (lodging: per person per night). If `close` is
+Prices are per person in the destination's `currency` (`INR` for the Indian cities; lodging: per person per night). Each venue has an `image` (`url`, `credit`, `license`, `source`) from Wikimedia Commons, or `null`. If `close` is
 earlier than `open`, the venue is open past midnight.
 
 ### `GET /destinations/{destination}/venues/{venueId}`
@@ -344,7 +361,7 @@ Replaces the invite code; the old one stops working. `200 { "inviteCode", "invit
 `{ "datasets": [ { "slug", "name", "datasetVersion", "venueCount", "updatedAt" } ] }`
 
 ### `POST /admin/datasets/validate`
-Body: a dataset (see [the Lisbon file](../server/data/destinations/lisbon.json)).
+Body: a dataset (see [the Jaipur file](../server/data/destinations/jaipur.json)).
 Checks it without saving: `200 { "valid": true, "destination": "lisbon", "venues": 42 }`
 or `400` listing every problem.
 
@@ -358,7 +375,7 @@ Nothing is changed if validation fails.
 tags come from the vocabulary above; latitude −90..90 and longitude −180..180,
 within 60 km of the destination centre (this catches swapped lat/lng); hours are
 `HH:MM` from `00:00` to `23:59`, open ≠ close; venueIds look like `v_lis_001`
-and are unique; unknown fields are rejected; currency must be `USD`.
+and are unique; unknown fields are rejected; currency must be `INR` or `USD`; an optional `image` must be a Wikimedia Commons photo with its credit.
 
 ---
 

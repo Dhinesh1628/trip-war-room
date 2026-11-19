@@ -2,6 +2,7 @@ import Anthropic from '@anthropic-ai/sdk';
 import { z } from 'zod';
 import { toHHMM } from './constraints.js';
 import { log } from '../lib/logger.js';
+import { amountsIn, formatMoney, CURRENCIES, DEFAULT_CURRENCY } from '../lib/money.js';
 
 // Writes the Concierge's reply. Two ways, same guarantees:
 //  - "llm": Claude phrases a reply from the already-filtered, ranked
@@ -21,7 +22,7 @@ You answer one traveller's question using ONLY the candidate venues supplied in 
 Rules:
 - Recommend exactly one candidate as suggestedVenueId. Prefer the first unless the question clearly favours another.
 - Only state facts that appear in the supplied data: names, prices, dietary tags, opening hours, walking minutes, distances, weather. Never invent a venue, price, time or feature.
-- Write prices exactly as given, with a dollar sign (for example $22). Write times as HH:MM in 24-hour form exactly as given.
+- Write prices exactly as given, with the currency symbol from the facts (for example ₹450 or $22). Write times as HH:MM in 24-hour form exactly as given.
 - Keep the answer to two or three short sentences, plain text, no lists, no markdown, no emoji.
 - citedVenueIds lists every venue you mention, including suggestedVenueId.`;
 
@@ -49,11 +50,14 @@ const outputSchema = (ids) => ({
 // ---- facts given to the model (and used by the grounding check) -------------
 
 export function factsFor({ question, constraints, ranked, weather }) {
+  const currency = constraints.currency ?? DEFAULT_CURRENCY;
   return {
     question,
+    currency,
+    currencySymbol: CURRENCIES[currency]?.symbol ?? currency,
     rulesApplied: {
       category: constraints.category,
-      maxPricePerPersonUSD: constraints.maxPricePerPerson,
+      maxPricePerPerson: constraints.maxPricePerPerson,
       budgetSource: constraints.budgetSource,
       dietaryTags: constraints.dietaryTags,
       mustBeOpen: constraints.slot
@@ -75,7 +79,7 @@ export function factsFor({ question, constraints, ranked, weather }) {
       name: r.venue.name,
       category: r.venue.category,
       neighborhood: r.venue.neighborhood,
-      pricePerPersonUSD: r.venue.pricePerPerson,
+      pricePerPerson: r.venue.pricePerPerson,
       dietaryTags: r.venue.dietaryTags,
       hours: r.venue.hours,
       indoor: r.venue.indoor,
@@ -98,12 +102,12 @@ export function groundingProblems(answer, facts, allVenueNames) {
   const cited = facts.candidates;
 
   const allowedPrices = new Set(
-    [...cited.map((c) => c.pricePerPersonUSD), facts.rulesApplied.maxPricePerPersonUSD]
+    [...cited.map((c) => c.pricePerPerson), facts.rulesApplied.maxPricePerPerson]
       .filter((n) => n != null)
       .map(money),
   );
-  for (const m of answer.matchAll(/\$\s?(\d+(?:\.\d{1,2})?)/g)) {
-    if (!allowedPrices.has(money(m[1]))) problems.push(`price $${m[1]} is not in the data`);
+  for (const { raw, value } of amountsIn(answer)) {
+    if (!allowedPrices.has(money(value))) problems.push(`price ${raw} is not in the data`);
   }
 
   const allowedTimes = new Set(
@@ -164,7 +168,7 @@ export function templateAnswer(facts) {
   }
   const diet = dietPhrase(best, rules.dietaryTags ?? []);
   if (diet) parts.push(`has ${diet}`);
-  parts.push(`costs about $${best.pricePerPersonUSD} per person`);
+  parts.push(`costs about ${formatMoney(best.pricePerPerson, facts.currency)} per person`);
   const alwaysOpen = best.hours.open === '00:00' && best.hours.close === '23:59';
   let text = `${parts.join(', ')}, and ${alwaysOpen ? 'is open 24 hours' : `is open ${best.hours.open}-${best.hours.close}`}.`;
   if (facts.weather && /rain|showers/.test(facts.weather.condition) && best.indoor) {
@@ -173,7 +177,7 @@ export function templateAnswer(facts) {
   if (others.length) {
     text += ` Other options: ${others
       .slice(0, 2)
-      .map((o) => `${o.name} ($${o.pricePerPersonUSD})`)
+      .map((o) => `${o.name} (${formatMoney(o.pricePerPerson, facts.currency)})`)
       .join(' and ')}.`;
   }
   return {
@@ -263,13 +267,14 @@ export function compactFacts(facts) {
   const r = facts.rulesApplied;
   return {
     question: facts.question,
+    currencySymbol: facts.currencySymbol,
     near: r.nearTo?.name ?? null,
     weather: facts.weather ? facts.weather.condition : null,
     candidates: facts.candidates.slice(0, 3).map((c) => ({
       venueId: c.venueId,
       name: c.name,
       area: c.neighborhood,
-      priceUSD: c.pricePerPersonUSD,
+      price: c.pricePerPerson,
       dietary: c.dietaryTags,
       open: `${c.hours.open}-${c.hours.close}`,
       walkMinutes: c.walkMinutes,
@@ -279,7 +284,7 @@ export function compactFacts(facts) {
 }
 
 const SYSTEM_SHORT = `You write one reply for a trip-planning app. Use ONLY the candidates given; they all fit the group's rules and the first is the best match.
-Reply as JSON: "answer" is two plain sentences recommending one candidate by name, mentioning its price (like $22) and why it fits; "suggestedVenueId" is that candidate's venueId; "citedVenueIds" lists every venueId you mention. Never invent prices, times or places.`;
+Reply as JSON: "answer" is two plain sentences recommending one candidate by name, mentioning its price with the currency symbol given (like ₹450) and why it fits; "suggestedVenueId" is that candidate's venueId; "citedVenueIds" lists every venueId you mention. Never invent prices, times or places.`;
 
 // Rejects replies that are technically grounded but not a real answer
 // (a bare name, or the JSON leaking into the sentence).

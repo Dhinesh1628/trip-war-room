@@ -40,7 +40,7 @@ mongodb+srv://<user>:<password>@cluster0.xxxxx.mongodb.net/trip-war-room?retryWr
 If the password has symbols like `@ : / ? #`, URL-encode them (`@` → `%40`,
 `#` → `%23`), or autogenerate one without symbols.
 
-**d) Data.** If you use the same database you developed with, the Lisbon venues
+**d) Data.** If you use the same database you developed with, the Indian cities
 and the generated recommendation history are already there. For a new database,
 run these once from your computer with `MONGO_URI` pointing at it:
 

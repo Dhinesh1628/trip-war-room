@@ -1,6 +1,7 @@
 import http from 'node:http';
 import { readFile } from 'node:fs/promises';
 import { DATA_DIR } from '../src/venues/seedData.js';
+import { FIXTURE_DIR } from './fixtures.js';
 import { createLlmClient, resolveProvider, providerLabel, writeAnswer, factsFor, qualityProblems, compactFacts } from '../src/concierge/answer.js';
 import { loadConfig } from '../src/config/env.js';
 import { filterCandidates, rankCandidates } from '../src/concierge/constraints.js';
@@ -14,7 +15,7 @@ let handler; // (body, res) => void, set per test
 const seen = [];
 
 beforeAll(async () => {
-  venues = JSON.parse(await readFile(`${DATA_DIR}/lisbon.json`, 'utf8')).venues;
+  venues = JSON.parse(await readFile(`${FIXTURE_DIR}/lisbon.json`, 'utf8')).venues;
   fakeOllama = http.createServer((req, res) => {
     let raw = '';
     req.on('data', (c) => (raw += c));
@@ -83,7 +84,7 @@ describe('quality check and short prompt', () => {
   test('the local model gets only the top 3 candidates and the fields it needs', () => {
     const c = compactFacts(facts());
     expect(c.candidates).toHaveLength(3);
-    expect(Object.keys(c.candidates[0]).sort()).toEqual(['area', 'dietary', 'name', 'open', 'priceUSD', 'rating', 'venueId', 'walkMinutes']);
+    expect(Object.keys(c.candidates[0]).sort()).toEqual(['area', 'dietary', 'name', 'open', 'price', 'rating', 'venueId', 'walkMinutes']);
   });
 
   test('a local model gets a 20 s default time limit, Claude 2.5 s', () => {
@@ -99,7 +100,7 @@ describe('Ollama answers', () => {
     const f = facts();
     const best = f.candidates[0];
     handler = (body, res) =>
-      reply(res, JSON.stringify({ answer: `${best.name} has vegetarian options and costs about $${best.pricePerPersonUSD} per person.`, suggestedVenueId: best.venueId, citedVenueIds: [best.venueId] }));
+      reply(res, JSON.stringify({ answer: `${best.name} has vegetarian options and costs about $${best.pricePerPerson} per person.`, suggestedVenueId: best.venueId, citedVenueIds: [best.venueId] }));
     const out = await writeAnswer({ facts: f, llm: createLlmClient(config()), config: config(), allVenueNames: names() });
     expect(out).toMatchObject({ mode: 'llm', model: 'ollama/llama3.2:3b', suggestedVenueId: best.venueId, usage: { input_tokens: 812, output_tokens: 41 } });
 

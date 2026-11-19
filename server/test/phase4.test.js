@@ -5,6 +5,7 @@ import { joinRoom, sleep } from './socketHelpers.js';
 import { TripEvent } from '../src/board/tripEvent.model.js';
 import { Interaction } from '../src/recs/interaction.model.js';
 import { DATA_DIR } from '../src/venues/seedData.js';
+import { FIXTURE_DIR } from './fixtures.js';
 import { generateDataset } from '../src/recs/generate.js';
 import mongoose from 'mongoose';
 
@@ -220,7 +221,7 @@ describe('session analytics reconcile exactly with the event log (spec 6.3)', ()
 describe('recommendations and the dashboard', () => {
   beforeAll(async () => {
     // Load the generated history, as `npm run generate:interactions` does.
-    const venues = JSON.parse(await readFile(`${DATA_DIR}/lisbon.json`, 'utf8')).venues;
+    const venues = JSON.parse(await readFile(`${FIXTURE_DIR}/lisbon.json`, 'utf8')).venues;
     const { train } = generateDataset(venues, { seed: 2026 });
     const ids = new Map();
     const id = (name) => (ids.has(name) ? ids.get(name) : ids.set(name, new mongoose.Types.ObjectId()).get(name));
@@ -286,5 +287,25 @@ describe('recommendations and the dashboard', () => {
     const post = (id, body) => request(app).post(`/api/v1/destinations/lisbon/venues/${id}/feedback`).set('Authorization', me.auth).send(body);
     expect((await post('v_nope', { liked: true })).status).toBe(404);
     expect((await post('v_lis_001', { liked: 'yes' })).status).toBe(400);
+  });
+});
+
+describe('saved places (the heart button)', () => {
+  test('save, list newest first with city and currency, ignore duplicates, unsave; unknown venues are 404', async () => {
+    const { auth } = await registerUser(app);
+    const put = (id) => request(app).put(`/api/v1/users/me/saved/${id}`).set('Authorization', auth);
+    expect((await put('v_jai_012')).status).toBe(200);
+    expect((await put('v_goa_010')).status).toBe(200);
+    expect((await put('v_jai_012')).body.savedVenueIds).toEqual(['v_jai_012', 'v_goa_010']);
+    expect((await put('v_nope_001')).status).toBe(404);
+
+    const list = await request(app).get('/api/v1/users/me/saved').set('Authorization', auth);
+    expect(list.body.saved.map((v) => v.venueId)).toEqual(['v_jai_012', 'v_goa_010']);
+    expect(list.body.saved[0]).toMatchObject({ name: 'Hawa Mahal', destinationName: 'Jaipur, India', currency: 'INR', pricePerPerson: 50 });
+    expect(list.body.saved[0].image.url).toMatch(/wikimedia\.org/);
+
+    const del = await request(app).delete('/api/v1/users/me/saved/v_jai_012').set('Authorization', auth);
+    expect(del.body.savedVenueIds).toEqual(['v_goa_010']);
+    expect((await request(app).get('/api/v1/users/me/saved')).status).toBe(401);
   });
 });

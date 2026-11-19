@@ -36,7 +36,14 @@ export function createApp(config, { gatewayHealth = () => null, gateway = null }
 
   app.disable('x-powered-by');
   if (config.trustProxy) app.set('trust proxy', 1);
-  app.use(helmet());
+  // Place photos are loaded from Wikimedia Commons; everything else stays same-origin.
+  app.use(
+    helmet({
+      contentSecurityPolicy: {
+        directives: { 'img-src': ["'self'", 'data:', 'https://upload.wikimedia.org', 'https://thumb.wikimedia.org'] },
+      },
+    }),
+  );
   app.use(cors({ origin: config.clientOrigin, credentials: true }));
   app.use(express.json({ limit: '1mb' }));
   app.use(cookieParser());

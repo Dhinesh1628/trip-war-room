@@ -1,3 +1,4 @@
+import { DEFAULT_CURRENCY } from '../lib/money.js';
 // The budget engine (spec 6, 11.1 week 3, 13: "100%-accurate per-person
 // totals"). Pure functions, integer cents only, so every total is exact:
 // the shares of an item always add up to exactly the item's cost, and the
@@ -56,8 +57,8 @@ export function itemCost(item, participantIds) {
 }
 
 // The whole trip. `items` are in board order (day, then time).
-// Returns cents everywhere plus dollar figures for display.
-export function computeBudget({ items, participantIds, totalBudget, ceilings = new Map() }) {
+// Returns hundredths (paise / cents) everywhere plus whole-currency figures for display.
+export function computeBudget({ items, participantIds, totalBudget, ceilings = new Map(), currency = DEFAULT_CURRENCY }) {
   const people = participantIds.map(String);
   const totals = new Map(people.map((id) => [id, 0]));
   const lines = [];
@@ -80,13 +81,13 @@ export function computeBudget({ items, participantIds, totalBudget, ceilings = n
   const groupCents = [...totals.values()].reduce((a, b) => a + b, 0);
   const budgetCents = toCents(totalBudget);
   return {
-    currency: 'USD',
+    currency,
     groupCents,
     budgetCents,
     remainingCents: budgetCents - groupCents,
     perPersonCents: Object.fromEntries(totals),
     lines,
-    // Dollar view for clients.
+    // Whole-currency view for clients.
     totalBudget: fromCents(budgetCents),
     groupCommitted: fromCents(groupCents),
     remaining: fromCents(budgetCents - groupCents),
@@ -109,7 +110,7 @@ export function computeBudget({ items, participantIds, totalBudget, ceilings = n
 export function budgetPanel(budget, participantCount, itemCount) {
   const per = budget.perPerson.map((p) => p.committed);
   return {
-    currency: 'USD',
+    currency: budget.currency,
     totalBudget: budget.totalBudget,
     participantCount,
     itemCount,

@@ -1,6 +1,16 @@
 import { useState } from 'react';
 import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom';
-import { IconMap2 } from '@tabler/icons-react';
+import { IconMapPin } from '@tabler/icons-react';
+import Photo from '../components/Photo.jsx';
+
+// Hawa Mahal, Jaipur (Wikimedia Commons). Shown before sign-in, so it can't
+// come from the destinations API.
+const HERO = {
+  url: 'https://thumb.wikimedia.org/wikipedia/commons/thumb/4/41/East_facade_Hawa_Mahal_Jaipur_from_ground_level_%28July_2022%29_-_img_01.jpg/960px-East_facade_Hawa_Mahal_Jaipur_from_ground_level_%28July_2022%29_-_img_01.jpg',
+  credit: 'Chainwit.',
+  license: 'CC BY-SA 4.0',
+  source: 'https://commons.wikimedia.org/wiki/File:East_facade_Hawa_Mahal_Jaipur_from_ground_level_(July_2022)_-_img_01.jpg',
+};
 import { useAuth } from '../lib/auth.jsx';
 
 export default function AuthPage({ mode }) {
@@ -43,25 +53,33 @@ export default function AuthPage({ mode }) {
   }
 
   return (
-    <main className="narrow">
-      <div className="row" style={{ marginBottom: 20 }}>
-        <IconMap2 size={24} stroke={1.6} aria-hidden="true" />
-        <span style={{ fontWeight: 500, fontSize: 16 }}>Trip War Room</span>
+    <main className="auth">
+      <Photo image={HERO} alt="Hawa Mahal, Jaipur" className="auth-photo" eager>
+        <div className="hero-shade" aria-hidden="true" />
+        <div className="auth-photo-text">
+          <div className="hero-place"><IconMapPin size={14} aria-hidden="true" /> Hawa Mahal, Jaipur</div>
+          <p className="auth-tag">Plan India together. One live board for your group: places, budget in rupees, and a concierge that keeps to your rules.</p>
+        </div>
+      </Photo>
+      <div className="auth-side">
+      <div className="brand" style={{ marginBottom: 28 }}>
+        <span className="brand-mark" aria-hidden="true"><IconMapPin size={16} stroke={2} /></span>
+        <span>Trip War Room</span>
       </div>
-      <div className="panel" style={{ padding: 20 }}>
-        <h1>{registering ? 'Create your account' : 'Sign in'}</h1>
-        <p className="muted small">{registering ? 'Plan trips with your group, live.' : 'Welcome back.'}</p>
+      <div className="auth-form">
+        <h1>{registering ? 'Create your account' : 'Welcome back'}</h1>
+        <p className="muted small">{registering ? 'Plan trips across India with your group, live.' : 'Sign in to pick up where your group left off.'}</p>
         <form onSubmit={submit} noValidate>
           {registering && (
             <div className="field">
               <label htmlFor="name">Your name</label>
-              <input id="name" value={form.displayName} onChange={set('displayName')} placeholder="Maya Costa" autoComplete="name" />
+              <input id="name" value={form.displayName} onChange={set('displayName')} placeholder="Priya Sharma" autoComplete="name" />
               {errors.displayName && <div className="error">{errors.displayName}</div>}
             </div>
           )}
           <div className="field">
             <label htmlFor="email">Email</label>
-            <input id="email" type="email" value={form.email} onChange={set('email')} placeholder="maya@example.com" autoComplete="email" />
+            <input id="email" type="email" value={form.email} onChange={set('email')} placeholder="priya@example.com" autoComplete="email" />
             {errors.email && <div className="error">{errors.email}</div>}
           </div>
           <div className="field">
@@ -76,18 +94,19 @@ export default function AuthPage({ mode }) {
             {errors.password && <div className="error">{errors.password}</div>}
           </div>
           {errors.form && <div className="banner danger" role="alert" style={{ marginBottom: 12 }}>{errors.form}</div>}
-          <button className="primary" type="submit" disabled={busy} style={{ width: '100%', justifyContent: 'center' }}>
+          <button className="primary block" type="submit" disabled={busy}>
             {busy ? 'One moment…' : registering ? 'Create account' : 'Sign in'}
           </button>
         </form>
       </div>
-      <p className="small muted" style={{ marginTop: 12, textAlign: 'center' }}>
+      <p className="small muted" style={{ marginTop: 16 }}>
         {registering ? (
           <>Have an account? <Link to="/signin" state={location.state}>Sign in</Link></>
         ) : (
           <>New here? <Link to="/register" state={location.state}>Create an account</Link></>
         )}
       </p>
+      </div>
     </main>
   );
 }

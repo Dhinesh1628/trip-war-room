@@ -1,12 +1,13 @@
 import { readFile } from 'node:fs/promises';
 import { DATA_DIR } from '../src/venues/seedData.js';
+import { FIXTURE_DIR } from './fixtures.js';
 import { buildModel, scoreForUser, recommendForGroup, features } from '../src/recs/recommender.js';
 import { generateDataset } from '../src/recs/generate.js';
 import { precisionAtK } from '../src/recs/evaluate.js';
 
 let venues;
 beforeAll(async () => {
-  venues = JSON.parse(await readFile(`${DATA_DIR}/lisbon.json`, 'utf8')).venues;
+  venues = JSON.parse(await readFile(`${FIXTURE_DIR}/lisbon.json`, 'utf8')).venues;
 });
 
 const like = (userId, venueId, extra = {}) => ({ userId, venueId, liked: true, weight: 1, coTraveledWith: [], ...extra });

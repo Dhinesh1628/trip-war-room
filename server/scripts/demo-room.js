@@ -62,7 +62,7 @@ console.log(`Demo against ${base}\n`);
 const [maya, sam, priya] = await Promise.all([register('Maya'), register('Sam'), register('Priya')]);
 const trip = await call('POST', '/trips', {
   token: maya.accessToken,
-  body: { destination: 'Lisbon, Portugal', startDate: '2026-12-10', endDate: '2026-12-14', totalBudget: 1200, maxParticipants: 8 },
+  body: { destination: 'Jaipur, India', startDate: '2026-12-10', endDate: '2026-12-14', totalBudget: 40000, maxParticipants: 8 },
 });
 await call('POST', '/trips/join', { token: sam.accessToken, body: { inviteCode: trip.inviteCode } });
 await call('POST', '/trips/join', { token: priya.accessToken, body: { inviteCode: trip.inviteCode } });
@@ -73,9 +73,9 @@ const S = await traveller('Sam', sam.accessToken, trip.tripId);
 const P = await traveller('Priya', priya.accessToken, trip.tripId);
 await sleep(100);
 
-console.log('\n-- Sam pins the Alfama walking tour; Priya pins dinner --');
-const tour = (await S.send('trip.board.pin', { venueId: 'v_lis_025', dayIndex: 0, startTime: '15:00', endTime: '17:00' })).item;
-const dinner = (await P.send('trip.board.pin', { venueId: 'v_lis_001', dayIndex: 0, startTime: '17:30', endTime: '19:00' })).item;
+console.log('\n-- Sam pins Hawa Mahal; Priya pins dinner --');
+const tour = (await S.send('trip.board.pin', { venueId: 'v_jai_012', dayIndex: 0, startTime: '15:00', endTime: '16:30' })).item;
+const dinner = (await P.send('trip.board.pin', { venueId: 'v_jai_006', dayIndex: 0, startTime: '17:30', endTime: '19:00' })).item;
 await sleep(100);
 
 console.log('\n-- Sam and Priya both drag the dinner card at the same moment --');
@@ -86,7 +86,7 @@ const [s, p] = await Promise.all([
 console.log(`${clock()}  result: Sam ${s.ok ? 'WON' : `lost (${s.error.code})`}, Priya ${p.ok ? 'WON' : `lost (${p.error.code})`}`);
 await sleep(100);
 
-console.log('\n-- Maya (leader) locks the tour --');
+console.log('\n-- Maya (leader) locks Hawa Mahal --');
 await M.send('trip.board.lock', { itemId: tour.itemId });
 const blocked = await S.send('trip.board.move', { itemId: tour.itemId, dayIndex: 2, startTime: '15:00', endTime: '17:00', expectedVersion: 2 });
 console.log(`${clock()}  Sam tries to move the locked tour: ${blocked.ok ? 'allowed (unexpected!)' : blocked.error.code}`);

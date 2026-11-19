@@ -10,9 +10,11 @@ const userSchema = new mongoose.Schema(
     role: { type: String, enum: ACCOUNT_ROLES, default: 'user' },
     preferences: {
       dietaryTags: { type: [{ type: String, enum: DIETARY_TAGS }], default: [] },
-      // Max spend per person per item (USD). Null = no personal ceiling.
+      // Max spend per person per item (in the trip's currency). Null = no personal ceiling.
       budgetCeiling: { type: Number, min: 0, default: null },
     },
+    // Places this traveller saved with the heart button (venue ids, newest first).
+    savedVenueIds: { type: [String], default: [] },
   },
   { timestamps: true },
 );

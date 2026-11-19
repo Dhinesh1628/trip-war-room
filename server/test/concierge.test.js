@@ -48,7 +48,7 @@ beforeEach(() => {
         {
           type: 'text',
           text: JSON.stringify({
-            answer: `${top.name} fits: about $${top.pricePerPersonUSD} per person, open ${top.hours.open}-${top.hours.close}.`,
+            answer: `${top.name} fits: about $${top.pricePerPerson} per person, open ${top.hours.open}-${top.hours.close}.`,
             suggestedVenueId: top.venueId,
             citedVenueIds: [top.venueId],
           }),

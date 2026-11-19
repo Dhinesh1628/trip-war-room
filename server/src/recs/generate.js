@@ -16,26 +16,33 @@ const late = (v) => {
 };
 const isFood = (v) => ['breakfast', 'lunch', 'dinner', 'cafe', 'bar'].includes(v.category);
 
+// Neighbourhoods known for going out, in the fixture and the Indian cities.
+const NIGHTLIFE_AREAS = ['Bairro Alto', 'Cais do Sodré', 'Hauz Khas', 'Bandra West', 'Baga', 'Calangute', 'C-Scheme'];
+
+// Rupee prices for the same kind of place are roughly 60 times the dollar
+// figures the personas were written with (a $15 meal is about a ₹900 one).
+export const PRICE_SCALE = { USD: 1, INR: 60 };
+
 export const PERSONAS = {
   plantBased: {
     label: 'plant-based foodie',
-    likes: (v) => isFood(v) && v.dietaryTags.some((t) => t === 'vegan' || t === 'vegetarian') && v.pricePerPerson <= 40,
+    likes: (v, s = 1) => isFood(v) && v.dietaryTags.some((t) => t === 'vegan' || t === 'vegetarian') && v.pricePerPerson <= 40 * s,
   },
   backpacker: {
     label: 'budget backpacker',
-    likes: (v) => v.pricePerPerson <= 15 || (v.category === 'lodging' && v.pricePerPerson < 50),
+    likes: (v, s = 1) => v.pricePerPerson <= 15 * s || (v.category === 'lodging' && v.pricePerPerson < 50 * s),
   },
   culture: {
     label: 'culture seeker',
-    likes: (v) => ['museum', 'attraction', 'tour'].includes(v.category) && v.pricePerPerson <= 60,
+    likes: (v, s = 1) => ['museum', 'attraction', 'tour'].includes(v.category) && v.pricePerPerson <= 60 * s,
   },
   nightOwl: {
     label: 'night owl',
-    likes: (v) => (v.category === 'bar' || (isFood(v) && late(v))) || ['Bairro Alto', 'Cais do Sodré'].includes(v.neighborhood),
+    likes: (v) => (v.category === 'bar' || (isFood(v) && late(v))) || NIGHTLIFE_AREAS.includes(v.neighborhood),
   },
   luxury: {
     label: 'luxury traveller',
-    likes: (v) => v.pricePerPerson >= 45 || v.rating >= 4.8,
+    likes: (v, s = 1) => v.pricePerPerson >= 45 * s || v.rating >= 4.8,
   },
 };
 
@@ -57,11 +64,11 @@ const shuffle = (list, rand) => {
   return a;
 };
 
-export function generateDataset(venues, { usersPerPersona = 24, seed = 2026, likeRate = 0.85, noiseRate = 0.04, trainShare = 0.55 } = {}) {
+export function generateDataset(venues, { usersPerPersona = 24, seed = 2026, likeRate = 0.85, noiseRate = 0.04, trainShare = 0.55, priceScale = 1 } = {}) {
   const rand = rng(seed);
   const users = [];
   for (const [persona, def] of Object.entries(PERSONAS)) {
-    for (let i = 0; i < usersPerPersona; i += 1) users.push({ userId: `${persona}_${i}`, persona, likes: def.likes });
+    for (let i = 0; i < usersPerPersona; i += 1) users.push({ userId: `${persona}_${i}`, persona, likes: (v) => def.likes(v, priceScale) });
   }
 
   // Trips: groups of 3-4, mostly the same persona (group affinity).

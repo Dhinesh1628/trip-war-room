@@ -57,16 +57,16 @@ const refreshed = await leader('POST', '/auth/refresh');
 check('refresh via cookie', refreshed.status === 200);
 leaderToken = refreshed.body.accessToken;
 
-const near = await leader('GET', '/destinations/lisbon/venues?near=38.7118,-9.1296&radiusKm=1', { token: leaderToken });
+const near = await leader('GET', '/destinations/jaipur/venues?near=26.9239,75.8267&radiusKm=1', { token: leaderToken });
 check(
-  'venues within 1 km of the Alfama tour',
+  'venues within 1 km of Hawa Mahal',
   near.status === 200 && near.body.count > 0 && near.body.venues.every((v) => v.distanceKm <= 1),
   `${near.body?.count} venues`,
 );
 
 const trip = await leader('POST', '/trips', {
   token: leaderToken,
-  body: { destination: 'Lisbon, Portugal', startDate: '2026-12-10', endDate: '2026-12-14', totalBudget: 1200, maxParticipants: 8 },
+  body: { destination: 'Jaipur, India', startDate: '2026-12-10', endDate: '2026-12-14', totalBudget: 40000, maxParticipants: 8 },
 });
 check('create trip', trip.status === 201 && /^[A-Z2-9]{2}-[A-Z2-9]{4}$/.test(trip.body.inviteCode), trip.body?.inviteCode);
 const { tripId, inviteCode } = trip.body;

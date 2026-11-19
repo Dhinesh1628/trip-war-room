@@ -1,3 +1,4 @@
+import { DEFAULT_CURRENCY } from '../lib/money.js';
 import { computeBudget, fromCents } from '../board/budgetEngine.js';
 
 // Session analytics for one trip (spec 6.3), computed ONLY from the trip's
@@ -64,7 +65,7 @@ export function replayBoard(events) {
 const boardOrder = (a, b) =>
   a.dayIndex - b.dayIndex || a.startTime.localeCompare(b.startTime) || String(a.itemId).localeCompare(String(b.itemId));
 
-export function computeAnalytics(events, { participantIds, totalBudget, names = new Map() }) {
+export function computeAnalytics(events, { participantIds, totalBudget, names = new Map(), currency = DEFAULT_CURRENCY }) {
   const log = sortBySeq(events);
   const count = (type, pred = () => true) => log.filter((e) => e.type === type && pred(e)).length;
   const byKey = (type, key) =>
@@ -76,7 +77,7 @@ export function computeAnalytics(events, { participantIds, totalBudget, names = 
 
   const board = replayBoard(log);
   const finalItems = [...board.values()].sort(boardOrder);
-  const budget = computeBudget({ items: finalItems, participantIds, totalBudget });
+  const budget = computeBudget({ items: finalItems, participantIds, totalBudget, currency });
 
   return {
     eventCount: log.length,
@@ -114,7 +115,7 @@ export function computeAnalytics(events, { participantIds, totalBudget, names = 
     },
     chatMessages: count('chat_sent'),
     finalBudget: {
-      currency: 'USD',
+      currency,
       totalBudget: budget.totalBudget,
       groupTotal: budget.groupCommitted,
       remaining: budget.remaining,

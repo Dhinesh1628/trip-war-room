@@ -26,7 +26,8 @@ erDiagram
     string passwordHash "bcrypt, never returned"
     string role "user | admin"
     string[] preferences_dietaryTags
-    number preferences_budgetCeiling "whole-trip USD per person"
+    number preferences_budgetCeiling "whole-trip, trip currency, per person"
+    string[] savedVenueIds "heart button, newest first"
   }
   REFRESH_TOKEN {
     string tokenHash UK "sha256"

@@ -4,7 +4,8 @@ import { connectDb, disconnectDb } from '../src/config/db.js';
 import { loadConfig } from '../src/config/env.js';
 import { buildServer } from '../src/server.js';
 import { User } from '../src/auth/user.model.js';
-import { seedAllDestinations } from '../src/venues/seedData.js';
+import { seedAllDestinations, DATA_DIR } from '../src/venues/seedData.js';
+import { FIXTURE_DIR } from './fixtures.js';
 
 export function testConfig(overrides = {}) {
   return loadConfig({
@@ -23,7 +24,7 @@ export function testConfig(overrides = {}) {
 export async function startTestServer({ seed = false, env = {}, llm = null } = {}) {
   const mongo = await MongoMemoryServer.create();
   await connectDb(mongo.getUri());
-  if (seed) await seedAllDestinations();
+  if (seed) await seedAllDestinations([DATA_DIR, FIXTURE_DIR]);
 
   const config = { ...testConfig(env), mongoUri: mongo.getUri(), llm };
   const { httpServer, app, gateway } = buildServer(config);

@@ -19,7 +19,7 @@ const venueQuery = z
       .string()
       .transform((s, ctx) => {
         const point = parseLatLng(s);
-        if (!point) ctx.addIssue({ code: 'custom', message: 'near must be "lat,lng", e.g. 38.7118,-9.1296' });
+        if (!point) ctx.addIssue({ code: 'custom', message: 'near must be "lat,lng", e.g. 26.9239,75.8267' });
         return point;
       })
       .optional(),
@@ -28,7 +28,7 @@ const venueQuery = z
   })
   .strict();
 
-// Accepts a slug ("lisbon") or the display name ("Lisbon, Portugal").
+// Accepts a slug ("jaipur") or the display name ("Jaipur, India").
 export { findDestination };
 
 // Above this many venues, searches go to the database (bounding box on the
@@ -86,6 +86,8 @@ export function destinationsRouter(config) {
         name: d.name,
         country: d.country,
         center: d.center,
+        currency: d.currency,
+        image: d.image?.url ? d.image : null,
         venueCount: countBy[d.slug] ?? 0,
         datasetVersion: d.datasetVersion,
       })),
@@ -102,6 +104,7 @@ export function destinationsRouter(config) {
       timezone: d.timezone,
       currency: d.currency,
       center: d.center,
+      image: d.image?.url ? d.image : null,
       datasetVersion: d.datasetVersion,
       transit: d.transit,
       weather: d.weather,

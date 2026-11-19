@@ -2,9 +2,9 @@ import mongoose from 'mongoose';
 import { DIETARY_TAGS, VENUE_CATEGORIES } from './vocabulary.js';
 
 // Venue / lodging / activity metadata (spec 7.2.1 venue_metadata).
-// _id is the dataset's own venueId (e.g. "v_lis_001") so AI citations and
+// _id is the dataset's own venueId (e.g. "v_jai_001") so AI citations and
 // itinerary items can reference a stable, human-readable id.
-// All prices are USD. For lodging, pricePerPerson is per person per night.
+// Prices are in the destination's currency (INR for the Indian cities). For lodging, pricePerPerson is per person per night.
 const venueSchema = new mongoose.Schema(
   {
     _id: { type: String, required: true },
@@ -27,6 +27,12 @@ const venueSchema = new mongoose.Schema(
     reviewCount: { type: Number, min: 0, required: true },
     indoor: { type: Boolean, required: true },
     description: { type: String, required: true },
+    image: { type: {
+      url: String,
+      credit: String,
+      license: String,
+      source: String,
+    }, default: undefined },
   },
   { timestamps: true },
 );
@@ -49,6 +55,7 @@ venueSchema.methods.toPublic = function toPublic() {
     reviewCount: this.reviewCount,
     indoor: this.indoor,
     description: this.description,
+    image: this.image?.url ? { url: this.image.url, credit: this.image.credit, license: this.image.license, source: this.image.source } : null,
   };
 };
 

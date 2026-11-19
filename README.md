@@ -1,6 +1,6 @@
 # Trip War Room
 
-A real-time, multiplayer trip-planning board. A group joins one Trip Room, pins
+A real-time, multiplayer trip-planning board for travel in India. A group joins one Trip Room, pins
 activities and lodging to a day-by-day itinerary, votes on contested slots,
 tracks a shared budget, chats, and asks an AI Concierge questions that are
 answered only from a locally authored venue dataset and always obey the
@@ -13,6 +13,12 @@ group's budget, dietary, opening-hours and distance constraints.
 > an exact budget engine (attendance, even and weighted splits, budget-split
 > votes); session analytics from an event log; hybrid recommendations; the
 > dashboard; admin dataset upload; load-tested, measured and reviewed.
+>
+> **India edition:** five Indian cities (Delhi, Mumbai, Jaipur, Goa, Kochi;
+> 122 places), every price in rupees (₹, Indian digit grouping), real photos
+> of each place from Wikimedia Commons with credits, and a photo-led design:
+> an Explore page with a Where / When / Who / Budget search bar, category and
+> city buttons, saved places (the heart button), and a bottom menu on phones.
 
 ## Documentation
 
@@ -69,7 +75,8 @@ trip-war-room/
     src/analytics/  session analytics from the event log
     src/recs/       interactions, hybrid recommender, data generator, Precision@5
     src/users/      profile, preferences, dashboard
-    data/destinations/  authored venue datasets: Lisbon plus Delhi, Mumbai, Jaipur, Goa, Kochi
+    data/destinations/  the venue datasets: Delhi, Mumbai, Jaipur, Goa, Kochi (rupees, with photos)
+    test/fixtures/      a fixed Lisbon dataset (USD) the automated tests are written against
     scripts/        seed, make-admin, smoke test, live room demo, Concierge and
                     recommender evaluations, interaction generator, dev:memory
     test/           Jest tests (use an in-memory MongoDB, no setup needed)
@@ -126,7 +133,8 @@ trip-war-room/
    npm run seed --prefix server
    ```
 
-   Expected output: one line per destination, e.g. `lisbon.json: lisbon (lisbon-2026.11-1) - 42 venues ...`
+   Expected output: one line per city, e.g. `jaipur.json: jaipur (jaipur-2026.11-2) - 24 venues ...`.
+   Add `-- --prune` to also remove destinations that are no longer in the folder.
 
    Optional: give the recommendation engine some history to learn from
    (120 synthetic travellers, about 1,700 interactions; safe to run again):
@@ -345,10 +353,13 @@ project's history phase by phase.
   rules are enforced and tested on the server.
 - **Touch screens:** drag and drop needs a mouse; on touch, change the day in
   the card dialog.
-- **Data:** six hand-authored destinations (Lisbon, Delhi, Mumbai, Jaipur, Goa,
+- **Data:** five hand-authored Indian cities (Delhi, Mumbai, Jaipur, Goa,
   Kochi). Landmarks and coordinates are real; restaurant and hotel names are
-  fictional, prices are approximate USD, and weather is mocked. Recommendation
-  history exists only for Lisbon, so other cities start from popularity.
+  fictional, prices are approximate rupees (landmarks at the Indian-visitor
+  rate), and weather is mocked. Photos are Wikimedia Commons lead images; a
+  fictional restaurant or hotel shows a related dish, street or landmark, and
+  six places with no free photo show their city's photo. Recommendation
+  history is generated (120 synthetic travellers).
 - **Hosting:** public deployment is out of scope per spec 4.2, but the repo is
   ready for Render (one service, see [docs/DEPLOY.md](docs/DEPLOY.md)). The free
   plan sleeps after 15 minutes idle.

@@ -5,6 +5,7 @@ import { startTestServer, registerUser } from './helpers.js';
 import { validateDataset } from '../src/venues/datasetSchema.js';
 import { ingestDataset } from '../src/venues/ingest.js';
 import { DATA_DIR } from '../src/venues/seedData.js';
+import { FIXTURE_DIR } from './fixtures.js';
 import { DIETARY_TAGS, FOOD_CATEGORIES, VENUE_CATEGORIES } from '../src/venues/vocabulary.js';
 import { Venue } from '../src/venues/venue.model.js';
 import { isOpenFor } from '../src/concierge/constraints.js';
@@ -13,7 +14,7 @@ let lisbon;
 const clone = () => structuredClone(lisbon);
 
 beforeAll(async () => {
-  lisbon = JSON.parse(await readFile(`${DATA_DIR}/lisbon.json`, 'utf8'));
+  lisbon = JSON.parse(await readFile(`${FIXTURE_DIR}/lisbon.json`, 'utf8'));
 });
 
 const minutes = (hhmm) => Number(hhmm.slice(0, 2)) * 60 + Number(hhmm.slice(3));
@@ -82,7 +83,7 @@ describe('upload validation rejects bad data with a clear message (spec 6.3)', (
     ['an unknown category', (d) => (d.venues[0].category = 'spa'), 'venues.0.category', /must be one of/],
     ['an unexpected field', (d) => (d.venues[0].secret = 'x'), 'venues.0', /Unrecognized key/i],
     ['an empty venue list', (d) => (d.venues = []), 'venues', /at least one venue/],
-    ['a non-USD currency', (d) => (d.destination.currency = 'EUR'), 'destination.currency', /USD/],
+    ['an unsupported currency', (d) => (d.destination.currency = 'EUR'), 'destination.currency', /INR, USD/],
     ['an impossible forecast date', (d) => (d.weather.daily[0].date = '2026-13-01'), 'weather.daily.0.date', /YYYY-MM-DD/],
   ];
 
@@ -168,8 +169,18 @@ describe('every destination file in server/data/destinations', () => {
   const files = readdirSync(DATA_DIR).filter((f) => f.endsWith('.json')).sort();
   const load = (f) => JSON.parse(readFileSync(`${DATA_DIR}/${f}`, 'utf8'));
 
-  test('includes Lisbon and the Indian cities', () => {
-    expect(files).toEqual(expect.arrayContaining(['lisbon.json', 'delhi.json', 'mumbai.json', 'jaipur.json', 'goa.json', 'kochi.json']));
+  test('the app ships only Indian destinations (Lisbon is a test fixture)', () => {
+    expect(files).toEqual(['delhi.json', 'goa.json', 'jaipur.json', 'kochi.json', 'mumbai.json']);
+  });
+
+  test.each(files)('%s is priced in rupees and every venue has a credited Wikimedia photo', (f) => {
+    const data = load(f);
+    expect(data.destination.currency).toBe('INR');
+    expect(data.destination.image?.url).toMatch(/^https:\/\/(upload|thumb)\.wikimedia\.org\//);
+    for (const v of data.venues) {
+      expect(v.image).toMatchObject({ url: expect.stringMatching(/^https:\/\/(upload|thumb)\.wikimedia\.org\//), credit: expect.any(String), license: expect.any(String) });
+      expect(Number.isInteger(v.pricePerPerson)).toBe(true); // whole rupees
+    }
   });
 
   test.each(files)('%s passes validation, its slug matches the file name, and it has every venue category', (f) => {
@@ -185,10 +196,11 @@ describe('every destination file in server/data/destinations', () => {
   });
 
   // Found on the live site: a plain "vegetarian dinner under $20 at 8 PM"
-  // returned no match in Delhi and Goa. Every city must be able to answer it.
-  test.each(files)('%s has a vegetarian dinner under $20 open 20:00-21:30', (f) => {
+  // returned no match in Delhi and Goa. Every city must be able to answer it
+  // (now in rupees: under ₹1,500).
+  test.each(files)('%s has a vegetarian dinner under ₹1,500 open 20:00-21:30', (f) => {
     const ok = load(f).venues.filter((v) => v.category === 'dinner' && v.dietaryTags.includes('vegetarian') &&
-      v.pricePerPerson <= 20 && isOpenFor(v.hours, { start: 20 * 60, end: 21 * 60 + 30 }));
+      v.pricePerPerson <= 1500 && isOpenFor(v.hours, { start: 20 * 60, end: 21 * 60 + 30 }));
     expect(ok.length).toBeGreaterThanOrEqual(1);
   });
 

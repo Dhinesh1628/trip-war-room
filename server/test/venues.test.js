@@ -3,6 +3,7 @@ import { readFile } from 'node:fs/promises';
 import { startTestServer, registerUser } from './helpers.js';
 import { distanceKm, boundingBox, parseLatLng } from '../src/venues/geo.js';
 import { DATA_DIR } from '../src/venues/seedData.js';
+import { FIXTURE_DIR } from './fixtures.js';
 
 let server;
 let app;
@@ -16,7 +17,7 @@ beforeAll(async () => {
   server = await startTestServer({ seed: true });
   app = server.app;
   auth = (await registerUser(app)).auth;
-  lisbon = JSON.parse(await readFile(`${DATA_DIR}/lisbon.json`, 'utf8'));
+  lisbon = JSON.parse(await readFile(`${FIXTURE_DIR}/lisbon.json`, 'utf8'));
 });
 
 afterAll(async () => {

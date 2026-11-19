@@ -50,6 +50,7 @@ export async function askConcierge({ room, userId, question, explicit = {}, llm,
       participantIds: room.participantIds,
       requesterId: userId,
       budget: room.budget(),
+      currency: room.currency,
     },
     explicit,
   );

@@ -1,3 +1,4 @@
+import { DEFAULT_CURRENCY } from '../lib/money.js';
 import express from 'express';
 import rateLimit from 'express-rate-limit';
 import mongoose from 'mongoose';
@@ -33,7 +34,7 @@ const createTripSchema = z
     totalBudget: z
       .number({ error: 'totalBudget must be a number' })
       .positive('totalBudget must be positive')
-      .max(1_000_000)
+      .max(100_000_000) // ₹10 crore: plenty for a group trip in rupees
       .refine((n) => Math.abs(n * 100 - Math.round(n * 100)) < 1e-6, 'totalBudget can have at most 2 decimals'),
     maxParticipants: z.number().int().min(1).max(MAX_ROOM_CAPACITY).default(8),
     defaultJoinRole: z.enum(['planner', 'viewer']).default('planner'),
@@ -100,6 +101,9 @@ async function tripView(trip, user, config) {
   };
 }
 
+// A trip's money is in its destination's currency (INR for the Indian cities).
+const currencyOf = async (trip) => (await findDestination(trip.destination))?.currency ?? DEFAULT_CURRENCY;
+
 const inviteUrl = (config, code) => `${config.clientOrigin}/join/${code}`;
 
 // Saves a new doc, retrying with a fresh invite code on the (very rare) collision.
@@ -148,6 +152,7 @@ export function tripsRouter(config, { gateway } = {}) {
         startDate: body.startDate,
         endDate: body.endDate,
         totalBudget: body.totalBudget,
+        currency: destination.currency,
         inviteCode,
         participants: [{ userId: leaderId, role: 'leader' }],
         settings: { maxParticipants: body.maxParticipants, defaultJoinRole: body.defaultJoinRole },
@@ -314,10 +319,11 @@ export function tripsRouter(config, { gateway } = {}) {
       participantIds,
       totalBudget: trip.totalBudget,
       ceilings: new Map(users.map((u) => [String(u._id), u.preferences?.budgetCeiling ?? null])),
+      currency: await currencyOf(trip),
     });
     const names = new Map(users.map((u) => [String(u._id), u.displayName]));
     res.json({
-      currency: 'USD',
+      currency: budget.currency,
       totalBudget: budget.totalBudget,
       groupTotal: budget.groupCommitted,
       remaining: budget.remaining,
@@ -348,7 +354,7 @@ export function tripsRouter(config, { gateway } = {}) {
       ItineraryItem.find({ tripId: trip._id }).lean(),
       namesFor(participantIds),
     ]);
-    const { _finalItems, ...analytics } = computeAnalytics(events, { participantIds, totalBudget: trip.totalBudget, names });
+    const { _finalItems, ...analytics } = computeAnalytics(events, { participantIds, totalBudget: trip.totalBudget, names, currency: await currencyOf(trip) });
     res.json({ tripId: String(trip._id), destination: trip.destinationName, ...analytics, reconciliation: reconcile(_finalItems, items) });
   });
 

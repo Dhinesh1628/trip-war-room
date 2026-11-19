@@ -23,7 +23,7 @@ export async function allDestinations() {
   return destinations;
 }
 
-// Accepts a slug ("lisbon") or the display name ("Lisbon, Portugal"), any case.
+// Accepts a slug ("jaipur") or the display name ("Jaipur, India"), any case.
 export async function findDestination(key) {
   const text = String(key).trim().toLowerCase();
   const list = await allDestinations();

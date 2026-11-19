@@ -20,6 +20,7 @@ export function roomActions({ emit, config }) {
     travellers: room.travellers,
     names: room.names,
     totalBudget: room.trip.totalBudget,
+    currency: room.currency,
   });
 
   // Re-runs the detector and announces conflicts that appeared or went away.

@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { get } from '../../lib/api.js';
+import Photo from '../../components/Photo.jsx';
 import { dayInfo, price, toHHMM, toMinutes, VISIT_MINUTES } from '../../lib/format.js';
 
 const CATEGORIES = ['all', 'breakfast', 'lunch', 'dinner', 'cafe', 'bar', 'activity', 'tour', 'museum', 'attraction', 'lodging'];
@@ -17,7 +18,7 @@ export function Dialog({ title, onClose, children }) {
       <div className="dialog" role="dialog" aria-modal="true" aria-label={title} tabIndex={-1} ref={ref}>
         <div className="between" style={{ marginBottom: 8 }}>
           <h2 style={{ margin: 0 }}>{title}</h2>
-          <button className="ghost icon" onClick={onClose} aria-label="Close">×</button>
+          <button type="button" className="round-btn" onClick={onClose} aria-label="Close">×</button>
         </div>
         {children}
       </div>
@@ -82,7 +83,7 @@ export default function PinDialog({ room, initial, onClose }) {
                 {CATEGORIES.map((c) => <option key={c} value={c}>{c === 'all' ? 'All kinds' : c}</option>)}
               </select>
             </div>
-            <div style={{ maxHeight: 260, overflowY: 'auto', border: '1px solid var(--border)', borderRadius: 8, marginBottom: 12 }}>
+            <div style={{ maxHeight: 300, overflowY: 'auto', border: '1px solid var(--border)', borderRadius: 12, marginBottom: 12 }}>
               {shown.map((v) => (
                 <label
                   key={v.venueId}
@@ -91,6 +92,7 @@ export default function PinDialog({ room, initial, onClose }) {
                 >
                   <span className="row grow">
                     <input type="radio" name="venue" aria-label={v.name} checked={v.venueId === venueId} onChange={() => { setVenueId(v.venueId); setStart(''); setError(null); }} style={{ width: 'auto', minHeight: 0 }} />
+                    <Photo image={v.image} alt="" className="pick-thumb" credit={false} />
                     <span className="grow">
                       <span style={{ fontWeight: 500, fontSize: 13 }}>{v.name}</span>
                       <span className="tiny muted" style={{ display: 'block' }}>
@@ -106,9 +108,12 @@ export default function PinDialog({ room, initial, onClose }) {
             </div>
           </>
         ) : (
-          <div className="panel" style={{ marginBottom: 12 }}>
+          <div className="panel row" style={{ marginBottom: 12, alignItems: 'flex-start' }}>
+            <Photo image={venue.image} alt="" className="pick-thumb" credit={false} />
+            <div className="grow">
             <div className="between"><span style={{ fontWeight: 500 }}>{venue.name}</span><span>{price(venue.pricePerPerson)}</span></div>
             <div className="small muted">{venue.category} · {venue.neighborhood} · open {venue.hours.open}-{venue.hours.close}</div>
+            </div>
           </div>
         )}
         <div className="row">

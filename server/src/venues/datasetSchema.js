@@ -1,3 +1,4 @@
+import { CURRENCY_CODES } from '../lib/money.js';
 import { z } from 'zod';
 import { DIETARY_TAGS, VENUE_CATEGORIES, TRANSIT_MODES, WEATHER_CONDITIONS } from './vocabulary.js';
 import { distanceKm } from './geo.js';
@@ -38,9 +39,23 @@ const hours = z
     path: ['close'],
   });
 
+// A photo with its credit. Only Wikimedia Commons images are accepted, so the
+// browser's content policy can stay narrow and every photo has a free licence.
+const image = z
+  .object({
+    url: z
+      .string()
+      .url()
+      .regex(/^https:\/\/(upload|thumb)\.wikimedia\.org\/[^?#]+$/, 'image.url must be an https://upload.wikimedia.org/ or thumb.wikimedia.org/ address with no query string'),
+    credit: z.string().trim().min(1).max(160),
+    license: z.string().trim().min(2).max(60),
+    source: z.string().url().regex(/^https:\/\/commons\.wikimedia\.org\//, 'image.source must be the Commons file page'),
+  })
+  .strict();
+
 const venue = z
   .object({
-    venueId: z.string().regex(/^v_[a-z0-9_]{1,40}$/, 'venueId must look like v_lis_001'),
+    venueId: z.string().regex(/^v_[a-z0-9_]{1,40}$/, 'venueId must look like v_jai_001'),
     name: z.string().trim().min(1).max(120),
     category: z.enum(VENUE_CATEGORIES, { error: `category must be one of: ${VENUE_CATEGORIES.join(', ')}` }),
     neighborhood: z.string().trim().min(1).max(80),
@@ -54,6 +69,7 @@ const venue = z
     reviewCount: z.number().int().min(0),
     indoor: z.boolean(),
     description: z.string().trim().min(10, 'description must be at least 10 characters').max(600),
+    image: image.optional(),
   })
   .strict();
 
@@ -63,7 +79,7 @@ const transitLink = z
     to: z.string().trim().min(1),
     mode: z.enum(TRANSIT_MODES),
     minutes: z.number().positive().max(600),
-    costPerPerson: z.number().min(0).max(1000),
+    costPerPerson: z.number().min(0).max(100000),
     line: z.string().trim().max(60).optional(),
   })
   .strict();
@@ -98,8 +114,9 @@ export const datasetSchema = z
         name: z.string().trim().min(2).max(100),
         country: z.string().trim().min(2).max(60),
         timezone: z.string().trim().min(3).max(60),
-        currency: z.literal('USD', { error: 'All prices are in USD; currency must be "USD"' }),
+        currency: z.enum(CURRENCY_CODES, { error: `currency must be one of: ${CURRENCY_CODES.join(', ')}` }),
         center: coordinates,
+        image: image.optional(),
       })
       .strict(),
     venues: z.array(venue).min(1, 'A dataset needs at least one venue').max(5000),

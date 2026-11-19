@@ -52,18 +52,18 @@ function breaks(v, c) {
 }
 
 const QUESTIONS = [
-  'Suggest a dinner spot near our 5 PM tour under $25/person',
-  'vegetarian dinner near our 5 PM tour',
-  'a vegan lunch under $20',
-  'gluten free breakfast at 9am',
-  'halal dinner within 1 km of our 5 PM tour',
-  'a bar after our 5 PM tour',
-  'cheap hotel under $70',
+  'Suggest a lunch spot near our 9 AM heritage walk under ₹500/person',
+  'vegetarian lunch near our 9 AM heritage walk',
+  'a vegan lunch under ₹600',
+  'veg breakfast at 8am',
+  'halal dinner within 2 km of our heritage walk',
+  'a bar at 9 pm',
+  'cheap hotel under ₹2,000',
   'a museum to visit on day 2',
-  'coffee near the castle',
-  'dinner at 21:00 under $40, dairy free',
-  'kosher lunch under $10',
-  'something to do near our 5 PM tour',
+  'chai near the fort',
+  'dinner at 21:00 under ₹1,500, gluten free',
+  'kosher lunch under ₹500',
+  'something to do near our heritage walk',
 ];
 
 console.log(`Concierge evaluation against ${base}\n`);
@@ -74,19 +74,19 @@ const token = reg.body.accessToken;
 const trip = (
   await call('POST', '/trips', {
     token,
-    body: { destination: 'lisbon', startDate: '2026-12-10', endDate: '2026-12-14', totalBudget: 2000, maxParticipants: 4 },
+    body: { destination: 'jaipur', startDate: '2026-12-10', endDate: '2026-12-14', totalBudget: 60000, maxParticipants: 4 },
   })
 ).body;
 
-// Pin the 5 PM Alfama tour and the castle, so questions have anchors.
+// Pin the 9 AM Pink City heritage walk and Amber Fort, so questions have anchors.
 const socket = io(`${base}/trips`, { auth: { token, tripId: trip.tripId }, transports: ['websocket'] });
 await new Promise((r) => socket.once('trip.sync.state', r));
 const pin = (p) => socket.timeout(5000).emitWithAck('trip.board.pin', { payload: p });
-await pin({ venueId: 'v_lis_025', dayIndex: 0, startTime: '17:00', endTime: '19:00' });
-await pin({ venueId: 'v_lis_027', dayIndex: 1, startTime: '10:00', endTime: '11:30' });
+await pin({ venueId: 'v_jai_017', dayIndex: 0, startTime: '09:00', endTime: '11:00' });
+await pin({ venueId: 'v_jai_010', dayIndex: 1, startTime: '10:00', endTime: '12:00' });
 
 const venues = new Map(
-  (await call('GET', '/destinations/lisbon/venues', { token })).body.venues.map((v) => [v.venueId, v]),
+  (await call('GET', '/destinations/jaipur/venues', { token })).body.venues.map((v) => [v.venueId, v]),
 );
 
 const rows = [];

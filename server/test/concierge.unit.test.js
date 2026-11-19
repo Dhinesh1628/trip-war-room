@@ -1,16 +1,17 @@
 import Anthropic from '@anthropic-ai/sdk';
 import { parseQuestion, buildConstraints, resolveAnchor } from '../src/concierge/interpret.js';
 import { factsFor, groundingProblems, templateAnswer, noMatchAnswer, writeAnswer } from '../src/concierge/answer.js';
-import { filterCandidates, rankCandidates } from '../src/concierge/constraints.js';
+import { filterCandidates, rankCandidates, RULES } from '../src/concierge/constraints.js';
 import { detectConflicts, diffConflicts, travelMinutes } from '../src/concierge/conflicts.js';
 import { openVote, castBallot, resolveVote, cancelVote, tallyOf, shareASlot } from '../src/board/votes.js';
 import { readFile } from 'node:fs/promises';
 import { DATA_DIR } from '../src/venues/seedData.js';
+import { FIXTURE_DIR } from './fixtures.js';
 
 let venues;
 let byId;
 beforeAll(async () => {
-  venues = JSON.parse(await readFile(`${DATA_DIR}/lisbon.json`, 'utf8')).venues;
+  venues = JSON.parse(await readFile(`${FIXTURE_DIR}/lisbon.json`, 'utf8')).venues;
   byId = new Map(venues.map((v) => [v.venueId, v]));
 });
 
@@ -131,7 +132,7 @@ describe('reading the question', () => {
 function exampleFacts() {
   const items = [item('i1', 'v_lis_025', 0, '17:00', '19:00')];
   const constraints = buildConstraints('Suggest a dinner spot near our 5 PM tour under $25/person', {
-    items, travellers: new Map(), participantIds: [], requesterId: 'u', budget: BUDGET,
+    items, travellers: new Map(), participantIds: [], requesterId: 'u', budget: BUDGET, currency: 'USD',
   });
   const ranked = rankCandidates(filterCandidates(venues, constraints).valid, constraints);
   return factsFor({ question: 'q', constraints, ranked, weather: { condition: 'rain', highC: 14, lowC: 9 } });
@@ -192,7 +193,7 @@ describe('the Claude call', () => {
     const facts = exampleFacts();
     const best = facts.candidates[0];
     const llm = fakeLlm(() =>
-      ok({ answer: `${best.name} is a ${best.walkMinutes}-minute walk from the tour and costs $${best.pricePerPersonUSD}.`, suggestedVenueId: best.venueId, citedVenueIds: [best.venueId] }),
+      ok({ answer: `${best.name} is a ${best.walkMinutes}-minute walk from the tour and costs $${best.pricePerPerson}.`, suggestedVenueId: best.venueId, citedVenueIds: [best.venueId] }),
     );
     const out = await writeAnswer({ facts, llm, config: CONFIG, allVenueNames: venues.map((v) => v.name) });
     expect(out).toMatchObject({ mode: 'llm', suggestedVenueId: best.venueId, model: 'claude-opus-5-5' });
@@ -357,5 +358,29 @@ describe('contested-slot voting', () => {
     expect(cancelVote(items, vote).ok).toBe(true);
     expect(items.get('i1').lifecycleStage).toBe('drafting');
     expect(items.get('i2').lifecycleStage).toBe('drafting');
+  });
+});
+
+// The Indian cities price in rupees: questions, rule reasons and answers all use ₹.
+describe('rupees', () => {
+  test('rupee amounts in questions are read, with Indian digit grouping', () => {
+    const ctx = { items: [], travellers: new Map(), participantIds: [], requesterId: 'u', budget: BUDGET, currency: 'INR' };
+    for (const [q, n] of [['veg dinner under ₹800', 800], ['lunch below Rs 1,200', 1200], ['cafe under 300 rupees', 300], ['stay under ₹1,20,000', 120000], ['dinner ₹500 per person', 500]]) {
+      expect(buildConstraints(q, ctx).maxPricePerPerson).toBe(n);
+    }
+    expect(buildConstraints('pure veg thali', ctx)).toMatchObject({ category: 'lunch', dietaryTags: ['vegetarian'], currency: 'INR' });
+  });
+
+  test('answers, rule reasons and the grounding check use ₹', () => {
+    const facts = exampleFacts();
+    const inr = { ...facts, currency: 'INR', currencySymbol: '₹' };
+    const t = templateAnswer(inr);
+    expect(t.answer).toMatch(/costs about ₹\d+ per person/);
+    expect(t.answer).not.toMatch(/\$/);
+    expect(groundingProblems(t.answer, inr, venues.map((v) => v.name))).toEqual([]);
+    expect(groundingProblems('Try it for ₹9,999.', inr, [])).toEqual(['price ₹9,999 is not in the data']);
+    expect(groundingProblems('About 9999 rupees.', inr, [])).toEqual(['price 9999 rupees is not in the data']);
+    const reason = RULES.budget({ pricePerPerson: 1500 }, { maxPricePerPerson: 800, currency: 'INR' });
+    expect(reason).toBe('₹1,500 is over the ₹800 ceiling');
   });
 });

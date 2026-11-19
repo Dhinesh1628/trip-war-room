@@ -1,3 +1,5 @@
+import { DEFAULT_CURRENCY } from '../lib/money.js';
+import { findDestination } from '../venues/catalog.js';
 import { Trip } from '../trips/trip.model.js';
 import { Interaction } from '../recs/interaction.model.js';
 import { Venue } from '../venues/venue.model.js';
@@ -75,7 +77,7 @@ export async function buildDashboard(userId, { registry } = {}) {
         favouriteCategories: top(categoryCounts, 3),
         dietaryTagsOfLikedPlaces: top(tagCounts, 3),
         priceRange: prices.length
-          ? { min: Math.min(...prices), median: median(prices), max: Math.max(...prices), currency: 'USD' }
+          ? { min: Math.min(...prices), median: median(prices), max: Math.max(...prices), currency: liked.length ? (await findDestination(liked[0].destination))?.currency ?? DEFAULT_CURRENCY : DEFAULT_CURRENCY }
           : null,
       },
     },

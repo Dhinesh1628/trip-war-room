@@ -1,10 +1,11 @@
 import { useState } from 'react';
 import { IconLock, IconPlus, IconAlertTriangle } from '@tabler/icons-react';
 import { dayInfo, price } from '../../lib/format.js';
+import Photo from '../../components/Photo.jsx';
 
 // The day-by-day board. Cards can be dragged to another day (same times);
 // opening a card lets you change the time, who's going, and more.
-export default function Board({ room, canPlan, conflictItemIds, names, onOpen, onAdd }) {
+export default function Board({ room, canPlan, conflictItemIds, names, onOpen, onAdd, photos }) {
   const [dropDay, setDropDay] = useState(null);
   const [error, setError] = useState(null);
   const items = Object.values(room.items);
@@ -64,6 +65,8 @@ export default function Board({ room, canPlan, conflictItemIds, names, onOpen, o
                     tabIndex={0}
                     aria-label={`${i.venue.name}, ${i.startTime} to ${i.endTime}${locked ? ', locked' : ''}${voting ? ', in a vote' : ''}`}
                   >
+                    <Photo image={photos?.get(i.venueId)} alt="" className="card-thumb" credit={false} />
+                    <div className="card-body">
                     <div className="between">
                       <span className="time">{i.startTime} to {i.endTime}</span>
                       <span className="row" style={{ gap: 4 }}>
@@ -76,6 +79,7 @@ export default function Board({ room, canPlan, conflictItemIds, names, onOpen, o
                     <div className="small muted">
                       {price(i.venue.pricePerPerson)} pp · {who ? `${who} only` : i.venue.neighborhood}
                       {i.split?.type === 'weighted' && ' · weighted'}
+                    </div>
                     </div>
                   </div>
                 );

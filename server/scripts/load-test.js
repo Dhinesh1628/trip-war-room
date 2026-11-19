@@ -93,7 +93,7 @@ for (let r = 0; r < ROOMS; r += 1) {
   }
   const trip = await call('POST', '/trips', {
     token: people[0].accessToken,
-    body: { destination: 'lisbon', startDate: '2026-12-10', endDate: '2026-12-14', totalBudget: 50000, maxParticipants: 50 },
+    body: { destination: 'jaipur', startDate: '2026-12-10', endDate: '2026-12-14', totalBudget: 5000000, maxParticipants: 50 },
   });
   for (const p of people.slice(1)) await call('POST', '/trips/join', { token: p.accessToken, body: { inviteCode: trip.inviteCode } });
   const clients = await Promise.all(people.map((p) => connect(p.accessToken, trip.tripId)));
@@ -101,13 +101,13 @@ for (let r = 0; r < ROOMS; r += 1) {
 }
 console.log(`setup: ${Math.round(performance.now() - setupStart)} ms (accounts, trips, ${ROOMS * PER_ROOM} connections)\n`);
 
-const venues = ['v_lis_001', 'v_lis_002', 'v_lis_017', 'v_lis_025', 'v_lis_027', 'v_lis_028', 'v_lis_030', 'v_lis_033'];
+const venues = ['v_jai_004', 'v_jai_005', 'v_jai_006', 'v_jai_010', 'v_jai_012', 'v_jai_013', 'v_jai_016', 'v_jai_017'];
 const testStart = performance.now();
 await Promise.all(
   rooms.map(async ({ clients }) => {
     // Each room: one shared card that two planners fight over every round,
     // plus a stream of pins and chat from everyone else.
-    const shared = (await send(clients[0], 'trip.board.pin', { venueId: 'v_lis_031', dayIndex: 0, startTime: '10:00', endTime: '11:00' })).item;
+    const shared = (await send(clients[0], 'trip.board.pin', { venueId: 'v_jai_015', dayIndex: 0, startTime: '10:00', endTime: '11:00' })).item;
     let version = shared.positionVersion;
     // Background pins each get their own early-morning start time, so they
     // never land in the exact same slot (which would rightly open a vote).

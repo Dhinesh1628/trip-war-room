@@ -19,7 +19,7 @@ contested-slot vote, and server-side RBAC.
 ## Scene 1: set up the room (1 min)
 
 1. Window A: register **Maya**. On the dashboard, under "Your needs", leave
-   the defaults. Start a trip: Lisbon, Dec 10 to 14, budget $1,200.
+   the defaults. Start a trip from the search bar: Where Jaipur, When Dec 10 to 14, Who 4, Budget ₹40,000.
 2. In the trip room, click the invite code to copy the link.
 3. Window B: open the link, register **Sam**, and press **Join trip**.
 4. Point out: both avatars are green (online) in both windows.
@@ -95,7 +95,7 @@ contested-slot vote, and server-side RBAC.
 1. Window A: open **Analytics**. Point out the banner saying the event log
    replays exactly to the board, the session numbers, and the cost-per-person
    table.
-2. Terminal: `npm test` (or show its summary): 371 tests passing.
+2. Terminal: `npm test` (or show its summary): 377 tests passing.
 3. Optional: `npm run demo:room --prefix server` shows three scripted
    travellers colliding on the same card and the measured sync drift.
 

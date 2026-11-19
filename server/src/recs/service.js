@@ -1,5 +1,6 @@
 import { Interaction } from './interaction.model.js';
-import { venuesFor } from '../venues/catalog.js';
+import { venuesFor, findDestination } from '../venues/catalog.js';
+import { PRICE_SCALE } from './generate.js';
 import { buildModel, recommendForGroup, ALPHA } from './recommender.js';
 
 // Live recommendations. The model is rebuilt from the interactions
@@ -19,13 +20,15 @@ async function modelFor(destination) {
   const hit = cache.get(destination);
   if (hit && hit.stamp === stamp) return hit;
 
-  const [rows, venues] = await Promise.all([
+  const [rows, venues, dest] = await Promise.all([
     Interaction.find({ destination }).select('userId venueId liked weight coTraveledWith').lean(),
     venuesFor(destination),
+    findDestination(destination),
   ]);
   const model = buildModel(
     rows.map((r) => ({ ...r, userId: String(r.userId) })),
     venues.map((v) => v.toPublic()),
+    { priceScale: PRICE_SCALE[dest?.currency] ?? 1 },
   );
   const entry = { stamp, model, interactionCount: rows.length, userCount: model.ratings.size, builtAt: new Date().toISOString() };
   cache.set(destination, entry);

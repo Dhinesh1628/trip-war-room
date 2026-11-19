@@ -1,3 +1,4 @@
+import { formatMoney } from '../lib/money.js';
 import { distanceKm } from '../venues/geo.js';
 import { FOOD_CATEGORIES } from '../venues/vocabulary.js';
 
@@ -59,7 +60,7 @@ export const RULES = {
     if (c.maxPricePerPerson == null) return null;
     return venue.pricePerPerson <= c.maxPricePerPerson
       ? null
-      : `$${venue.pricePerPerson} is over the $${c.maxPricePerPerson} ceiling`;
+      : `${formatMoney(venue.pricePerPerson, c.currency)} is over the ${formatMoney(c.maxPricePerPerson, c.currency)} ceiling`;
   },
   dietary(venue, c) {
     if (!c.dietaryTags?.length || !FOOD_CATEGORIES.includes(venue.category)) return null;

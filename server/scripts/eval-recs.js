@@ -3,12 +3,14 @@
 // Usage: npm run eval:recs
 import fs from 'node:fs';
 import path from 'node:path';
-import { DATA_DIR } from '../src/venues/seedData.js';
+import { fileURLToPath } from 'node:url';
 import { generateDataset, PERSONAS } from '../src/recs/generate.js';
 import { precisionAtK } from '../src/recs/evaluate.js';
 import { ALPHA } from '../src/recs/recommender.js';
 
-const venues = JSON.parse(fs.readFileSync(path.join(DATA_DIR, 'lisbon.json'), 'utf8')).venues;
+// The benchmark uses the Lisbon fixture so results stay comparable over time.
+const FIXTURE = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../test/fixtures/lisbon.json');
+const venues = JSON.parse(fs.readFileSync(FIXTURE, 'utf8')).venues;
 const SEEDS = [2026, 7, 42, 1234, 99];
 
 console.log('Personas (venues each would like):');

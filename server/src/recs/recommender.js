@@ -17,13 +17,15 @@ export const ALPHA = 0.5;
 export const CO_TRAVEL_BOOST = 1.5;
 export const MIN_SIGNALS_FOR_COLLAB = 3;
 
-const priceBand = (p) => (p < 15 ? 'budget' : p < 30 ? 'moderate' : p < 60 ? 'premium' : 'luxury');
+// Bands are written in dollars; `scale` converts them (about 60 for rupees,
+// so a ₹250 cafe is "budget" and a ₹9,000 hotel night is "luxury").
+const priceBand = (p, scale = 1) => (p < 15 * scale ? 'budget' : p < 30 * scale ? 'moderate' : p < 60 * scale ? 'premium' : 'luxury');
 
 // Sparse feature vector for a venue.
-export function features(venue) {
+export function features(venue, priceScale = 1) {
   const f = new Map([
     [`cat:${venue.category}`, 1],
-    [`price:${priceBand(venue.pricePerPerson)}`, 0.8],
+    [`price:${priceBand(venue.pricePerPerson, priceScale)}`, 0.8],
     [`area:${venue.neighborhood}`, 0.4],
     [venue.indoor ? 'indoor' : 'outdoor', 0.3],
   ]);
@@ -46,9 +48,9 @@ function cosine(a, b) {
 const signal = (i) => (i.liked ? 1 : -1) * (i.weight ?? 1);
 
 // Builds the model from interaction rows: { userId, venueId, liked, weight, coTraveledWith }.
-export function buildModel(interactions, venues) {
+export function buildModel(interactions, venues, { priceScale = 1 } = {}) {
   const venueById = new Map(venues.map((v) => [v.venueId, v]));
-  const vectors = new Map(venues.map((v) => [v.venueId, features(v)]));
+  const vectors = new Map(venues.map((v) => [v.venueId, features(v, priceScale)]));
   const ratings = new Map(); // userId -> Map venueId -> summed signal
   const coTravel = new Map(); // userId -> Set of userIds
   for (const i of interactions) {

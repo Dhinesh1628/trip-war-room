@@ -23,7 +23,7 @@ export default function BudgetPanel({ room, names, active }) {
           </span>
         </div>
       ))}
-      <p className="tiny faint" style={{ marginTop: 6, marginBottom: 0 }}>Exact to the cent. Open a card to change who's going or how it's split.</p>
+      <p className="tiny faint" style={{ marginTop: 6, marginBottom: 0 }}>Exact to the paisa. Open a card to change who's going or how it's split.</p>
     </section>
   );
 }

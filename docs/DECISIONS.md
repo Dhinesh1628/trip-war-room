@@ -52,10 +52,11 @@ human-readable id.
 **Dates are `YYYY-MM-DD` strings.** A trip day is a calendar day at the
 destination; storing UTC timestamps would invite off-by-one-day bugs.
 
-**Money.** All prices are USD (the spec's examples use "$"), stored as numbers
-with at most 2 decimals. The budget engine (Phase 4) will do its arithmetic in
-integer cents so totals are exact. Lodging `pricePerPerson` means per person
-per night.
+**Money.** Prices are stored as numbers with at most 2 decimals, in the
+destination's currency. The budget engine does its arithmetic in integer
+hundredths (paise or cents) so totals are exact. Lodging `pricePerPerson` means
+per person per night. (Originally USD only, following the spec's "$" examples;
+see "India edition" below.)
 
 **Prices must be positive.** The spec says the upload must check that price is
 a positive number, so even nearly-free activities have a small price (for
@@ -412,3 +413,42 @@ warning, and it can't be switched on through the normal server.
 **Live role changes on the client.** A role change made over REST (for
 example "Make viewer") now updates the traveller's own role on screen
 straight away, not only the people list.
+
+## India edition (after Phase 6)
+
+**India only.** The app ships five Indian cities. The Lisbon dataset moved to
+`server/test/fixtures/`: most hand-checked tests (worked budget examples, the
+spec's "dinner near our 5 PM tour under $25") are written against it, and
+keeping it fixed keeps those checks meaningful. `npm run seed -- --prune`
+removes destinations that are no longer in `server/data/destinations`.
+
+**Rupees, per destination.** Each dataset declares its currency (`INR` or
+`USD`); trips, budgets, analytics, conflict messages and Concierge answers use
+it. Amounts are shown with Indian digit grouping (₹1,20,000). The question
+parser reads "under ₹800", "below Rs 1,200", "under 800 rupees" and "₹500 per
+person"; the grounding check accepts any of those forms and rejects a price
+that isn't in the data, whatever symbol is used. Landmark prices are the
+Indian-visitor ticket rates, since the app is aimed at Indian travellers.
+
+**Price-based features scale with the currency.** The recommender's price
+bands and the synthetic travellers' tastes were written in dollars. Rather than
+rewrite them, they are multiplied by a per-currency factor (60 for rupees), so
+a ₹250 café is "budget" and a ₹9,000 hotel night is "luxury".
+
+**Photos from Wikimedia Commons.** Each venue stores one photo (URL, author,
+licence, file page), chosen from the lead image of a related Wikipedia article
+and kept only if the file is on Commons under a free licence. Every photo shows
+its credit and links to its Commons page, as CC BY-SA requires. Images are
+loaded from Wikimedia's servers, so the content-security policy allows
+`upload.wikimedia.org` and `thumb.wikimedia.org` for images only. The upload
+validator accepts only those hosts.
+
+**Saved places.** The heart button stores venue ids on the user
+(`savedVenueIds`, newest first, at most 200). Saving also records a "like"
+for the recommender. No separate collection: it is a short list read with the
+user.
+
+**Design.** Black and white and photo-led, based on the reference design the
+user chose (a mobile booking app) and an Airbnb-like search bar and category
+row. Layout ideas only: the app keeps its own name and mark, and uses no
+Airbnb branding, logo or colours.
