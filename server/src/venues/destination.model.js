@@ -52,6 +52,8 @@ const destinationSchema = new mongoose.Schema(
         },
       ],
     },
+    // { venueIds, meters } footpath table (see venues/walking.js)
+    walking: { type: mongoose.Schema.Types.Mixed, default: undefined },
     datasetVersion: { type: String, required: true },
   },
   { timestamps: true },

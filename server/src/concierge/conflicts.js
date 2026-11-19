@@ -1,3 +1,4 @@
+import { walkingMeters, METERS_PER_MINUTE } from '../venues/walking.js';
 import { DEFAULT_CURRENCY, formatMoney } from '../lib/money.js';
 import { distanceKm } from '../venues/geo.js';
 import { toMinutes, isOpenFor, walkMinutes } from './constraints.js';
@@ -16,10 +17,13 @@ import { computeBudget, toCents, fromCents } from '../board/budgetEngine.js';
 // Each conflict has a stable `conflictId`, so the same problem is not
 // announced twice.
 
-// Minutes needed to get from a to b: walking up to 2.5 km, otherwise public
-// transport at ~20 km/h plus 10 minutes of waiting.
-export function travelMinutes(a, b) {
+// Minutes needed to get from a to b: walking up to 2.5 km (the real footpath
+// when the dataset has one, else an estimate), otherwise public transport at
+// ~20 km/h plus 10 minutes of waiting.
+export function travelMinutes(a, b, fromVenueId = null, toVenueId = null) {
   const km = distanceKm(a, b);
+  const routed = fromVenueId && toVenueId ? walkingMeters(fromVenueId, toVenueId) : null;
+  if (routed != null && routed <= 3000) return Math.max(1, Math.round(routed / METERS_PER_MINUTE));
   return km <= 2.5 ? walkMinutes(km) : Math.round(10 + (km / 20) * 60);
 }
 
@@ -65,7 +69,7 @@ export function detectConflicts({ items, participantIds, travellers, names = new
       const b = sorted[i + 1];
       const gap = slotOf(b).start - slotOf(a).end;
       if (gap < 0) continue; // already an overlap
-      const need = travelMinutes(a.venue.coordinates, b.venue.coordinates);
+      const need = travelMinutes(a.venue.coordinates, b.venue.coordinates, a.venueId, b.venueId);
       if (gap < need) {
         const ids = [idOf(a), idOf(b)];
         conflicts.push({

@@ -1,3 +1,4 @@
+import { registerWalking, clearWalking } from './walking.js';
 import { Destination } from './destination.model.js';
 import { Venue } from './venue.model.js';
 import { bus } from '../lib/bus.js';
@@ -15,11 +16,15 @@ const venuesBySlug = new Map(); // slug -> array of Venue documents
 export function clearCatalog() {
   destinations = null;
   venuesBySlug.clear();
+  clearWalking();
 }
 bus.on(DATASET_CHANGED, clearCatalog);
 
 export async function allDestinations() {
-  if (!destinations) destinations = await Destination.find().sort({ name: 1 }).lean();
+  if (!destinations) {
+    destinations = await Destination.find().sort({ name: 1 }).lean();
+    for (const d of destinations) registerWalking(d.slug, d.walking);
+  }
   return destinations;
 }
 

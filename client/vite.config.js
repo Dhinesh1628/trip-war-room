@@ -15,4 +15,11 @@ export default defineConfig({
       '/socket.io': { target: API, ws: true },
     },
   },
+  // Screen tests (npm test): React Testing Library in a simulated browser.
+  test: {
+    environment: 'jsdom',
+    setupFiles: ['./src/test/setup.js'],
+    css: false,
+    restoreMocks: true,
+  },
 });

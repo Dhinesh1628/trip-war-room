@@ -43,11 +43,12 @@ export function verifyAccessToken(token, config) {
 
 const hash = (token) => crypto.createHash('sha256').update(token).digest('hex');
 
-export async function issueRefreshToken(userId, config, family = crypto.randomUUID()) {
+export async function issueRefreshToken(userId, config, family = crypto.randomUUID(), persistent = true) {
   const token = crypto.randomBytes(48).toString('base64url');
-  const expiresAt = new Date(Date.now() + config.refreshTokenTtlDays * 24 * 60 * 60 * 1000);
-  await RefreshToken.create({ tokenHash: hash(token), userId, family, expiresAt });
-  return { token, expiresAt };
+  const ttlMs = persistent ? config.refreshTokenTtlDays * 24 * 60 * 60 * 1000 : config.shortSessionHours * 60 * 60 * 1000;
+  const expiresAt = new Date(Date.now() + ttlMs);
+  await RefreshToken.create({ tokenHash: hash(token), userId, family, expiresAt, persistent });
+  return { token, expiresAt, persistent, family };
 }
 
 // Exchanges a refresh token for a new one (rotation). Returns { userId, token, expiresAt }.
@@ -78,7 +79,7 @@ export async function rotateRefreshToken(token, config) {
   }
 
   const [next, user] = await Promise.all([
-    issueRefreshToken(claimed.userId, config, claimed.family),
+    issueRefreshToken(claimed.userId, config, claimed.family, claimed.persistent !== false),
     User.findById(claimed.userId),
   ]);
   return { userId: claimed.userId, user, ...next };
@@ -92,12 +93,27 @@ export async function revokeRefreshFamily(token) {
   }
 }
 
-export function refreshCookieOptions(config, expiresAt) {
+// A persistent session gets a dated cookie; otherwise the cookie ends when the browser closes.
+export function refreshCookieOptions(config, expiresAt, persistent = true) {
   return {
     httpOnly: true,
     secure: config.secureCookies,
     sameSite: 'strict',
     path: '/api/v1/auth',
-    expires: expiresAt,
+    ...(persistent ? { expires: expiresAt } : {}),
   };
+}
+
+// The session (refresh-token family) a cookie belongs to, or null.
+export async function familyOf(token) {
+  if (!token) return null;
+  const record = await RefreshToken.findOne({ tokenHash: hash(token) }).select('family').lean();
+  return record?.family ?? null;
+}
+
+// Signs the user out everywhere except the given session (or everywhere).
+export async function revokeOtherSessions(userId, keepFamily = null) {
+  const filter = { userId, revokedAt: null, ...(keepFamily ? { family: { $ne: keepFamily } } : {}) };
+  const r = await RefreshToken.updateMany(filter, { revokedAt: new Date() });
+  return r.modifiedCount;
 }

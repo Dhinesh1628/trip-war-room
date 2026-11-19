@@ -32,6 +32,7 @@ const venueSchema = new mongoose.Schema(
       credit: String,
       license: String,
       source: String,
+      representative: Boolean,
     }, default: undefined },
   },
   { timestamps: true },
@@ -55,7 +56,7 @@ venueSchema.methods.toPublic = function toPublic() {
     reviewCount: this.reviewCount,
     indoor: this.indoor,
     description: this.description,
-    image: this.image?.url ? { url: this.image.url, credit: this.image.credit, license: this.image.license, source: this.image.source } : null,
+    image: this.image?.url ? { url: this.image.url, credit: this.image.credit, license: this.image.license, source: this.image.source, representative: Boolean(this.image.representative) } : null,
   };
 };
 

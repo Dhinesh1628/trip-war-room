@@ -11,7 +11,7 @@ import { DATASET_CHANGED } from './catalog.js';
 export async function ingestDataset(input) {
   const result = validateDataset(input);
   if (!result.ok) throw badRequest('Dataset is invalid', result.errors);
-  const { destination, venues, transit, weather, datasetVersion } = result.data;
+  const { destination, venues, transit, weather, walking, datasetVersion } = result.data;
 
   const ids = venues.map((v) => v.venueId);
   const clash = await Venue.findOne({ _id: { $in: ids }, destination: { $ne: destination.slug } }).lean();
@@ -23,7 +23,7 @@ export async function ingestDataset(input) {
 
   await Destination.findOneAndUpdate(
     { slug: destination.slug },
-    { ...destination, transit, weather, datasetVersion },
+    { ...destination, transit, weather, walking: walking ?? null, datasetVersion },
     { upsert: true, runValidators: true },
   );
 

@@ -1,3 +1,10 @@
+import mongoose from 'mongoose';
+import { Review } from '../reviews/review.model.js';
+import { reviewSummaries, clearReviewCache, withReviews } from '../reviews/reviews.js';
+import { User } from '../auth/user.model.js';
+import { sanitizeChat } from '../chat/sanitize.js';
+import { routedWalkMinutes } from './walking.js';
+import { walkMinutes } from '../concierge/constraints.js';
 import express from 'express';
 import { z } from 'zod';
 import { Venue } from './venue.model.js';
@@ -12,6 +19,12 @@ import { Interaction } from '../recs/interaction.model.js';
 const DEFAULT_RADIUS_KM = 2;
 
 const feedbackSchema = z.object({ liked: z.boolean() }).strict();
+const reviewSchema = z
+  .object({
+    rating: z.number().int('rating must be a whole number of stars').min(1, 'rating is 1 to 5 stars').max(5, 'rating is 1 to 5 stars'),
+    text: z.string().max(1000, 'A review can be at most 1,000 characters').optional().default(''),
+  })
+  .strict();
 
 const venueQuery = z
   .object({
@@ -115,7 +128,9 @@ export function destinationsRouter(config) {
   router.get('/:destination/venues', validate(venueQuery, 'query'), async (req, res) => {
     const d = await findDestination(req.params.destination);
     if (!d) throw notFound('Destination not found');
-    const { venues, radiusKm } = await searchVenues(d.slug, req.valid.query);
+    const found = await searchVenues(d.slug, req.valid.query);
+    const radiusKm = found.radiusKm;
+    const venues = await withReviews(d.slug, found.venues);
     res.json({
       destination: d.name,
       slug: d.slug,
@@ -143,12 +158,72 @@ export function destinationsRouter(config) {
     res.status(201).json({ venueId: venue._id, liked: req.valid.body.liked });
   });
 
+  async function venueOr404({ destination, venueId }) {
+    const d = await findDestination(destination);
+    if (!d) throw notFound('Destination not found');
+    const venue = (await venuesFor(d.slug)).find((v) => v._id === venueId);
+    if (!venue) throw notFound('Venue not found');
+    return { d, venue };
+  }
+
   router.get('/:destination/venues/:venueId', async (req, res) => {
     const d = await findDestination(req.params.destination);
     if (!d) throw notFound('Destination not found');
     const venue = (await venuesFor(d.slug)).find((v) => v._id === req.params.venueId);
     if (!venue) throw notFound('Venue not found');
-    res.json({ destination: d.name, venue: venue.toPublic() });
+    // The three closest places on foot (real footpaths when known).
+    const others = (await venuesFor(d.slug)).filter((v) => v._id !== venue._id);
+    const nearby = others
+      .map((v) => {
+        const routed = routedWalkMinutes(venue._id, v._id);
+        const km = distanceKm(venue.coordinates, v.coordinates);
+        return { venueId: v._id, name: v.name, category: v.category, walkMinutes: routed ?? walkMinutes(km), routed: routed != null, km };
+      })
+      .sort((a, b) => a.walkMinutes - b.walkMinutes || a.km - b.km)
+      .slice(0, 3)
+      .map(({ km, ...rest }) => rest); // eslint-disable-line no-unused-vars
+    const [withSummary] = await withReviews(d.slug, [venue.toPublic()]);
+    res.json({ destination: d.name, venue: withSummary, nearby });
+  });
+
+  // Reviews of a place, newest first, plus your own if you wrote one.
+  router.get('/:destination/venues/:venueId/reviews', async (req, res) => {
+    const { d, venue } = await venueOr404(req.params);
+    const rows = await Review.find({ venueId: venue._id }).sort({ updatedAt: -1, _id: -1 }).limit(100).lean();
+    const names = new Map(
+      (await User.find({ _id: { $in: rows.map((r) => r.userId) } }).select('displayName').lean()).map((u) => [String(u._id), u.displayName]),
+    );
+    const summary = (await reviewSummaries(d.slug)).get(venue._id) ?? { count: 0, average: null };
+    const pub = (r) => ({ reviewId: String(r._id), userId: String(r.userId), displayName: names.get(String(r.userId)) ?? 'A traveller', rating: r.rating, text: r.text, createdAt: r.createdAt, updatedAt: r.updatedAt });
+    res.json({ summary, reviews: rows.map(pub), mine: rows.filter((r) => String(r.userId) === req.user.id).map(pub)[0] ?? null });
+  });
+
+  // Write or replace your review. Text is cleaned like chat (no HTML).
+  router.put('/:destination/venues/:venueId/reviews', validate(reviewSchema), async (req, res) => {
+    const { d, venue } = await venueOr404(req.params);
+    const text = sanitizeChat(req.valid.body.text ?? '');
+    const r = await Review.findOneAndUpdate(
+      { venueId: venue._id, userId: req.user.id },
+      { $set: { rating: req.valid.body.rating, text, destination: d.slug } },
+      { upsert: true, returnDocument: 'after', runValidators: true, setDefaultsOnInsert: true },
+    );
+    clearReviewCache(d.slug);
+    // A review is also a taste signal: 4-5 stars a like, 1-2 a dislike.
+    if (r.rating !== 3) {
+      await Interaction.create({ userId: req.user.id, destination: d.slug, venueId: venue._id, category: venue.category, liked: r.rating >= 4, weight: 2, source: 'feedback' });
+    }
+    res.json({ review: { reviewId: String(r._id), rating: r.rating, text: r.text, updatedAt: r.updatedAt } });
+  });
+
+  // Delete your review (an admin can delete anyone's with ?userId=).
+  router.delete('/:destination/venues/:venueId/reviews', async (req, res) => {
+    const { d, venue } = await venueOr404(req.params);
+    const target = req.query.userId && req.user.role === 'admin' ? String(req.query.userId) : req.user.id;
+    if (!mongoose.isValidObjectId(target)) throw notFound('Review not found');
+    const gone = await Review.deleteOne({ venueId: venue._id, userId: target });
+    if (!gone.deletedCount) throw notFound('Review not found');
+    clearReviewCache(d.slug);
+    res.status(204).end();
   });
 
   return router;

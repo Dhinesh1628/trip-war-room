@@ -1,3 +1,4 @@
+import { routedWalkMinutes } from '../venues/walking.js';
 import { formatMoney } from '../lib/money.js';
 import { distanceKm } from '../venues/geo.js';
 import { FOOD_CATEGORIES } from '../venues/vocabulary.js';
@@ -133,7 +134,7 @@ export function rankCandidates(valid, constraints) {
       return {
         venue,
         distanceKm: km == null ? null : Math.round(km * 1000) / 1000,
-        walkMinutes: km == null ? null : walkMinutes(km),
+        walkMinutes: km == null ? null : routedWalkMinutes(constraints.anchor.venueId, venue.venueId) ?? walkMinutes(km),
         scores: { proximity: round3(proximity), rating: round3(rating), headroom: round3(headroom) },
         score: round3(score),
       };
@@ -143,5 +144,6 @@ export function rankCandidates(valid, constraints) {
 
 const round3 = (n) => Math.round(n * 1000) / 1000;
 
-// Average city walking pace, with a 25% allowance for hills and crossings.
+// Estimate when no footpath route is stored: average city walking pace, with
+// a 25% allowance for hills and crossings.
 export const walkMinutes = (km) => Math.max(1, Math.round(((km * 1.25) / 4.8) * 60));

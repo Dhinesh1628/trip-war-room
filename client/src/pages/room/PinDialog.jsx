@@ -1,11 +1,13 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { get } from '../../lib/api.js';
 import Photo from '../../components/Photo.jsx';
+import { useI18n } from '../../lib/i18n.jsx';
 import { dayInfo, price, toHHMM, toMinutes, VISIT_MINUTES } from '../../lib/format.js';
 
 const CATEGORIES = ['all', 'breakfast', 'lunch', 'dinner', 'cafe', 'bar', 'activity', 'tour', 'museum', 'attraction', 'lodging'];
 
 export function Dialog({ title, onClose, children }) {
+  const { t } = useI18n();
   const ref = useRef(null);
   useEffect(() => {
     ref.current?.focus();
@@ -18,7 +20,7 @@ export function Dialog({ title, onClose, children }) {
       <div className="dialog" role="dialog" aria-modal="true" aria-label={title} tabIndex={-1} ref={ref}>
         <div className="between" style={{ marginBottom: 8 }}>
           <h2 style={{ margin: 0 }}>{title}</h2>
-          <button type="button" className="round-btn" onClick={onClose} aria-label="Close">×</button>
+          <button type="button" className="round-btn" onClick={onClose} aria-label={t('Close')}>×</button>
         </div>
         {children}
       </div>
@@ -28,6 +30,7 @@ export function Dialog({ title, onClose, children }) {
 
 // Pick a venue from the destination's catalog and a time slot.
 export default function PinDialog({ room, initial, onClose }) {
+  const { t, lang } = useI18n();
   const [venues, setVenues] = useState([]);
   const [category, setCategory] = useState('all');
   const [query, setQuery] = useState('');
@@ -62,9 +65,9 @@ export default function PinDialog({ room, initial, onClose }) {
 
   async function submit(e) {
     e.preventDefault();
-    if (!venue) return setError('Pick a venue first');
-    if (!start || !end) return setError('Set a start and end time');
-    if (end <= start) return setError('The end time has to be after the start (items end the same day)');
+    if (!venue) return setError(t('Pick a venue first'));
+    if (!start || !end) return setError(t('Set a start and end time'));
+    if (end <= start) return setError(t('The end time has to be after the start (items end the same day)'));
     setBusy(true);
     const r = await room.send('trip.board.pin', { venueId, dayIndex: Number(dayIndex), startTime: start, endTime: end });
     setBusy(false);
@@ -73,14 +76,14 @@ export default function PinDialog({ room, initial, onClose }) {
   }
 
   return (
-    <Dialog title="Pin a venue" onClose={onClose}>
+    <Dialog title={t('Pin a venue')} onClose={onClose}>
       <form onSubmit={submit} noValidate>
         {!venue || !initial.venueId ? (
           <>
             <div className="row" style={{ marginBottom: 8 }}>
-              <input aria-label="Search venues" placeholder="Search by name or area" value={query} onChange={(e) => setQuery(e.target.value)} />
-              <select aria-label="Category" value={category} onChange={(e) => setCategory(e.target.value)} style={{ width: 140 }}>
-                {CATEGORIES.map((c) => <option key={c} value={c}>{c === 'all' ? 'All kinds' : c}</option>)}
+              <input aria-label={t('Search venues')} placeholder={t('Search by name or area')} value={query} onChange={(e) => setQuery(e.target.value)} />
+              <select aria-label={t('Category')} value={category} onChange={(e) => setCategory(e.target.value)} style={{ width: 140 }}>
+                {CATEGORIES.map((c) => <option key={c} value={c}>{c === 'all' ? t('All kinds') : t(c)}</option>)}
               </select>
             </div>
             <div style={{ maxHeight: 300, overflowY: 'auto', border: '1px solid var(--border)', borderRadius: 12, marginBottom: 12 }}>
@@ -96,15 +99,15 @@ export default function PinDialog({ room, initial, onClose }) {
                     <span className="grow">
                       <span style={{ fontWeight: 500, fontSize: 13 }}>{v.name}</span>
                       <span className="tiny muted" style={{ display: 'block' }}>
-                        {v.category} · {v.neighborhood} · {v.hours.open}-{v.hours.close}
-                        {v.dietaryTags.length > 0 && ` · ${v.dietaryTags.join(', ')}`}
+                        {t(v.category)} · {v.neighborhood} · {v.hours.open}–{v.hours.close}
+                        {v.dietaryTags.length > 0 && ` · ${v.dietaryTags.map((d) => t(d)).join(', ')}`}
                       </span>
                     </span>
                   </span>
-                  <span className="small">{price(v.pricePerPerson)}{onBoard.has(v.venueId) && <span className="tag" style={{ marginLeft: 6 }}>on board</span>}</span>
+                  <span className="small">{price(v.pricePerPerson)}{onBoard.has(v.venueId) && <span className="tag" style={{ marginLeft: 6 }}>{t('on board')}</span>}</span>
                 </label>
               ))}
-              {venues.length > 0 && shown.length === 0 && <p className="small muted" style={{ padding: 10 }}>No venues match.</p>}
+              {venues.length > 0 && shown.length === 0 && <p className="small muted" style={{ padding: 10 }}>{t('No venues match.')}</p>}
             </div>
           </>
         ) : (
@@ -112,28 +115,28 @@ export default function PinDialog({ room, initial, onClose }) {
             <Photo image={venue.image} alt="" className="pick-thumb" credit={false} />
             <div className="grow">
             <div className="between"><span style={{ fontWeight: 500 }}>{venue.name}</span><span>{price(venue.pricePerPerson)}</span></div>
-            <div className="small muted">{venue.category} · {venue.neighborhood} · open {venue.hours.open}-{venue.hours.close}</div>
+            <div className="small muted">{t(venue.category)} · {venue.neighborhood} · {t('open {hours}', { hours: `${venue.hours.open}–${venue.hours.close}` })}</div>
             </div>
           </div>
         )}
         <div className="row">
           <div className="field grow">
-            <label htmlFor="pin-day">Day</label>
+            <label htmlFor="pin-day">{t('Day')}</label>
             <select id="pin-day" value={dayIndex} onChange={(e) => setDayIndex(e.target.value)}>
-              {Array.from({ length: room.trip.dayCount }, (_, d) => <option key={d} value={d}>Day {d + 1} · {dayInfo(room.trip.startDate, d).label}</option>)}
+              {Array.from({ length: room.trip.dayCount }, (_, d) => <option key={d} value={d}>{t('Day {n}', { n: d + 1 })} · {dayInfo(room.trip.startDate, d, lang).label}</option>)}
             </select>
           </div>
           <div className="field" style={{ width: 140 }}>
-            <label htmlFor="pin-start">From</label>
+            <label htmlFor="pin-start">{t('From')}</label>
             <input id="pin-start" type="time" value={start} onChange={(e) => { setStart(e.target.value); setError(null); }} />
           </div>
           <div className="field" style={{ width: 140 }}>
-            <label htmlFor="pin-end">To</label>
+            <label htmlFor="pin-end">{t('To')}</label>
             <input id="pin-end" type="time" value={end} onChange={(e) => { setEnd(e.target.value); setError(null); }} />
           </div>
         </div>
         {error && <div className="error" role="alert" style={{ marginBottom: 8 }}>{error}</div>}
-        <div className="row"><button className="primary" disabled={busy}>{busy ? 'Pinning…' : 'Pin to board'}</button><button type="button" onClick={onClose}>Cancel</button></div>
+        <div className="row"><button className="primary" disabled={busy}>{busy ? t('Pinning…') : t('Pin to board')}</button><button type="button" onClick={onClose}>{t('Cancel')}</button></div>
       </form>
     </Dialog>
   );

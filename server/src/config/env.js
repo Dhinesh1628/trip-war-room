@@ -47,6 +47,18 @@ export function loadConfig(env = process.env) {
     // Invite previews and joins per account per 15 minutes (brute-force guard).
     inviteRateLimit: Number(env.INVITE_RATE_LIMIT) || 30,
     secureCookies: nodeEnv === 'production',
+    // A "don't keep me signed in" session lasts this long (refresh cookie without an expiry).
+    shortSessionHours: Number(env.SHORT_SESSION_HOURS) || 24,
+    // Email (Resend) and SMS (Twilio). Without them, outside production,
+    // messages go to a test inbox at GET /api/v1/dev/outbox.
+    resendApiKey: env.RESEND_API_KEY || null,
+    emailFrom: env.EMAIL_FROM || 'Trip War Room <onboarding@resend.dev>',
+    twilio: env.TWILIO_ACCOUNT_SID && env.TWILIO_AUTH_TOKEN && env.TWILIO_FROM
+      ? { accountSid: env.TWILIO_ACCOUNT_SID, authToken: env.TWILIO_AUTH_TOKEN, from: env.TWILIO_FROM }
+      : null,
+    devOutbox: nodeEnv !== 'production',
+    // Sign in with Google: the OAuth client id from Google Cloud (public, not a secret).
+    googleClientId: env.GOOGLE_CLIENT_ID || null,
     // Set TRUST_PROXY=1 behind a hosting proxy (e.g. Render) so rate limiting sees real IPs.
     trustProxy: env.TRUST_PROXY === '1',
     // Real-time gateway tuning.

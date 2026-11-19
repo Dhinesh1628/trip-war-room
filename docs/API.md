@@ -379,6 +379,86 @@ and are unique; unknown fields are rejected; currency must be `INR` or `USD`; an
 
 ---
 
+## Accounts, reviews and the home page
+
+### `GET /auth/providers`
+Which sign-in methods this server offers. The client shows only these.
+`200 { "google": { "clientId": "…apps.googleusercontent.com" } | null, "phone": true, "email": true, "testInbox": false }`
+
+### `POST /auth/register`, `POST /auth/login` (additions)
+Both accept `"remember": false` for "don't keep me signed in": the refresh
+cookie then has no expiry and the session lasts 24 hours. Registering sends an
+email-confirmation link.
+
+### `POST /auth/password/forgot`
+`{ "email": "…" }` → `202 { "message": "If an account uses that email, a reset link is on its way." }`,
+the same answer whether or not the account exists. `503 EMAIL_UNAVAILABLE` when
+email isn't set up on the server.
+
+### `POST /auth/password/reset`
+`{ "token": "<from the email link>", "password": "…", "remember": true }` →
+`200` with a new session (like login). The link works once, for 30 minutes;
+every other session is signed out. `400` for a used or expired link.
+
+### `POST /auth/email/verify` and `POST /auth/email/resend` *(resend: auth)*
+Verify: `{ "token": "…" }` → `200 { "user": { …, "emailVerified": true } }`.
+Resend: `202 { "message": "We sent a new link to …" }`.
+
+### `POST /auth/password/change` *(auth)*
+`{ "currentPassword": "…", "newPassword": "…" }` (no current password needed
+for Google or phone accounts that never set one) →
+`200 { "user": …, "signedOutSessions": 2 }`. Other sessions are signed out.
+
+### `POST /auth/sessions/revoke-others` *(auth)*
+Signs out every session except the one making the request.
+`200 { "signedOutSessions": 1 }`.
+
+### `POST /auth/google`
+`{ "credential": "<Google ID token>", "remember": true }` → `200` with a session.
+Creates an account or links one with the same Google-verified email.
+`401 GOOGLE_INVALID`, `409 EMAIL_TAKEN` (unverified email that already has an
+account), `503 GOOGLE_UNAVAILABLE` (no client id configured).
+
+### `POST /auth/otp/request` and `POST /auth/otp/verify`
+Request: `{ "phone": "98765 43210" }` (10 digits mean +91; otherwise include the
+country code) → `202 { "phone": "+919876543210", "expiresInSeconds": 300 }`.
+`429` after 3 codes in 10 minutes.
+
+Verify: `{ "phone": "+919876543210", "code": "123456", "displayName": "…" }` →
+`200` with a session, or `200 { "needsName": true }` the first time for a new
+number (send again with `displayName`). Five wrong codes lock that code.
+
+### `GET /users/me/home` *(auth)*
+The signed-in dashboard:
+```json
+{ "stats": { "upcomingTrips": 2, "plannedSpend": 18450, "currency": "INR", "savedPlaces": 7, "reviewsWritten": 3, "openVotes": 1 },
+  "nextTrip": { "tripId": "…", "destination": "Jaipur, India", "startDate": "2026-12-10", "endDate": "2026-12-13", "daysToGo": 21,
+                "participantCount": 4, "onlineNow": 3, "pinned": 6, "openVotes": 1, "conflicts": 1,
+                "groupCommitted": 9200, "totalBudget": 40000, "currency": "INR", "image": { … } },
+  "invitations": [ { "tripId": "…", "destination": "Goa, India", "inviteCode": "AB-7Q2K", "invitedBy": "Sam", … } ],
+  "activity": [ { "type": "item_pinned", "who": "Arjun", "place": "Amber Fort", "trip": "Jaipur", "at": "…" } ] }
+```
+
+### `POST /trips/{id}/invites` — Leader+
+`{ "email": "friend@example.com" }` → `202 { "sent": true }`. Emails the trip's
+invite link; the invite also shows on their home page. `409 ALREADY_MEMBER`,
+`429` after 30 a day per trip.
+
+### `GET /destinations/{destination}/venues/{venueId}` (addition)
+Also returns `nearby`: the three closest places on foot,
+`[{ "venueId": "…", "name": "…", "walkMinutes": 3, "routed": true }]`
+(`routed` means a real OpenStreetMap footpath, not an estimate). Venue lists
+include `travellerReviews: { "count": 2, "average": 4.5 }`.
+
+### `GET`, `PUT`, `DELETE /destinations/{destination}/venues/{venueId}/reviews` *(auth)*
+- `GET` → `{ "summary": { "count", "average" }, "reviews": [ { "displayName", "rating", "text", "updatedAt" } ], "mine": … }`
+- `PUT { "rating": 1-5, "text": "up to 1,000 characters" }` writes or replaces your review (HTML is stripped). 4-5 stars count as a like for recommendations, 1-2 as a dislike.
+- `DELETE` removes yours (`?userId=` lets an admin remove anyone's). `204`, or `404`.
+
+### `GET /dev/outbox` *(not in production)*
+The emails and texts a local server would have sent. Only mounted when
+`NODE_ENV` is not `production`.
+
 ## Real-time (WebSocket) API
 
 Socket.io 4, namespace `/trips`. **One connection = one traveller in one Trip Room.**

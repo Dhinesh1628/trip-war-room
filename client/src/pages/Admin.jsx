@@ -2,11 +2,13 @@ import { useEffect, useState } from 'react';
 import { IconUpload, IconCircleCheck } from '@tabler/icons-react';
 import { get, post } from '../lib/api.js';
 import { useAuth } from '../lib/auth.jsx';
+import { useI18n } from '../lib/i18n.jsx';
 
 // Admin-only: upload a destination's venue dataset (spec 6.3). The server
 // checks every rule and rejects the whole file if anything is wrong.
 export default function Admin() {
   const { user } = useAuth();
+  const { t } = useI18n();
   const [datasets, setDatasets] = useState([]);
   const [file, setFile] = useState(null);
   const [json, setJson] = useState(null);
@@ -19,7 +21,7 @@ export default function Admin() {
   }, [user]);
 
   if (user?.role !== 'admin') {
-    return <main className="page"><div className="banner info">Only admins can manage venue datasets.</div></main>;
+    return <main className="page"><div className="banner info">{t('Only admins can manage venue datasets.')}</div></main>;
   }
 
   async function pick(e) {
@@ -31,12 +33,12 @@ export default function Admin() {
     try {
       setJson(JSON.parse(await f.text()));
     } catch {
-      setResult({ error: "That file isn't valid JSON. Check it in a text editor." });
+      setResult({ error: t("That file isn't valid JSON. Check it in a text editor.") });
     }
   }
 
   async function send(path) {
-    if (!json) return setResult({ error: 'Choose a dataset file first' });
+    if (!json) return setResult({ error: t('Choose a dataset file first') });
     setBusy(true);
     try {
       const r = await post(path, json);
@@ -51,10 +53,10 @@ export default function Admin() {
 
   return (
     <main className="page stack" style={{ maxWidth: 760 }}>
-      <h1>Venue datasets</h1>
+      <h1>{t('Venue datasets')}</h1>
       <section className="panel">
         <table>
-          <thead><tr><th>Destination</th><th>Version</th><th className="num">Venues</th><th>Updated</th></tr></thead>
+          <thead><tr><th>{t('Destination')}</th><th>{t('Version')}</th><th className="num">{t('Venues')}</th><th>{t('Updated')}</th></tr></thead>
           <tbody>
             {datasets.map((d) => (
               <tr key={d.slug}>
@@ -69,22 +71,22 @@ export default function Admin() {
       </section>
 
       <section className="panel">
-        <h2>Upload a dataset</h2>
+        <h2>{t('Upload a dataset')}</h2>
         <p className="small muted">
-          A JSON file in the same format as <code>server/data/destinations/lisbon.json</code>. Uploading replaces that destination's venues. Check it first to see any problems without changing anything.
+          {t('A JSON file in the same format as')} <code>server/data/destinations/jaipur.json</code>. {t("Uploading replaces that destination's venues. Check it first to see any problems without changing anything.")}
         </p>
         <div className="field">
-          <label htmlFor="file">Dataset file</label>
+          <label htmlFor="file">{t('Dataset file')}</label>
           <input id="file" type="file" accept=".json,application/json" onChange={pick} />
         </div>
         {json && (
           <p className="small muted">
-            {file?.name}: {json.destination?.name ?? 'unknown destination'}, {Array.isArray(json.venues) ? json.venues.length : 0} {json.venues?.length === 1 ? 'venue' : 'venues'}
+            {file?.name}: {json.destination?.name ?? t('unknown destination')}, {t('{n} venues', { n: Array.isArray(json.venues) ? json.venues.length : 0 })}
           </p>
         )}
         <div className="row">
-          <button onClick={() => send('/admin/datasets/validate')} disabled={busy}>Check file</button>
-          <button className="primary" onClick={() => send('/admin/datasets')} disabled={busy}><IconUpload size={14} aria-hidden="true" /> Upload</button>
+          <button onClick={() => send('/admin/datasets/validate')} disabled={busy}>{t('Check file')}</button>
+          <button className="primary" onClick={() => send('/admin/datasets')} disabled={busy}><IconUpload size={14} aria-hidden="true" /> {t('Upload')}</button>
         </div>
 
         {result?.ok && (
@@ -92,8 +94,8 @@ export default function Admin() {
             <IconCircleCheck size={16} aria-hidden="true" />
             <span>
               {result.ok.summary
-                ? `Uploaded ${result.ok.summary.destination}: ${result.ok.summary.venues} venues (${result.ok.summary.inserted} new, ${result.ok.summary.updated} changed, ${result.ok.summary.removed} removed).`
-                : `The file passes every check: ${result.ok.venues} venues for ${result.ok.destination}.`}
+                ? t('Uploaded {name}: {n} venues ({added} new, {changed} changed, {removed} removed).', { name: result.ok.summary.destination, n: result.ok.summary.venues, added: result.ok.summary.inserted, changed: result.ok.summary.updated, removed: result.ok.summary.removed })
+                : t('The file passes every check: {n} venues for {name}.', { n: result.ok.venues, name: result.ok.destination })}
             </span>
           </div>
         )}
@@ -103,7 +105,7 @@ export default function Admin() {
             {result.details && (
               <ul style={{ margin: '6px 0 0', paddingLeft: 18 }}>
                 {result.details.slice(0, 30).map((d, i) => <li key={i}><code>{d.path || '(file)'}</code>: {d.message}</li>)}
-                {result.details.length > 30 && <li>and {result.details.length - 30} more</li>}
+                {result.details.length > 30 && <li>{t('and {n} more', { n: result.details.length - 30 })}</li>}
               </ul>
             )}
           </div>

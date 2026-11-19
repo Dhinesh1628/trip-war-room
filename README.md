@@ -19,6 +19,17 @@ group's budget, dietary, opening-hours and distance constraints.
 > of each place from Wikimedia Commons with credits, and a photo-led design:
 > an Explore page with a Where / When / Who / Budget search bar, category and
 > city buttons, saved places (the heart button), and a bottom menu on phones.
+>
+> **Also added:** a signed-in home dashboard; a search box with price, rating,
+> dietary and "open now" filters and sorting; a list or map view
+> (OpenStreetMap); a date-range calendar; real walking times from
+> OpenStreetMap footpaths; traveller reviews; photos served by the app itself,
+> with representative photos labelled; password reset, email confirmation,
+> email invites, Sign in with Google and phone sign-in with a one-time code;
+> "keep me signed in" and signing out other devices; an installable app that
+> opens offline with your last saved board; touch dragging on phones;
+> English, Hindi, Tamil and Telugu; and automated screen tests with an
+> accessibility check.
 
 ## Documentation
 
@@ -217,7 +228,10 @@ npm test
 ```
 
 This runs the server's Jest suite (against an in-memory MongoDB; the first run
-downloads a MongoDB binary, which can take a minute) and then builds the client.
+downloads a MongoDB binary, which can take a minute), the client's screen
+tests (Vitest, React Testing Library and axe-core in a simulated browser),
+and then builds the client. Run only the screen tests with
+`npm test --prefix client`.
 
 What the suites cover:
 
@@ -238,6 +252,12 @@ What the suites cover:
 | `recs.test.js` | content-based and collaborative parts, co-traveller boost, cold start, group filters, **Precision@5 ≥ 0.6** on the held-out set |
 | `phase4.test.js` | end to end: attendance and weighted splits, budget-split votes, **a hand-worked session whose analytics must reconcile exactly with the event log**, recommendations, the dashboard, feedback |
 | `health.test.js`, `gateway.test.js` | health checks, config safety, WebSocket ping/pong |
+| `accounts.test.js` | password reset (single-use links, other sessions signed out), email confirmation, "keep me signed in" cookies, changing the password, signing out other devices, Sign in with Google (signature, audience, linking, never taking over an account through an unverified email), phone codes (expiry, attempt limit, rate limit, only the newest code works), email invites, the home dashboard |
+| `reviews.test.js` | reviews (one per traveller, cleaned of HTML, summaries, admin removal), real walking routes, nearby places, self-hosted photos |
+| client `i18n.test.js` | every interface string exists in Hindi, Tamil and Telugu with the same placeholders |
+| client `filters.test.js` | search, filters, "open now" past midnight, sorting, rupee and date formatting |
+| client `screens.test.jsx` | the calendar, sign-in (email, phone code, language switch), Explore (search, filters, sort, heart), place reviews, the home dashboard, account security, and an accessibility check (axe-core) on each |
+| client `offline.test.jsx` | the read-only offline board and clearing saved boards on sign-out |
 
 ### Smoke test against a running server
 
@@ -349,16 +369,25 @@ project's history phase by phase.
   same-region database.
 - **The AI latency target wasn't measured with Claude** (no API credits at
   test time). The free local model is too slow on a CPU-only laptop.
-- **No automated UI tests.** The client was verified in the browser, and all
-  rules are enforced and tested on the server.
-- **Touch screens:** drag and drop needs a mouse; on touch, change the day in
-  the card dialog.
+- **Screen tests run in a simulated browser** (jsdom), so colour contrast and
+  real layout are checked by hand in a browser, not automatically.
+- **Email, Google and SMS need your keys.** Without them, outside production,
+  messages go to a test inbox at `/dev/inbox`; on the live site those sign-in
+  options stay hidden until the keys are set (see the deploy guide). SMS
+  providers charge per message.
+- **Translations are machine-assisted.** Hindi, Tamil and Telugu cover every
+  screen, but a native speaker should review them. Place descriptions,
+  Concierge answers and server messages stay in English, and the Concierge
+  reads questions in English.
 - **Data:** five hand-authored Indian cities (Delhi, Mumbai, Jaipur, Goa,
   Kochi). Landmarks and coordinates are real; restaurant and hotel names are
   fictional, prices are approximate rupees (landmarks at the Indian-visitor
   rate), and weather is mocked. Photos are Wikimedia Commons lead images; a
-  fictional restaurant or hotel shows a related dish, street or landmark, and
-  six places with no free photo show their city's photo. Recommendation
+  fictional restaurant or hotel shows a related dish, street or landmark,
+  labelled "Representative photo". The app serves its own copies (about 9 MB).
+  Walking times come from OpenStreetMap footpaths, computed once when the data
+  is built; two places with no route (an island, and one far from a path) use
+  an estimate. Recommendation
   history is generated (120 synthetic travellers).
 - **Hosting:** public deployment is out of scope per spec 4.2, but the repo is
   ready for Render (one service, see [docs/DEPLOY.md](docs/DEPLOY.md)). The free

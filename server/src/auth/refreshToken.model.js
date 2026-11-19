@@ -11,6 +11,8 @@ const refreshTokenSchema = new mongoose.Schema({
   family: { type: String, required: true, index: true },
   expiresAt: { type: Date, required: true },
   revokedAt: { type: Date, default: null },
+  // false = "don't keep me signed in": the cookie ends with the browser and the token lives a day.
+  persistent: { type: Boolean, default: true },
   createdAt: { type: Date, default: Date.now },
 });
 

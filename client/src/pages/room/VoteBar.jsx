@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react';
 import { IconCheck, IconX } from '@tabler/icons-react';
+import { useI18n } from '../../lib/i18n.jsx';
 
 function useNow() {
   const [now, setNow] = useState(Date.now());
   useEffect(() => {
-    const t = setInterval(() => setNow(Date.now()), 1000);
-    return () => clearInterval(t);
+    const timer = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(timer);
   }, []);
   return now;
 }
@@ -17,6 +18,7 @@ const left = (closesAt, now) => {
 
 // Open votes: contested slots (pick one) and budget splits (yes or no).
 export default function VoteBar({ room, names }) {
+  const { t } = useI18n();
   const now = useNow();
   const [mine, setMine] = useState({});
   const [error, setError] = useState(null);
@@ -32,25 +34,27 @@ export default function VoteBar({ room, names }) {
   }
 
   return (
-    <section className="stack" aria-label="Open votes">
+    <section className="stack" aria-label={t('Open votes')}>
       {error && <div className="banner danger" role="alert">{error}</div>}
       {votes.map((v) =>
         v.kind === 'split' ? (
           <div key={v.voteId} className="panel" style={{ borderColor: 'var(--accent)' }}>
             <div className="between wrap">
               <div className="small">
-                <span style={{ fontWeight: 500 }}>Budget split vote:</span> {names.get(v.openedByUserId) ?? 'Someone'} proposes{' '}
-                {v.proposal.attendeeIds?.length ? `only ${v.proposal.attendeeIds.map((id) => names.get(id)).join(', ')} go to` : 'a new split for'} {v.name}
+                <span style={{ fontWeight: 500 }}>{t('Budget split vote:')}</span>{' '}
+                {v.proposal.attendeeIds?.length
+                  ? t('{who} proposes only {names} go to {place}', { who: names.get(v.openedByUserId) ?? t('Someone'), names: v.proposal.attendeeIds.map((id) => names.get(id)).join(', '), place: v.name })
+                  : t('{who} proposes a new split for {place}', { who: names.get(v.openedByUserId) ?? t('Someone'), place: v.name })}
                 {v.proposal.split.type === 'weighted' &&
-                  ` (shares ${Object.entries(v.proposal.split.weights).map(([id, w]) => `${names.get(id)?.split(' ')[0]} ${w}`).join(' : ')})`}
-                <span className="muted"> · {v.tally.yes} yes, {v.tally.no} no · {left(v.closesAt, now)} left</span>
+                  ` (${t('shares')} ${Object.entries(v.proposal.split.weights).map(([id, w]) => `${names.get(id)?.split(' ')[0]} ${w}`).join(' : ')})`}
+                <span className="muted"> · {t('{yes} yes, {no} no', { yes: v.tally.yes, no: v.tally.no })} · {t('{time} left', { time: left(v.closesAt, now) })}</span>
               </div>
               <div className="row">
-                <button className={mine[v.voteId] === 'yes' ? 'primary' : ''} onClick={() => cast('trip.split.cast', { voteId: v.voteId, choice: 'yes' }, v.voteId, 'yes')}>
-                  <IconCheck size={14} aria-hidden="true" /> Yes
+                <button className={mine[v.voteId] === 'yes' ? 'primary' : ''} aria-pressed={mine[v.voteId] === 'yes'} onClick={() => cast('trip.split.cast', { voteId: v.voteId, choice: 'yes' }, v.voteId, 'yes')}>
+                  <IconCheck size={14} aria-hidden="true" /> {t('Yes')}
                 </button>
-                <button className={mine[v.voteId] === 'no' ? 'primary' : ''} onClick={() => cast('trip.split.cast', { voteId: v.voteId, choice: 'no' }, v.voteId, 'no')}>
-                  <IconX size={14} aria-hidden="true" /> No
+                <button className={mine[v.voteId] === 'no' ? 'primary' : ''} aria-pressed={mine[v.voteId] === 'no'} onClick={() => cast('trip.split.cast', { voteId: v.voteId, choice: 'no' }, v.voteId, 'no')}>
+                  <IconX size={14} aria-hidden="true" /> {t('No')}
                 </button>
               </div>
             </div>
@@ -59,14 +63,15 @@ export default function VoteBar({ room, names }) {
           <div key={v.voteId} className="panel" style={{ borderColor: 'var(--accent)' }}>
             <div className="between wrap">
               <div className="small">
-                <span style={{ fontWeight: 500 }}>Vote:</span> which one keeps this slot?
-                <span className="muted"> · {v.ballotCount} of {room.participants.length} voted · {left(v.closesAt, now)} left</span>
+                <span style={{ fontWeight: 500 }}>{t('Vote:')}</span> {t('which one keeps this slot?')}
+                <span className="muted"> · {t('{n} of {total} voted', { n: v.ballotCount, total: room.participants.length })} · {t('{time} left', { time: left(v.closesAt, now) })}</span>
               </div>
               <div className="row wrap">
                 {v.candidates.map((c) => (
                   <button
                     key={c.itemId}
                     className={mine[v.voteId] === c.itemId ? 'primary' : ''}
+                    aria-pressed={mine[v.voteId] === c.itemId}
                     onClick={() => cast('trip.vote.cast', { voteId: v.voteId, itemId: c.itemId }, v.voteId, c.itemId)}
                   >
                     {c.name} <span className="tiny">{v.tally[c.itemId] ?? 0}</span>

@@ -302,7 +302,7 @@ describe('saved places (the heart button)', () => {
     const list = await request(app).get('/api/v1/users/me/saved').set('Authorization', auth);
     expect(list.body.saved.map((v) => v.venueId)).toEqual(['v_jai_012', 'v_goa_010']);
     expect(list.body.saved[0]).toMatchObject({ name: 'Hawa Mahal', destinationName: 'Jaipur, India', currency: 'INR', pricePerPerson: 50 });
-    expect(list.body.saved[0].image.url).toMatch(/wikimedia\.org/);
+    expect(list.body.saved[0].image.url).toMatch(/^\/photos\//);
 
     const del = await request(app).delete('/api/v1/users/me/saved/v_jai_012').set('Authorization', auth);
     expect(del.body.savedVenueIds).toEqual(['v_goa_010']);

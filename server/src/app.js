@@ -11,6 +11,7 @@ import { usersRouter } from './users/users.routes.js';
 import { destinationsRouter } from './venues/venues.routes.js';
 import { tripsRouter } from './trips/trips.routes.js';
 import { adminRouter } from './admin/admin.routes.js';
+import { devRouter } from './notify/dev.routes.js';
 
 // Serves the built client: real files from dist/, and index.html for any other
 // page URL (/trips/abc, /join/AB-7Q2K) so React Router can show the right page.
@@ -22,6 +23,13 @@ function serveClient(app, distDir) {
   }
   // Vite puts a content hash in asset names, so they can be cached forever.
   app.use('/assets', express.static(path.join(distDir, 'assets'), { immutable: true, maxAge: '1y', fallthrough: false }));
+  // Photo file names include a hash of the source, so they can be cached long.
+  app.use('/photos', express.static(path.join(distDir, 'photos'), { immutable: true, maxAge: '30d', fallthrough: false }));
+  // The service worker must always be re-checked, or app updates would stall.
+  app.get('/sw.js', (req, res) => {
+    res.set('Cache-Control', 'no-cache');
+    res.sendFile(path.join(distDir, 'sw.js'));
+  });
   app.use(express.static(distDir, { index: false, maxAge: '1h' }));
   app.get(/^(?!\/api(\/|$)).*/, (req, res) => {
     res.set('Cache-Control', 'no-cache'); // always pick up a new deploy
@@ -36,11 +44,21 @@ export function createApp(config, { gatewayHealth = () => null, gateway = null }
 
   app.disable('x-powered-by');
   if (config.trustProxy) app.set('trust proxy', 1);
-  // Place photos are loaded from Wikimedia Commons; everything else stays same-origin.
+  // Content security policy: same-origin by default, plus the few outside
+  // services the app uses (see the comments below).
   app.use(
     helmet({
       contentSecurityPolicy: {
-        directives: { 'img-src': ["'self'", 'data:', 'https://upload.wikimedia.org', 'https://thumb.wikimedia.org'] },
+        directives: {
+          // Photos are self-hosted; Wikimedia stays allowed for admin-uploaded datasets.
+          // Map tiles come from OpenStreetMap.
+          'img-src': ["'self'", 'data:', 'https://upload.wikimedia.org', 'https://thumb.wikimedia.org', 'https://tile.openstreetmap.org'],
+          // Sign in with Google (Google Identity Services).
+          'script-src': ["'self'", 'https://accounts.google.com/gsi/client'],
+          'frame-src': ['https://accounts.google.com/gsi/'],
+          'connect-src': ["'self'", 'https://accounts.google.com/gsi/'],
+          'style-src': ["'self'", "'unsafe-inline'", 'https://accounts.google.com/gsi/style'],
+        },
       },
     }),
   );
@@ -68,6 +86,8 @@ export function createApp(config, { gatewayHealth = () => null, gateway = null }
   api.use('/destinations', destinationsRouter(config));
   api.use('/trips', tripsRouter(config, { gateway }));
   api.use('/admin', adminRouter(config));
+  // Test inbox (emails and texts the server would send); never in production.
+  if (config.devOutbox) api.use('/dev', devRouter());
 
   app.use('/api/v1', api);
 

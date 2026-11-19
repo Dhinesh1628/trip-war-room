@@ -452,3 +452,50 @@ user.
 user chose (a mobile booking app) and an Airbnb-like search bar and category
 row. Layout ideas only: the app keeps its own name and mark, and uses no
 Airbnb branding, logo or colours.
+
+## Fixes after the review (after the India edition)
+
+**Photos are self-hosted.** The 127 photos (122 places, 5 cities) were downloaded
+once from Wikimedia Commons at 500 px (places) and 1,280 px (cities), about 9 MB,
+and are served by the app with long cache times. Each keeps its author, licence
+and Commons link. Venues whose photo shows a related dish, street or landmark
+rather than the place itself are marked `representative` and labelled. The six
+places that only had a city photo got better matches by searching Commons.
+
+**Real walking times, computed once.** The free OpenStreetMap foot-routing
+service (FOSSGIS) gave a footpath-distance table for each city at data-build
+time; nothing calls it while the app runs. The Concierge's "N-minute walk",
+travel-time clashes and "Nearby on foot" use these (80 m a minute). The
+distance rule itself still uses straight-line kilometres, as the spec defines
+it. Pairs without a route fall back to the old estimate.
+
+**Map: Leaflet with OpenStreetMap tiles**, loaded only when someone opens the
+map (it is the largest library). Tiles are credited as the tile policy asks.
+
+**Sign-in options switch on with their keys.** Password reset, email
+confirmation and invites (Resend), Google (Google Identity Services, verified
+on the server with Google's public keys instead of an extra library, which
+had a vulnerable dependency), and phone codes (Twilio). The server reports
+which are available (`GET /auth/providers`) and the client shows only those.
+Locally, without keys, a test inbox stands in.
+
+**Accounts without an email.** Phone accounts have no email, so the unique
+indexes on email, phone and Google id became partial (unique when present).
+The server updates the index on start-up.
+
+**Signed-in home page.** `/` is now a dashboard (summary numbers, the next trip,
+invitations, recent activity); Explore moved to `/explore`.
+
+**Languages: English text is the key.** Each translation file maps the English
+string to its translation, and missing ones show in English, so a new string
+is never blank. A test extracts every string passed to `t()` and fails if any
+language lacks it or changes a placeholder. Language files load on demand.
+The Concierge still reads English questions.
+
+**Touch dragging uses a grip handle.** Pressing the grip and dragging moves the
+card (the board scrolls sideways near the edge); the rest of the card still
+scrolls the page normally, which a long-press on the whole card would break.
+
+**Offline: read-only, on this device.** The service worker caches the app and
+photos; the trip room keeps the last board in local storage and shows it
+read-only without a connection. Sign-out deletes those copies.

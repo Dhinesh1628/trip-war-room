@@ -21,7 +21,13 @@ checked and how; "tested" means an automated test covers it.
 | Access tokens | HS256 JWT with the algorithm pinned; `none` and other keys are rejected (tested). They last 15 minutes, and the config refuses more than 1 hour (tested). |
 | Refresh tokens | Random 48-byte tokens in an httpOnly, SameSite=Strict cookie scoped to `/api/v1/auth`, and `Secure` in production. Only SHA-256 hashes are stored. They rotate on every use, and re-using an old token revokes the whole session (tested). Two parallel refreshes can't both succeed (tested). |
 | Revocation | Every request re-reads the user, so removing admin rights or deleting an account takes effect at once (tested). |
-| Client storage | The access token is kept in memory only, never localStorage. |
+| Client storage | The access token is kept in memory only, never localStorage. A read-only copy of your last boards is kept on the device for offline viewing; signing out deletes it. |
+| Keep me signed in | Unticked: the refresh cookie has no expiry (it ends with the browser) and the token lives 24 hours; the choice survives refreshes (tested). |
+| Password reset | Single-use links (32 random bytes, stored as SHA-256 hashes) that expire after 30 minutes. Asking for one answers the same way whether or not the email has an account. Resetting signs out every other session (tested). |
+| Email confirmation | The same kind of link, valid for 48 hours and tied to the address it was sent to (tested). |
+| Sign in with Google | The ID token is verified on the server: RS256 signature against Google's published keys, issuer, audience (our client id) and expiry; forged, foreign and unknown-key tokens are refused (tested). A Google account links to an existing account only when Google says the email is verified (tested). |
+| Phone codes | 6 digits from a secure random source, stored hashed with a server secret, valid 5 minutes, 5 wrong tries then locked, 3 codes per number per 10 minutes, only the newest code works, compared in constant time (tested). |
+| Signing out elsewhere | Changing the password and "Sign out other devices" revoke every other session but keep this one (tested). |
 
 ## Access control (spec 10.1: enforced server-side)
 
@@ -47,7 +53,7 @@ checked and how; "tested" means an automated test covers it.
 
 ## Transport and headers
 
-- `helmet` sets the standard security headers, including `X-Content-Type-Options`, frame protection and a default Content Security Policy for API responses.
+- `helmet` sets the standard security headers, including `X-Content-Type-Options`, frame protection and a Content Security Policy. The policy is same-origin, plus exactly what the app uses: map tiles from `tile.openstreetmap.org`, Wikimedia image hosts (for admin-uploaded datasets), and Google Identity Services for Sign in with Google.
 - CORS only allows the configured client origin. Socket.io uses the same origin rule.
 - CSRF: API calls use Bearer tokens (not cookies), so they can't be forged
   cross-site. The one cookie-based endpoint (`/auth/refresh`) is SameSite=Strict.
@@ -60,6 +66,10 @@ checked and how; "tested" means an automated test covers it.
 | Register and login | 20 per 15 minutes per IP |
 | Concierge questions | 20 per minute per traveller (tested) |
 | Joining and invite previews | 30 per 15 minutes per account (added in this review; see below) |
+| Password reset, email links, Google and phone sign-in | Share the register/login limit: 20 per 15 minutes per IP |
+| Phone codes | 3 per number per 10 minutes; 5 wrong tries per code |
+| Email invites | 30 per trip per day, leader only |
+| Reviews | One per traveller per place (writing again replaces it); text cleaned like chat |
 | Trip size | 50 people per room, enforced atomically (tested with a 5-way race for the last seat) |
 
 ## Dependencies
@@ -90,5 +100,7 @@ checked and how; "tested" means an automated test covers it.
 - `--bench` mode on the in-memory dev server lifts the rate limits for load
   testing. It is only reachable through `scripts/dev-memory.js` and must never
   be used on a deployment.
-- No account e-mail verification or password reset. This is out of scope for a
-  single-operator prototype (spec 4.1).
+- Email and SMS go through third-party providers (Resend, Twilio) once
+  configured; their delivery and logs are outside this app.
+- The local test inbox shows sign-in codes and reset links in plain text. It
+  is mounted only when NODE_ENV is not production.

@@ -45,11 +45,15 @@ const image = z
   .object({
     url: z
       .string()
-      .url()
-      .regex(/^https:\/\/(upload|thumb)\.wikimedia\.org\/[^?#]+$/, 'image.url must be an https://upload.wikimedia.org/ or thumb.wikimedia.org/ address with no query string'),
+      .regex(
+        /^(\/photos\/[a-z0-9-]+\.(jpg|png)|https:\/\/(upload|thumb)\.wikimedia\.org\/[^?#]+)$/,
+        'image.url must be a /photos/ file or an https://upload.wikimedia.org/ or thumb.wikimedia.org/ address with no query string',
+      ),
     credit: z.string().trim().min(1).max(160),
     license: z.string().trim().min(2).max(60),
     source: z.string().url().regex(/^https:\/\/commons\.wikimedia\.org\//, 'image.source must be the Commons file page'),
+    // true when the photo shows a related dish, street or landmark rather than the venue itself
+    representative: z.boolean().optional(),
   })
   .strict();
 
@@ -121,6 +125,14 @@ export const datasetSchema = z
       .strict(),
     venues: z.array(venue).min(1, 'A dataset needs at least one venue').max(5000),
     transit: z.array(transitLink).max(2000).default([]),
+    // Footpath metres between venues (OpenStreetMap), meters[i][j] from venueIds[i] to venueIds[j].
+    walking: z
+      .object({
+        venueIds: z.array(z.string()).max(2000),
+        meters: z.array(z.array(z.number().min(0).max(500000).nullable())),
+      })
+      .strict()
+      .optional(),
     weather: z
       .object({ monthly: z.array(monthly).max(12).default([]), daily: z.array(daily).max(400).default([]) })
       .strict()
@@ -143,6 +155,16 @@ export const datasetSchema = z
         });
       }
     });
+    if (data.walking) {
+      const ids = new Set(data.venues.map((v) => v.venueId));
+      const w = data.walking;
+      if (w.venueIds.some((id) => !ids.has(id)) || new Set(w.venueIds).size !== w.venueIds.length) {
+        ctx.addIssue({ code: 'custom', path: ['walking', 'venueIds'], message: 'walking.venueIds must be distinct venue ids from this dataset' });
+      }
+      if (w.meters.length !== w.venueIds.length || w.meters.some((row) => row.length !== w.venueIds.length)) {
+        ctx.addIssue({ code: 'custom', path: ['walking', 'meters'], message: 'walking.meters must be a square table matching walking.venueIds' });
+      }
+    }
     const months = data.weather.monthly.map((m) => m.month);
     if (new Set(months).size !== months.length) {
       ctx.addIssue({ code: 'custom', path: ['weather', 'monthly'], message: 'Each month may appear only once' });

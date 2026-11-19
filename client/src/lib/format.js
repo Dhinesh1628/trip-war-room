@@ -27,25 +27,29 @@ export const price = (n, currency = DEFAULT_CURRENCY) => {
 export const money = price;
 
 const DAY_MS = 86400000;
-export function dayInfo(startDate, dayIndex) {
+// Dates are shown in the chosen language (en, hi, ta, te), Indian style.
+export const localeOf = (lang = 'en') => (lang === 'en' ? 'en-IN' : `${lang}-IN`);
+
+export function dayInfo(startDate, dayIndex, lang = 'en') {
   const d = new Date(Date.parse(`${startDate}T00:00:00Z`) + dayIndex * DAY_MS);
+  const loc = localeOf(lang);
   return {
     iso: d.toISOString().slice(0, 10),
-    label: d.toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric', timeZone: 'UTC' }),
-    long: d.toLocaleDateString('en-IN', { weekday: 'long', month: 'short', day: 'numeric', timeZone: 'UTC' }),
+    label: d.toLocaleDateString(loc, { weekday: 'short', day: 'numeric', timeZone: 'UTC' }),
+    long: d.toLocaleDateString(loc, { weekday: 'long', month: 'short', day: 'numeric', timeZone: 'UTC' }),
   };
 }
 
-export function dateRange(start, end) {
-  const f = (s, o) => new Date(`${s}T00:00:00Z`).toLocaleDateString('en-IN', { timeZone: 'UTC', ...o });
-  return `${f(start, { day: 'numeric', month: 'short' })} to ${f(end, { day: 'numeric', month: 'short', year: 'numeric' })}`;
+export function dateRange(start, end, lang = 'en') {
+  const f = (s, o) => new Date(`${s}T00:00:00Z`).toLocaleDateString(localeOf(lang), { timeZone: 'UTC', ...o });
+  return `${f(start, { day: 'numeric', month: 'short' })} – ${f(end, { day: 'numeric', month: 'short', year: 'numeric' })}`;
 }
 
 // "10–13 Dec" for cards.
-export function shortRange(start, end) {
+export function shortRange(start, end, lang = 'en') {
   const s = new Date(`${start}T00:00:00Z`);
   const e = new Date(`${end}T00:00:00Z`);
-  const m = (d) => d.toLocaleDateString('en-IN', { month: 'short', timeZone: 'UTC' });
+  const m = (d) => d.toLocaleDateString(localeOf(lang), { month: 'short', timeZone: 'UTC' });
   return m(s) === m(e) ? `${s.getUTCDate()}–${e.getUTCDate()} ${m(e)}` : `${s.getUTCDate()} ${m(s)} – ${e.getUTCDate()} ${m(e)}`;
 }
 
@@ -62,5 +66,5 @@ export const toHHMM = (m) => `${String(Math.floor(m / 60) % 24).padStart(2, '0')
 
 export const VISIT_MINUTES = { breakfast: 45, lunch: 60, dinner: 90, cafe: 45, bar: 90, activity: 120, tour: 120, museum: 90, attraction: 90, lodging: 60 };
 
-export const hoursText = (h) => (h.open === '00:00' && h.close === '23:59' ? 'Open 24 hours' : `${h.open}–${h.close}`);
+export const hoursText = (h, t = (x) => x) => (h.open === '00:00' && h.close === '23:59' ? t('Open 24 hours') : `${h.open}–${h.close}`);
 export const cityOf = (name = '') => name.split(',')[0];

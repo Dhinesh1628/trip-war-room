@@ -2,9 +2,11 @@ import { useMemo, useState } from 'react';
 import { IconLock, IconLockOpen, IconTrash } from '@tabler/icons-react';
 import { Dialog } from './PinDialog.jsx';
 import { dayInfo, money, price } from '../../lib/format.js';
+import { useI18n } from '../../lib/i18n.jsx';
 
 // One card: time, who's going and who pays, lock, remove.
 export default function ItemDialog({ room, item, names, canPlan, isLeader, onClose }) {
+  const { t, lang } = useI18n();
   const locked = item.lifecycleStage === 'locked';
   const voting = item.lifecycleStage === 'voting';
   const editable = canPlan && !locked && !voting;
@@ -42,46 +44,46 @@ export default function ItemDialog({ room, item, names, canPlan, isLeader, onClo
   });
 
   async function saveTime() {
-    if (end <= start) return setMsg({ error: 'The end time has to be after the start' });
-    result(await room.send('trip.board.move', { itemId: item.itemId, dayIndex: Number(dayIndex), startTime: start, endTime: end, expectedVersion: item.positionVersion }), 'Time saved');
+    if (end <= start) return setMsg({ error: t('The end time has to be after the start') });
+    result(await room.send('trip.board.move', { itemId: item.itemId, dayIndex: Number(dayIndex), startTime: start, endTime: end, expectedVersion: item.positionVersion }), t('Time saved'));
   }
   async function saveSharing() {
-    if (!going.length) return setMsg({ error: 'At least one person has to go' });
-    result(await room.send('trip.board.setSharing', { itemId: item.itemId, ...sharing(), expectedVersion: item.positionVersion }), 'Split saved');
+    if (!going.length) return setMsg({ error: t('At least one person has to go') });
+    result(await room.send('trip.board.setSharing', { itemId: item.itemId, ...sharing(), expectedVersion: item.positionVersion }), t('Split saved'));
   }
   async function proposeSharing() {
-    if (!going.length) return setMsg({ error: 'At least one person has to go' });
-    if (result(await room.send('trip.split.propose', { itemId: item.itemId, ...sharing() }), 'Vote opened')) onClose();
+    if (!going.length) return setMsg({ error: t('At least one person has to go') });
+    if (result(await room.send('trip.split.propose', { itemId: item.itemId, ...sharing() }), t('Vote opened'))) onClose();
   }
 
   return (
     <Dialog title={item.venue.name} onClose={onClose}>
       <p className="small muted">
-        {item.venue.category} · {item.venue.neighborhood} · {price(item.venue.pricePerPerson)} per person · open {item.venue.hours?.open}-{item.venue.hours?.close}
-        {item.venue.dietaryTags?.length > 0 && ` · ${item.venue.dietaryTags.join(', ')}`}
+        {t(item.venue.category)} · {item.venue.neighborhood} · {price(item.venue.pricePerPerson)} {t('per person')} · {t('open {hours}', { hours: `${item.venue.hours?.open}–${item.venue.hours?.close}` })}
+        {item.venue.dietaryTags?.length > 0 && ` · ${item.venue.dietaryTags.map((d) => t(d)).join(', ')}`}
       </p>
       <p className="small">
-        Pinned by {names.get(item.pinnedByUserId) ?? 'someone'}
-        {locked && <> · <IconLock size={12} aria-hidden="true" /> locked{item.lockedByUserId ? ` by ${names.get(item.lockedByUserId) ?? 'the leader'}` : ' by a vote'}</>}
-        {voting && <> · in a vote</>}
+        {t('Pinned by {name}', { name: names.get(item.pinnedByUserId) ?? t('someone') })}
+        {locked && <> · <IconLock size={12} aria-hidden="true" /> {item.lockedByUserId ? t('locked by {name}', { name: names.get(item.lockedByUserId) ?? t('the leader') }) : t('locked by a vote')}</>}
+        {voting && <> · {t('in a vote')}</>}
       </p>
 
-      <h3>When</h3>
+      <h3>{t('When')}</h3>
       <div className="row">
         <div className="field grow">
-          <label htmlFor="it-day">Day</label>
+          <label htmlFor="it-day">{t('Day')}</label>
           <select id="it-day" value={dayIndex} disabled={!editable} onChange={(e) => setDayIndex(e.target.value)}>
-            {Array.from({ length: room.trip.dayCount }, (_, d) => <option key={d} value={d}>Day {d + 1} · {dayInfo(room.trip.startDate, d).label}</option>)}
+            {Array.from({ length: room.trip.dayCount }, (_, d) => <option key={d} value={d}>{t('Day {n}', { n: d + 1 })} · {dayInfo(room.trip.startDate, d, lang).label}</option>)}
           </select>
         </div>
-        <div className="field" style={{ width: 140 }}><label htmlFor="it-s">From</label><input id="it-s" type="time" value={start} disabled={!editable} onChange={(e) => setStart(e.target.value)} /></div>
-        <div className="field" style={{ width: 140 }}><label htmlFor="it-e">To</label><input id="it-e" type="time" value={end} disabled={!editable} onChange={(e) => setEnd(e.target.value)} /></div>
+        <div className="field" style={{ width: 140 }}><label htmlFor="it-s">{t('From')}</label><input id="it-s" type="time" value={start} disabled={!editable} onChange={(e) => setStart(e.target.value)} /></div>
+        <div className="field" style={{ width: 140 }}><label htmlFor="it-e">{t('To')}</label><input id="it-e" type="time" value={end} disabled={!editable} onChange={(e) => setEnd(e.target.value)} /></div>
       </div>
-      {editable && <button onClick={saveTime}>Save time</button>}
+      {editable && <button onClick={saveTime}>{t('Save time')}</button>}
 
-      <h3 style={{ marginTop: 16 }}>Who's going and who pays</h3>
+      <h3 style={{ marginTop: 16 }}>{t("Who's going and who pays")}</h3>
       <table>
-        <thead><tr><th>Traveller</th><th>Going</th>{weighted && <th className="num">Share weight</th>}<th className="num">Pays</th></tr></thead>
+        <thead><tr><th>{t('Traveller')}</th><th>{t('Going')}</th>{weighted && <th className="num">{t('Share weight')}</th>}<th className="num">{t('Pays')}</th></tr></thead>
         <tbody>
           {people.map((p) => (
             <tr key={p.userId}>
@@ -89,7 +91,7 @@ export default function ItemDialog({ room, item, names, canPlan, isLeader, onClo
               <td>
                 <input
                   type="checkbox"
-                  aria-label={`${p.displayName} is going`}
+                  aria-label={t('{name} is going', { name: p.displayName })}
                   checked={going.includes(p.userId)}
                   disabled={!canPlan || locked || voting}
                   onChange={() => setGoing(going.includes(p.userId) ? going.filter((x) => x !== p.userId) : [...going, p.userId])}
@@ -98,7 +100,7 @@ export default function ItemDialog({ room, item, names, canPlan, isLeader, onClo
               </td>
               {weighted && (
                 <td className="num">
-                  <input type="number" min="0" max="100" step="1" aria-label={`${p.displayName} weight`} style={{ width: 70 }} value={weights[p.userId]} disabled={!going.includes(p.userId)} onChange={(e) => setWeights({ ...weights, [p.userId]: e.target.value })} />
+                  <input type="number" min="0" max="100" step="1" aria-label={t('{name} weight', { name: p.displayName })} style={{ width: 70 }} value={weights[p.userId]} disabled={!going.includes(p.userId)} onChange={(e) => setWeights({ ...weights, [p.userId]: e.target.value })} />
                 </td>
               )}
               <td className="num">{preview && going.includes(p.userId) ? money(preview.shares[p.userId]) : '—'}</td>
@@ -109,12 +111,12 @@ export default function ItemDialog({ room, item, names, canPlan, isLeader, onClo
       <div className="between small" style={{ margin: '6px 0 10px' }}>
         <label className="row" style={{ margin: 0, color: 'var(--text)' }}>
           <input type="checkbox" checked={weighted} disabled={!canPlan || locked || voting} onChange={(e) => setWeighted(e.target.checked)} style={{ width: 'auto', minHeight: 0 }} />
-          Split by weights (for example a bigger room)
+          {t('Split by weights (for example a bigger room)')}
         </label>
-        {preview && <span className="muted">Total {money(preview.total)}</span>}
+        {preview && <span className="muted">{t('Total {amount}', { amount: money(preview.total) })}</span>}
       </div>
       {canPlan && !locked && !voting && (
-        <div className="row wrap"><button onClick={saveSharing}>Save split</button><button onClick={proposeSharing}>Put it to a vote</button></div>
+        <div className="row wrap"><button onClick={saveSharing}>{t('Save split')}</button><button onClick={proposeSharing}>{t('Put it to a vote')}</button></div>
       )}
 
       {msg?.error && <div className="error" role="alert" style={{ marginTop: 10 }}>{msg.error}</div>}
@@ -124,9 +126,9 @@ export default function ItemDialog({ room, item, names, canPlan, isLeader, onClo
         <div className="row">
           {isLeader && !voting && (
             locked ? (
-              <button onClick={async () => result(await room.send('trip.board.unlock', { itemId: item.itemId }), 'Unlocked')}><IconLockOpen size={14} aria-hidden="true" /> Unlock</button>
+              <button onClick={async () => result(await room.send('trip.board.unlock', { itemId: item.itemId }), t('Unlocked'))}><IconLockOpen size={14} aria-hidden="true" /> {t('Unlock')}</button>
             ) : (
-              <button onClick={async () => result(await room.send('trip.board.lock', { itemId: item.itemId }), 'Locked')}><IconLock size={14} aria-hidden="true" /> Lock as final</button>
+              <button onClick={async () => result(await room.send('trip.board.lock', { itemId: item.itemId }), t('Locked'))}><IconLock size={14} aria-hidden="true" /> {t('Lock as final')}</button>
             )
           )}
         </div>
@@ -135,10 +137,10 @@ export default function ItemDialog({ room, item, names, canPlan, isLeader, onClo
             className="danger"
             onClick={async () => {
               const r = await room.send('trip.board.remove', { itemId: item.itemId, expectedVersion: item.positionVersion });
-              if (result(r, 'Removed')) onClose();
+              if (result(r, t('Removed'))) onClose();
             }}
           >
-            <IconTrash size={14} aria-hidden="true" /> Remove
+            <IconTrash size={14} aria-hidden="true" /> {t('Remove')}
           </button>
         )}
       </div>

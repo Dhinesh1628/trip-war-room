@@ -95,7 +95,7 @@ contested-slot vote, and server-side RBAC.
 1. Window A: open **Analytics**. Point out the banner saying the event log
    replays exactly to the board, the session numbers, and the cost-per-person
    table.
-2. Terminal: `npm test` (or show its summary): 377 tests passing.
+2. Terminal: `npm test` (or show its summary): 454 tests passing (419 server, 35 screen).
 3. Optional: `npm run demo:room --prefix server` shows three scripted
    travellers colliding on the same card and the measured sync drift.
 

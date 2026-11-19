@@ -1,3 +1,5 @@
+import { TripInvite } from './tripInvite.model.js';
+import { sendEmail, channels, NotConfiguredError } from '../notify/notify.js';
 import { DEFAULT_CURRENCY } from '../lib/money.js';
 import express from 'express';
 import rateLimit from 'express-rate-limit';
@@ -379,6 +381,39 @@ export function tripsRouter(config, { gateway } = {}) {
     res.json({ tripId: String(trip._id), destination: trip.destinationName, groupDietaryTags: dietaryTags, ...result });
   });
 
+  // Leader only: email someone the invite link. At most 30 per trip per day.
+  const inviteEmailSchema = z.object({ email: z.string().trim().toLowerCase().email('Enter a valid email address').max(254) }).strict();
+  router.post('/:id/invites', validate(inviteEmailSchema), async (req, res) => {
+    const { trip } = await loadTripWithRole(req.params.id, req.user, 'leader');
+    if (!channels(config).email) throw new HttpError(503, 'EMAIL_UNAVAILABLE', 'Email invites are not set up on this server yet');
+    const to = req.valid.body.email;
+    const today = await TripInvite.countDocuments({ tripId: trip._id, createdAt: { $gt: new Date(Date.now() - 86400_000) } });
+    if (today >= 30) throw new HttpError(429, 'RATE_LIMITED', 'You have sent 30 invites for this trip today. Try again tomorrow, or share the link.');
+    const member = await User.findOne({ email: to }).select('_id').lean();
+    if (member && trip.participants.some((p) => String(p.userId) === String(member._id))) {
+      throw conflict('ALREADY_MEMBER', `${to} is already in this trip`);
+    }
+    await TripInvite.updateOne({ tripId: trip._id, email: to }, { $set: { invitedBy: req.user.id, createdAt: new Date() } }, { upsert: true });
+    const url = inviteUrl(config, trip.inviteCode);
+    const from = req.user.name ?? 'A friend';
+    try {
+      await sendEmail(config, {
+        to,
+        subject: `${from} invited you to plan a trip to ${trip.destinationName}`,
+        text: `${from} invited you to plan ${trip.destinationName} (${trip.startDate} to ${trip.endDate}) together on Trip War Room.
+
+Join the trip: ${url}
+
+Invite code: ${trip.inviteCode}`,
+        html: `<p>${escapeHtml(from)} invited you to plan <b>${escapeHtml(trip.destinationName)}</b> (${trip.startDate} to ${trip.endDate}) together on Trip War Room.</p><p><a href="${url}">Join the trip</a></p><p>Invite code: ${trip.inviteCode}</p>`,
+      });
+    } catch (err) {
+      if (err instanceof NotConfiguredError) throw new HttpError(503, 'EMAIL_UNAVAILABLE', err.message);
+      throw new HttpError(502, 'EMAIL_FAILED', "We couldn't send the invite. Try again, or share the link.");
+    }
+    res.status(202).json({ sent: true, email: to });
+  });
+
   // Leader only: replace the invite code (the old one stops working).
   router.post('/:id/invite-code', async (req, res) => {
     const { trip } = await loadTripWithRole(req.params.id, req.user, 'leader');
@@ -389,4 +424,8 @@ export function tripsRouter(config, { gateway } = {}) {
   });
 
   return router;
+}
+
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
 }

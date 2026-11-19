@@ -1,14 +1,15 @@
 # Test report (spec 12.1, 12.2)
 
-**Result: 377 tests in 16 files, all passing** (run on 2026-11-19, 82 s,
-Node 24, Jest 30). Each test file starts its own in-memory MongoDB, so no
-setup is needed:
+**Result: 454 tests, all passing**: 419 server tests in 18 files (Jest 30,
+each file with its own in-memory MongoDB) and 35 client screen tests in 4
+files (Vitest 5, React Testing Library, axe-core). Run on 2026-11-19, Node 24.
+No setup is needed:
 
 ```bash
 npm test
 ```
 
-This runs the server suite and then builds the client.
+This runs the server suite, the client screen tests, and then builds the client.
 
 ## What is covered
 
@@ -71,7 +72,17 @@ and a client build were competing for the laptop's CPU, one test failed and
 then passed on every re-run. On a busy machine, re-run before treating a single
 failure in `realtime.test.js` or `concierge.test.js` as a regression.
 
-**Not covered:** there are no automated tests for the React client. Its
-behaviour was verified in the browser, and every rule it relies on is enforced
-and tested on the server. A Playwright end-to-end suite is the next step
-listed in the [retrospective](RETROSPECTIVE.md).
+**New in the fixes:** `accounts.test.js` (password reset, email confirmation,
+keep-me-signed-in cookies, password change, signing out other devices, Google
+sign-in, phone codes, email invites, the home page: 32 tests) and
+`reviews.test.js` (reviews, walking routes, nearby places, self-hosted photos:
+14 tests). Client: translations complete in all three languages (11), search
+and filters (7), the screens with an accessibility check on each (14), and the
+offline board (3).
+
+**Not covered automatically:** the screen tests run in a simulated browser, so
+colour contrast, real layout, map tiles and touch dragging were checked in a
+real browser instead (light, dark, 375 px phone width, Hindi and Tamil).
+Email, Google and SMS delivery are tested against the local test inbox and
+fake Google keys; real delivery needs your provider keys. A Playwright
+end-to-end suite is the next step listed in the [retrospective](RETROSPECTIVE.md).

@@ -40,7 +40,8 @@ mongodb+srv://<user>:<password>@cluster0.xxxxx.mongodb.net/trip-war-room?retryWr
 If the password has symbols like `@ : / ? #`, URL-encode them (`@` → `%40`,
 `#` → `%23`), or autogenerate one without symbols.
 
-**d) Data.** If you use the same database you developed with, the Indian cities
+**d) Data.** Photos are part of the site itself (`client/public/photos`), so
+nothing extra is needed for them. If you use the same database you developed with, the Indian cities
 and the generated recommendation history are already there. For a new database,
 run these once from your computer with `MONGO_URI` pointing at it:
 
@@ -67,6 +68,19 @@ npm run generate:interactions --prefix server
 Environment Variable** → `ANTHROPIC_API_KEY` = your key (with credits) →
 **Save**. Without it, the Concierge gives the same rule-checked suggestions
 with template wording. (Ollama can't run on Render's free plan.)
+
+## Optional: email, Google and phone sign-in
+
+Each one switches on by itself when its settings are present (Render →
+service → **Environment** → **Add Environment Variable** → **Save**). Until
+then the live site simply doesn't show that option. The local test inbox
+(`/dev/inbox`) never exists in production.
+
+| Feature | Settings | Where to get them |
+|---|---|---|
+| Password reset, email confirmation, email invites | `RESEND_API_KEY`, `EMAIL_FROM` (for example `Trip War Room <hello@yourdomain.com>`) | resend.com: free plan. Until you verify a domain, Resend only delivers to your own address. |
+| Sign in with Google | `GOOGLE_CLIENT_ID` | Google Cloud Console → APIs and Services → Credentials → Create OAuth client ID → Web application. Add your site (`https://<your-app>.onrender.com`, and `http://localhost:5180` for local use) under **Authorised JavaScript origins**. The client id is public, not a secret. |
+| Phone sign-in with a code | `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_FROM` | twilio.com. Costs money per SMS; sending to Indian numbers needs DLT registration with Indian carriers. |
 
 ## 3. Check it works
 

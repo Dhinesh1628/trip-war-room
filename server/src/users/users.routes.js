@@ -6,6 +6,7 @@ import { validate } from '../lib/validate.js';
 import { DIETARY_TAGS } from '../venues/vocabulary.js';
 import { bus, USER_CHANGED } from '../lib/bus.js';
 import { buildDashboard } from './dashboard.js';
+import { buildHome } from './home.js';
 import { Venue } from '../venues/venue.model.js';
 import { Interaction } from '../recs/interaction.model.js';
 import { allDestinations } from '../venues/catalog.js';
@@ -54,6 +55,11 @@ export function usersRouter(config, { gateway } = {}) {
   // Personal dashboard (spec 6.3).
   router.get('/me/dashboard', requireAuth(config), async (req, res) => {
     res.json(await buildDashboard(req.user.id, { registry: gateway?.registry }));
+  });
+
+  // Signed-in home page (summary, next trip, invitations, activity).
+  router.get('/me/home', requireAuth(config), async (req, res) => {
+    res.json(await buildHome(req.user.id, { registry: gateway?.registry }));
   });
 
   router.patch('/me', requireAuth(config), validate(updateMeSchema), async (req, res) => {

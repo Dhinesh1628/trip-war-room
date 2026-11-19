@@ -1,5 +1,5 @@
 import { readFile } from 'node:fs/promises';
-import { readdirSync, readFileSync } from 'node:fs';
+import { readdirSync, readFileSync, existsSync } from 'node:fs';
 import request from 'supertest';
 import { startTestServer, registerUser } from './helpers.js';
 import { validateDataset } from '../src/venues/datasetSchema.js';
@@ -173,12 +173,21 @@ describe('every destination file in server/data/destinations', () => {
     expect(files).toEqual(['delhi.json', 'goa.json', 'jaipur.json', 'kochi.json', 'mumbai.json']);
   });
 
-  test.each(files)('%s is priced in rupees and every venue has a credited Wikimedia photo', (f) => {
+  test.each(files)('%s is priced in rupees and every venue has a credited, self-hosted Commons photo', (f) => {
     const data = load(f);
+    const served = (url) => existsSync(new URL(`../../client/public${url}`, import.meta.url));
     expect(data.destination.currency).toBe('INR');
-    expect(data.destination.image?.url).toMatch(/^https:\/\/(upload|thumb)\.wikimedia\.org\//);
+    expect(data.destination.image?.url).toMatch(/^\/photos\/[a-z0-9-]+\.jpg$/);
+    expect(served(data.destination.image.url)).toBe(true);
     for (const v of data.venues) {
-      expect(v.image).toMatchObject({ url: expect.stringMatching(/^https:\/\/(upload|thumb)\.wikimedia\.org\//), credit: expect.any(String), license: expect.any(String) });
+      expect(v.image).toMatchObject({
+        url: expect.stringMatching(/^\/photos\/[a-z0-9-]+\.jpg$/),
+        credit: expect.any(String),
+        license: expect.any(String),
+        source: expect.stringMatching(/^https:\/\/commons\.wikimedia\.org\/wiki\/File:/),
+        representative: expect.any(Boolean),
+      });
+      expect(served(v.image.url)).toBe(true); // the file is in client/public, so the site serves it
       expect(Number.isInteger(v.pricePerPerson)).toBe(true); // whole rupees
     }
   });

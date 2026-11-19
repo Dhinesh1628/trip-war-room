@@ -12,6 +12,10 @@ if (process.env.DNS_SERVERS) {
 export async function connectDb(uri) {
   mongoose.set('strictQuery', true);
   await mongoose.connect(uri);
+  // Email became optional (phone and Google accounts), so the old
+  // "email is unique" index is replaced by one that ignores missing emails.
+  const { User } = await import('../auth/user.model.js');
+  await User.syncIndexes();
   return mongoose.connection;
 }
 
